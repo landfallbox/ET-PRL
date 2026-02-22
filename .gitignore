@@ -22,3 +22,4 @@ env/
 src/core
 src/online_anomaly_detection
 src/unsupervised_anomaly_detection
+uv.lock
