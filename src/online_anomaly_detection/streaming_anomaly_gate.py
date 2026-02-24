@@ -7,10 +7,11 @@ from typing import Optional, Dict
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.core.streaming_stats import StreamingStats
-from src.core.streaming_isolation_depth import StreamingIsolationDepth
-from src.core.streaming_threshold_optimizer import StreamingThresholdOptimizer
-from src.core.multi_scale_distribution_tracker import MultiScaleDistributionTracker
+from config.online_anomaly_detection_config import OnlineAnomalyDetectionConfig
+from ml_toolkit.anomaly_detection import MultiScaleDistributionTracker
+from ml_toolkit.anomaly_detection import StreamingIsolationDepth
+from ml_toolkit.anomaly_detection import StreamingStats
+from ml_toolkit.anomaly_detection import StreamingThresholdOptimizer
 
 
 @dataclass
@@ -33,22 +34,16 @@ class StreamingAnomalyGate:
     2. 双层自适应阈值 - 本地快速响应 + 全局长期稳定
     3. 多尺度分布追踪 - 同时捕捉短期和长期的数据漂移
     4. 零外部依赖 - 完全独立运行，不需要后续的分类模型
-
-    使用场景：
-    - 直接作为DQN的触发门控
-    - 替代离线标签生成 + 门控模型的两阶段流程
-    - 在生产环境中实时运行
     """
 
     def __init__(
         self,
         feature_dim: int,
-        local_window_size: int = 100,
-        global_ema_decay: float = 0.01,
-        reference_samples: int = 500,
-        contamination: float = 0.2,
-        target_event_rate: float = 0.35,
-        alpha_local_weight: float = 0.7,
+        local_window_size: Optional[int] = None,
+        global_ema_decay: Optional[float] = None,
+        reference_samples: Optional[int] = None,
+        contamination: Optional[float] = None,
+        alpha_local_weight: Optional[float] = None,
     ):
         """
         初始化在线异常检测门控
@@ -59,25 +54,36 @@ class StreamingAnomalyGate:
             global_ema_decay: 全局阈值EMA衰减率（越小越稳定）
             reference_samples: 流式IF参考集大小
             contamination: 异常比例先验
-            target_event_rate: 目标异常事件率
             alpha_local_weight: 本地阈值权重（0-1，越大越快反应漂移）
         """
         self.feature_dim = feature_dim
         self.sample_count = 0
 
+        if local_window_size is None:
+            local_window_size = OnlineAnomalyDetectionConfig.GATE_LOCAL_WINDOW_SIZE
+        if global_ema_decay is None:
+            global_ema_decay = OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY
+        if reference_samples is None:
+            reference_samples = OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES
+        if contamination is None:
+            contamination = OnlineAnomalyDetectionConfig.GATE_CONTAMINATION
+        if alpha_local_weight is None:
+            alpha_local_weight = OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT
+
         # 1. 流式特征统计维护器
         self.feature_stats = StreamingStats(
             feature_dim=feature_dim,
-            ema_decay=0.01,
-            window_size=1000,
+            ema_decay=OnlineAnomalyDetectionConfig.STATS_EMA_DECAY,
+            window_size=OnlineAnomalyDetectionConfig.STATS_WINDOW_SIZE,
         )
 
         # 2. 流式异常检测器（替代IsolationForest）
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
-            update_freq=50,  # 每50个样本更新参考集统计
-            distance_metric="euclidean",
+            update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
+            distance_metric=OnlineAnomalyDetectionConfig.ISOLATION_DISTANCE_METRIC,
             contamination=contamination,
+            decay_strategy=OnlineAnomalyDetectionConfig.ISOLATION_DECAY_STRATEGY,
         )
 
         # 3. 双层阈值优化器
@@ -85,19 +91,14 @@ class StreamingAnomalyGate:
             local_window_size=local_window_size,
             global_ema_decay=global_ema_decay,
             alpha=alpha_local_weight,
-            target_event_rate=target_event_rate,
-            min_samples_for_optimization=30,
+            min_samples_for_optimization=OnlineAnomalyDetectionConfig.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
         )
 
         # 4. 多尺度分布追踪器
         self.multi_scale_tracker = MultiScaleDistributionTracker(
             feature_dim=feature_dim,
-            windows={
-                "short": 100,  # 短期：100样本
-                "medium": 1440,  # 中期：1440样本（假设60样本/小时）
-                "long": 10080,  # 长期：10080样本（假设60样本/小时，约7天）
-            },
-            ema_decay=0.01,
+            windows=OnlineAnomalyDetectionConfig.TRACKER_WINDOWS,
+            ema_decay=OnlineAnomalyDetectionConfig.TRACKER_EMA_DECAY,
         )
 
         # 初始化状态
@@ -126,9 +127,10 @@ class StreamingAnomalyGate:
         )
         scores = self.anomaly_detector.score_batch(normalized_data, window="long")
 
-        # 设置初始阈值
-        initial_threshold = np.percentile(scores, (1 - 0.35) * 100)
+        # 设置初始阈值（无先验事件率，使用分数中位数）
+        initial_threshold = float(np.median(scores))
         self.threshold_optimizer.global_threshold = initial_threshold
+        self.threshold_optimizer.local_threshold = initial_threshold
         self.threshold_optimizer.adaptive_threshold = initial_threshold
 
         self._initialized = True

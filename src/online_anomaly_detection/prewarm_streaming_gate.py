@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from config.dqn_config import DQNConfig
+from config.online_anomaly_detection_config import OnlineAnomalyDetectionConfig
 from src.online_anomaly_detection.streaming_anomaly_gate import StreamingAnomalyGate
 
 
@@ -38,16 +39,27 @@ def _load_prewarm_data(columns: list[str]) -> np.ndarray:
 
 
 def prewarm_gate(output_path: Path) -> Path:
-    columns = DQNConfig.STATE_COLUMNS
+    columns = OnlineAnomalyDetectionConfig.FEATURE_COLUMNS
     prewarm_data = _load_prewarm_data(columns)
 
-    gate = StreamingAnomalyGate(feature_dim=len(columns))
+    gate = StreamingAnomalyGate(
+        feature_dim=len(columns),
+        local_window_size=OnlineAnomalyDetectionConfig.GATE_LOCAL_WINDOW_SIZE,
+        global_ema_decay=OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY,
+        reference_samples=OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES,
+        contamination=OnlineAnomalyDetectionConfig.GATE_CONTAMINATION,
+        alpha_local_weight=OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT,
+    )
 
-    print(f"开始预热门控，样本数: {len(prewarm_data)}")
-    gate.initialize_with_data(prewarm_data)
+    print(f"开始纯在线预热，样本数: {len(prewarm_data)}")
+
+    trigger_count = 0
+    anomaly_scores: list[float] = []
 
     for sample in prewarm_data:
-        gate.predict(sample)
+        decision = gate.predict(sample)
+        trigger_count += int(decision.gate_signal)
+        anomaly_scores.append(float(decision.anomaly_score))
 
     gate.save_state(output_path)
     print(f"预热完成，状态已保存: {output_path}")
@@ -55,6 +67,21 @@ def prewarm_gate(output_path: Path) -> Path:
     stats = gate.get_statistics()
     print(f"样本计数: {stats['sample_count']}")
     print(f"当前阈值: {stats['threshold_optimizer']['adaptive_threshold']:.6f}")
+
+    total_samples = len(prewarm_data)
+    trigger_rate = trigger_count / total_samples if total_samples > 0 else 0.0
+    print(f"触发率: {trigger_rate:.4%} ({trigger_count}/{total_samples})")
+
+    if anomaly_scores:
+        scores_np = np.asarray(anomaly_scores, dtype=np.float32)
+        print(
+            "分数分位数: "
+            f"P50={np.quantile(scores_np, 0.50):.6f}, "
+            f"P75={np.quantile(scores_np, 0.75):.6f}, "
+            f"P90={np.quantile(scores_np, 0.90):.6f}, "
+            f"P95={np.quantile(scores_np, 0.95):.6f}, "
+            f"P99={np.quantile(scores_np, 0.99):.6f}"
+        )
 
     return output_path
 
