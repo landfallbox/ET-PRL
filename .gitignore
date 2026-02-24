@@ -20,8 +20,6 @@ env/
 
 # temp ignore
 src/core
-src/online_anomaly_detection
 src/unsupervised_label_generation
 uv.lock
-/config/online_anomaly_detection_config.py
 /config/unsupervised_label_generation_config.py
