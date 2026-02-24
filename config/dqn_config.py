@@ -45,12 +45,25 @@ class DQNConfig(CommonConfig):
     # ==================== 奖励设计 ====================
     REWARD_WEIGHT_EFFICIENCY = 0.5
     REWARD_WEIGHT_COMFORT = 0.5
-    REWARD_STRATEGY = "dataset"
+    REWARD_STRATEGY = "physics"
     TARGET_SUPPLY_TEMP = 7.0
+    CHILLER_SUPPLY_TEMP_REF = 17.0
+    COMFORT_SIGMA = 1.5
 
     # ==================== 环境参数 ====================
     CHILLER_CAPACITY = 1760
     CHILLER_REF_POWER = 314
+    CHILLER_F_NOMINAL = 581
+    CHILLER_F_CW = 252
+    CHILLER_F_TOWER = 569
+    CHILLER_F_CHW = 131
+    CHILLER_CP = 4.2
+    CHILLER_WATER_DENSITY = 1000
+
+    # 冷机启停阈值
+    CHILLER_HIGH_THRESHOLD = 2603
+    CHILLER_MEDIUM_THRESHOLD = 1760
+    CHILLER_LOW_THRESHOLD = 1496
 
     # ==================== 显示选项 ====================
     SHOW_FIGURES = False

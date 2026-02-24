@@ -52,6 +52,20 @@ class DQNTrainer:
             self.config.REWARD_WEIGHT_EFFICIENCY,
             self.config.REWARD_WEIGHT_COMFORT,
             self.config.TARGET_SUPPLY_TEMP,
+            self.config.COEFF_DATE_PATH,
+            self.config.CHILLER_CAPACITY,
+            self.config.CHILLER_REF_POWER,
+            self.config.CHILLER_SUPPLY_TEMP_REF,
+            self.config.COMFORT_SIGMA,
+            self.config.CHILLER_HIGH_THRESHOLD,
+            self.config.CHILLER_MEDIUM_THRESHOLD,
+            self.config.CHILLER_LOW_THRESHOLD,
+            self.config.CHILLER_F_NOMINAL,
+            self.config.CHILLER_F_CW,
+            self.config.CHILLER_F_TOWER,
+            self.config.CHILLER_F_CHW,
+            self.config.CHILLER_CP,
+            self.config.CHILLER_WATER_DENSITY,
         )
         train_env = SequenceEnv(train_data, self.config.STATE_COLUMNS, reward_calc)
         val_reward_calc = RewardCalculator(
@@ -60,6 +74,20 @@ class DQNTrainer:
             self.config.REWARD_WEIGHT_EFFICIENCY,
             self.config.REWARD_WEIGHT_COMFORT,
             self.config.TARGET_SUPPLY_TEMP,
+            self.config.COEFF_DATE_PATH,
+            self.config.CHILLER_CAPACITY,
+            self.config.CHILLER_REF_POWER,
+            self.config.CHILLER_SUPPLY_TEMP_REF,
+            self.config.COMFORT_SIGMA,
+            self.config.CHILLER_HIGH_THRESHOLD,
+            self.config.CHILLER_MEDIUM_THRESHOLD,
+            self.config.CHILLER_LOW_THRESHOLD,
+            self.config.CHILLER_F_NOMINAL,
+            self.config.CHILLER_F_CW,
+            self.config.CHILLER_F_TOWER,
+            self.config.CHILLER_F_CHW,
+            self.config.CHILLER_CP,
+            self.config.CHILLER_WATER_DENSITY,
         )
         val_env = SequenceEnv(val_data, self.config.STATE_COLUMNS, val_reward_calc)
 
