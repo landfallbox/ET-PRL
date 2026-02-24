@@ -11,16 +11,22 @@ class CommonConfig:
     """通用配置基类，包含所有模型共用的配置"""
 
     # ==================== 数据配置 ====================
+    # 数据根目录
+    DATA_ROOT = Path("data")
     # 原始数据路径
-    RAW_DATA_PATH = Path("data") / "raw_data.csv"
-    # 处理后数据输出目录
-    PROCESSED_DATA_DIR = Path("data") / "processed"
+    RAW_DATA_PATH = DATA_ROOT / "raw_data.csv"
     # 模型特定的数据子目录名（子类可覆盖）
-    DATA_SUBDIR = ""  # 如果为空，则使用 PROCESSED_DATA_DIR；否则使用 PROCESSED_DATA_DIR / DATA_SUBDIR
+    # 如果为空，则使用 DATA_ROOT；否则使用 DATA_ROOT / DATA_SUBDIR
+    DATA_SUBDIR = ""
     # 是否打乱数据
     SHUFFLE_DATA = False
     # 随机种子
     RANDOM_STATE = 42
+
+    # 数据划分比例（默认值，可由子类覆盖）
+    TRAIN_RATIO = 0.7
+    VAL_RATIO = 0.15
+    TEST_RATIO = 0.15
 
     # 是否使用 GPU
     USE_GPU = True
@@ -96,13 +102,13 @@ class CommonConfig:
 
         返回：
             数据目录的完整路径
-            如果 DATA_SUBDIR 为空，则返回 PROCESSED_DATA_DIR
-            否则返回 PROCESSED_DATA_DIR / DATA_SUBDIR
+            如果 DATA_SUBDIR 为空，则返回 DATA_ROOT
+            否则返回 DATA_ROOT / DATA_SUBDIR
         """
         if cls.DATA_SUBDIR:
-            return cls.PROCESSED_DATA_DIR / cls.DATA_SUBDIR
+            return cls.DATA_ROOT / cls.DATA_SUBDIR
         else:
-            return cls.PROCESSED_DATA_DIR
+            return cls.DATA_ROOT
 
     @classmethod
     def get_train_data_path(cls) -> Path:
@@ -125,36 +131,49 @@ class CommonConfig:
         return cls.get_data_dir() / cls.NORMALIZER_FILENAME
 
     @classmethod
+    def _require_experiment_name(cls) -> str:
+        """
+        获取并校验实验名称
+
+        返回：
+            非空实验名称
+        """
+        experiment_name = getattr(cls, "EXPERIMENT_NAME", "")
+        if not isinstance(experiment_name, str) or not experiment_name.strip():
+            raise ValueError("EXPERIMENT_NAME 必须在子类中设置为非空字符串")
+        return experiment_name.strip()
+
+    @classmethod
     def get_experiment_dir(cls, mode: str = "train") -> Path:
         """
         获取实验目录路径
 
         参数：
-            mode: 实验模式，"train" 或 "eval"
+            mode: 实验模式，"train" 或 "eval"；为空时不添加子目录
 
         返回：
-            实验目录的完整路径，格式为 logs/<experiment_name>/<mode>/<timestamp>/
-
-        说明：
-            experiment_name 需要在子类中定义
+            实验目录的完整路径
+            - 带子目录: logs/<experiment_name>/<mode>/<timestamp>/
+            - 不带子目录: logs/<experiment_name>/<timestamp>/
         """
-        # 获取子类中定义的 EXPERIMENT_NAME
-        experiment_name = getattr(cls, 'EXPERIMENT_NAME', 'experiment')
+        experiment_name = cls._require_experiment_name()
 
-        if mode == "train":
-            subdir = cls.TRAIN_SUBDIR
-        elif mode == "eval":
-            subdir = cls.EVAL_SUBDIR
-        else:
-            raise ValueError(f"Invalid mode: {mode}. Must be 'train' or 'eval'")
+        subdir = None
+        if mode:
+            mode_key = str(mode).lower()
+            if mode_key == "train":
+                subdir = cls.TRAIN_SUBDIR
+            elif mode_key == "eval":
+                subdir = cls.EVAL_SUBDIR
+            else:
+                subdir = str(mode)
 
-        exp_dir = (
-            cls.LOG_ROOT_DIR
-            / experiment_name
-            / subdir
-            / cls.TIMESTAMP
-        )
-        return exp_dir
+        parts = [cls.LOG_ROOT_DIR, experiment_name]
+        if subdir:
+            parts.append(subdir)
+        parts.append(cls.TIMESTAMP)
+
+        return Path(*parts)
 
     @classmethod
     def get_train_experiment_dir(cls) -> Path:
@@ -177,7 +196,7 @@ class CommonConfig:
         说明：
             experiment_name 需要在子类中定义
         """
-        experiment_name = getattr(cls, 'EXPERIMENT_NAME', 'experiment')
+        experiment_name = cls._require_experiment_name()
         opt_dir = (
             cls.LOG_ROOT_DIR
             / experiment_name
