@@ -21,21 +21,21 @@ class DQNConfig(CommonConfig):
     # ==================== 网络架构 ====================
     STATE_SIZE = 3
     ACTION_SIZE = 10
-    HIDDEN_SIZES = [256]
+    HIDDEN_SIZES = [256, 128, 64]
 
     # ==================== 学习参数 ====================
-    LEARNING_RATE = 0.001
-    GAMMA = 0.95
+    LEARNING_RATE = 0.004879892074564739
+    GAMMA = 0.9622741714605638
 
     # ==================== 探索策略 ====================
-    EPSILON_START = 1.0
-    EPSILON_MIN = 0.01
-    EPSILON_DECAY = 0.995
+    EPSILON_START = 0.6109179540743849
+    EPSILON_MIN = 0.004476723497053443
+    EPSILON_DECAY = 0.9947335474894262
 
     # ==================== 经验回放 ====================
-    MEMORY_CAPACITY = 50000
-    BATCH_SIZE = 64
-    TARGET_UPDATE_FREQ = 100
+    MEMORY_CAPACITY = 20000
+    BATCH_SIZE = 178
+    TARGET_UPDATE_FREQ = 126
 
     # ==================== 训练控制 ====================
     NUM_EPISODES = 80
@@ -43,12 +43,12 @@ class DQNConfig(CommonConfig):
     VAL_INTERVAL = 5
 
     # ==================== 奖励设计 ====================
-    REWARD_WEIGHT_EFFICIENCY = 0.5
-    REWARD_WEIGHT_COMFORT = 0.5
+    REWARD_WEIGHT_EFFICIENCY = 0.3022625888960673
+    REWARD_WEIGHT_COMFORT = 0.6977374111039327
     REWARD_STRATEGY = "physics"
     TARGET_SUPPLY_TEMP = 7.0
     CHILLER_SUPPLY_TEMP_REF = 17.0
-    COMFORT_SIGMA = 1.5
+    COMFORT_SIGMA = 2.5531337378152386
 
     # ==================== 环境参数 ====================
     CHILLER_CAPACITY = 1760
