@@ -41,5 +41,5 @@ allow-direct-references = true
 packages = ["src", "config"]
 
 [tool.uv.sources]
-ml-toolkit = { path = "../ml-toolkit", editable = true }
+ml-toolkit = { git = "https://github.com/landfallbox/ml-toolkit.git" }
 
