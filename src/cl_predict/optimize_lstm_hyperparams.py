@@ -205,7 +205,3 @@ def optimize_hyperparameters():
 
     return result
 
-
-if __name__ == "__main__":
-    optimize_hyperparameters()
-

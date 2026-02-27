@@ -1,0 +1,148 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from ml_toolkit.rl import SequenceEnv
+from ml_toolkit.utils import create_experiment_context
+
+from config.compare_dqn_config import CompareDQNConfig
+from src.control_evaluation.common import (
+    build_eval_components,
+    copy_train_config,
+    create_streaming_gate,
+    resolve_train_experiment_dir,
+)
+from src.control_evaluation.strategies import evaluate_event_driven, evaluate_fixed_interval
+
+
+def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
+    fixed_reward = float(fixed_summary.get("total_reward", 0.0))
+    event_reward = float(event_summary.get("total_reward", 0.0))
+
+    fixed_actions = int(fixed_summary.get("action_count", 0))
+    event_actions = int(event_summary.get("action_count", 0))
+    action_reduction = fixed_actions - event_actions
+    action_reduction_pct = (action_reduction / fixed_actions * 100.0) if fixed_actions > 0 else 0.0
+
+    ppr = (event_reward / fixed_reward) if fixed_reward != 0 else 0.0
+    acr = (fixed_actions / event_actions) if event_actions > 0 else float("inf")
+
+    return {
+        "reward_change": event_reward - fixed_reward,
+        "reward_change_pct": ((event_reward - fixed_reward) / fixed_reward * 100.0) if fixed_reward != 0 else 0.0,
+        "comfort_change": float(event_summary.get("avg_comfort_score", 0.0))
+        - float(fixed_summary.get("avg_comfort_score", 0.0)),
+        "energy_change": float(event_summary.get("avg_energy_score", 0.0))
+        - float(fixed_summary.get("avg_energy_score", 0.0)),
+        "violation_time_pct_change": float(event_summary.get("violation_time_pct", 0.0))
+        - float(fixed_summary.get("violation_time_pct", 0.0)),
+        "action_reduction": int(action_reduction),
+        "action_reduction_pct": float(action_reduction_pct),
+        "PPR": float(ppr),
+        "PPR_percent": float(ppr * 100.0),
+        "ACR": float(acr),
+    }
+
+
+def compare_control_strategies(
+    train_experiment_dir: Path | None = None,
+    fixed_interval: int = 4,
+    gate_state_path: Path | None = None,
+) -> None:
+    config = CompareDQNConfig
+    eval_experiment_dir = config.get_eval_experiment_dir()
+
+    context = create_experiment_context(
+        experiment_dir=eval_experiment_dir,
+        config=config,
+        save_config=False,
+        log_filename=config.EVALUATION_LOG_FILENAME,
+        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        config_filename=config.CONFIG_FILENAME,
+    )
+    logger = context.logger
+    metrics_recorder = context.metrics_recorder
+
+    if fixed_interval <= 0:
+        raise ValueError(f"fixed_interval 必须大于 0，当前: {fixed_interval}")
+
+    resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
+    logger.info(f"使用训练实验目录: {resolved_train_dir}")
+
+    copy_train_config(
+        resolved_train_dir=resolved_train_dir,
+        eval_experiment_dir=eval_experiment_dir,
+        config=config,
+        logger=logger,
+    )
+
+    test_data, action_space, agent, checkpoint, reward_calc = build_eval_components(
+        config=config,
+        resolved_train_dir=resolved_train_dir,
+    )
+
+    base_payload = {
+        "train_experiment_dir": str(resolved_train_dir),
+        "best_epoch_from_train": int(checkpoint.get("epoch", -1)) + 1,
+        "best_metrics_from_train": checkpoint.get("metrics", {}),
+        "mode": "compare",
+        "fixed_interval": int(fixed_interval),
+        "gate_state_path": str(gate_state_path) if gate_state_path is not None else None,
+    }
+
+    fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    fixed_summary, fixed_step_results = evaluate_fixed_interval(
+        agent=agent,
+        env=fixed_env,
+        action_space=action_space,
+        fixed_interval=fixed_interval,
+        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+    )
+
+    event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
+    event_summary, event_step_results = evaluate_event_driven(
+        agent=agent,
+        env=event_env,
+        data=test_data,
+        action_space=action_space,
+        gate=event_gate,
+        feature_columns=config.FEATURE_COLUMNS,
+        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+    )
+
+    comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)
+    metrics_recorder.save_metrics(
+        {
+            **base_payload,
+            "fixed_interval_summary": fixed_summary,
+            "event_driven_summary": event_summary,
+            "comparison": comparison,
+        }
+    )
+
+    fixed_step_results_path = eval_experiment_dir / "fixed_interval_step_results.csv"
+    event_step_results_path = eval_experiment_dir / "event_driven_step_results.csv"
+    fixed_step_results.to_csv(fixed_step_results_path, index=False)
+    event_step_results.to_csv(event_step_results_path, index=False)
+
+    logger.info("评估完成: fixed_interval vs event_driven")
+    logger.info(
+        "固定间隔: "
+        f"total_reward={fixed_summary['total_reward']:.4f}, "
+        f"action_count={fixed_summary['action_count']}, "
+        f"violation_time_pct={fixed_summary['violation_time_pct']:.2f}%"
+    )
+    logger.info(
+        "事件驱动: "
+        f"total_reward={event_summary['total_reward']:.4f}, "
+        f"action_count={event_summary['action_count']}, "
+        f"event_trigger_rate={event_summary['event_trigger_rate']:.4f}, "
+        f"violation_time_pct={event_summary['violation_time_pct']:.2f}%"
+    )
+    logger.info(
+        "对比指标: "
+        f"PPR={comparison['PPR']:.4f}, "
+        f"ACR={comparison['ACR']:.4f}, "
+        f"action_reduction_pct={comparison['action_reduction_pct']:.2f}%"
+    )

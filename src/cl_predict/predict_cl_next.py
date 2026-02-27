@@ -1,7 +1,6 @@
 """
 使用最新 LSTM 训练实验对 raw_data.csv 进行 CL_next 预测
 """
-import argparse
 import json
 from pathlib import Path
 
@@ -140,37 +139,3 @@ def predict_cl_next(
     print(f"输入数据: {raw_data_path}")
     print(f"输出文件: {output_csv_path}")
     print(f"输出行数: {len(result_df)}")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="使用最新 LSTM 模型预测 raw_data.csv 的 CL_next")
-    parser.add_argument(
-        "--raw_data_path",
-        type=str,
-        default=str(LSTMConfig.RAW_DATA_PATH),
-        help="原始数据路径，默认 data/raw_data.csv",
-    )
-    parser.add_argument(
-        "--output_csv_path",
-        type=str,
-        default=str(Path("data") / "dqn" / "cl_next_predictions.csv"),
-        help="输出 CSV 路径，默认 data/dqn/cl_next_predictions.csv",
-    )
-    parser.add_argument(
-        "--experiment_dir",
-        type=str,
-        default=None,
-        help="指定训练实验目录，不指定则自动加载最新训练实验",
-    )
-
-    args = parser.parse_args()
-
-    predict_cl_next(
-        raw_data_path=Path(args.raw_data_path),
-        output_csv_path=Path(args.output_csv_path),
-        train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
-    )
-
-
-if __name__ == "__main__":
-    main()

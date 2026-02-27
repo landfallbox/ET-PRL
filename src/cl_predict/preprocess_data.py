@@ -161,7 +161,3 @@ def preprocess_data():
     print(f"验证集已保存：{val_path}")
     print(f"测试集已保存：{test_path}")
     print("数据预处理完成！")
-
-
-if __name__ == "__main__":
-    preprocess_data()

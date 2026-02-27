@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import json
 import threading
 import time
@@ -276,17 +275,3 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
     logger.info(f"最优配置已保存: {summary_path}")
 
     return summary
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="DQN 超参贝叶斯优化")
-    parser.add_argument("--n_trials", type=int, default=30, help="优化试验次数")
-    parser.add_argument("--max_episodes", type=int, default=30, help="每个 trial 的最大训练轮数")
-    parser.add_argument("--n_jobs", type=int, default=1, help="并行试验数，1 表示串行")
-    args = parser.parse_args()
-
-    optimize_dqn_hyperparameters(n_trials=args.n_trials, max_episodes=args.max_episodes, n_jobs=args.n_jobs)
-
-
-if __name__ == "__main__":
-    main()

@@ -2,7 +2,6 @@
 比较 cl_next_predictions.csv 中 CL 与 CL_next 的差异，并生成可视化图像。
 """
 
-import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -118,44 +117,3 @@ def evaluate_cl_next_predictions(
         print("MAPE: NaN（CL 全为 0，无法计算）")
     else:
         print(f"MAPE: {metrics['mape']:.4f}%")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="比较 CL 与 CL_next 的差异并绘图")
-    parser.add_argument(
-        "--input_csv_path",
-        type=str,
-        default=str(Path("data") / "dqn" / "cl_next_predictions.csv"),
-        help="输入 CSV 路径，默认 data/dqn/cl_next_predictions.csv",
-    )
-    parser.add_argument(
-        "--output_img_path",
-        type=str,
-        default=str(Path("data") / "dqn" / "cl_next_predictions_eval.png"),
-        help="输出图片路径，默认 data/dqn/cl_next_predictions_eval.png",
-    )
-    parser.add_argument(
-        "--start",
-        type=int,
-        default=None,
-        help="绘图起始下标（含），默认 0",
-    )
-    parser.add_argument(
-        "--end",
-        type=int,
-        default=None,
-        help="绘图结束下标（不含），默认到最后一行",
-    )
-
-    args = parser.parse_args()
-
-    evaluate_cl_next_predictions(
-        input_csv_path=Path(args.input_csv_path),
-        output_img_path=Path(args.output_img_path),
-        start=args.start,
-        end=args.end,
-    )
-
-
-if __name__ == "__main__":
-    main()

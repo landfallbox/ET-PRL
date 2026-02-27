@@ -3,7 +3,6 @@
 @Date        : 2026/02/04 星期二
 @Description : LSTM 模型评估脚本
 """
-import argparse
 import json
 from pathlib import Path
 
@@ -12,7 +11,15 @@ from ml_toolkit.data_processing import DatasetLoader
 from ml_toolkit.evaluation import LSTMEvaluator
 from ml_toolkit.evaluation import calculate_mae, calculate_rmse, calculate_mape, calculate_r2_score
 from ml_toolkit.models import LSTM
-from ml_toolkit.utils import CheckpointManager, ConfigManager, Logger, create_loss_fn, Visualizer
+from ml_toolkit.utils import (
+    CheckpointManager,
+    ConfigManager,
+    Visualizer,
+    copy_config_snapshot,
+    create_experiment_context,
+    create_loss_fn,
+    resolve_experiment_dir,
+)
 
 
 def eval_lstm(train_experiment_dir: Path = None):
@@ -25,29 +32,27 @@ def eval_lstm(train_experiment_dir: Path = None):
     # 1. 初始化配置并创建评估专用实验目录
     config = LSTMConfig()
     eval_experiment_dir = config.get_eval_experiment_dir()
-    logger = Logger(eval_experiment_dir, log_filename=config.EVALUATION_LOG_FILENAME)
-    config_manager = ConfigManager(eval_experiment_dir)
+    context = create_experiment_context(
+        experiment_dir=eval_experiment_dir,
+        save_config=False,
+        log_filename=config.EVALUATION_LOG_FILENAME,
+        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        config_filename=config.CONFIG_FILENAME,
+    )
+    logger = context.logger
 
     logger.info("=" * 50)
     logger.info("开始模型评估")
     logger.info(f"评估实验目录: {eval_experiment_dir}")
 
     # 2. 查找或指定训练实验目录
-    if train_experiment_dir is None:
-        logger.info("未指定训练实验目录，正在查找最新训练实验...")
-        train_experiment_dir = CheckpointManager.find_latest_experiment("lstm", mode="train")
-
-        if train_experiment_dir is None:
-            logger.error("未找到任何 LSTM 训练实验目录")
-            return
-
-        logger.info(f"找到最新训练实验: {train_experiment_dir}")
-    else:
-        train_experiment_dir = Path(train_experiment_dir)
-        if not train_experiment_dir.exists():
-            logger.error(f"指定的训练实验目录不存在: {train_experiment_dir}")
-            return
-        logger.info(f"使用指定的训练实验目录: {train_experiment_dir}")
+    train_experiment_dir = resolve_experiment_dir(
+        explicit_dir=train_experiment_dir,
+        experiment_name=config.EXPERIMENT_NAME,
+        mode="train",
+        log_root_dir=config.LOG_ROOT_DIR,
+    )
+    logger.info(f"使用训练实验目录: {train_experiment_dir}")
 
     # 3. 加载训练实验配置
     logger.info("加载训练实验配置...")
@@ -55,7 +60,12 @@ def eval_lstm(train_experiment_dir: Path = None):
     config_dict = train_config_manager.load_config()
 
     # 保存训练配置到评估目录（便于追溯）
-    config_manager.save_config(config_dict)
+    copy_config_snapshot(
+        source_experiment_dir=train_experiment_dir,
+        target_experiment_dir=eval_experiment_dir,
+        config_filename=config.CONFIG_FILENAME,
+        logger=logger,
+    )
 
     # 重建配置对象（用于数据加载）
     config = LSTMConfig()
@@ -181,22 +191,3 @@ def eval_lstm(train_experiment_dir: Path = None):
 
     logger.info(f"测试结果已保存: {metrics_file}")
     logger.info("评估完成！")
-
-
-def main():
-    """命令行入口"""
-    parser = argparse.ArgumentParser(description="LSTM 模型评估脚本")
-    parser.add_argument(
-        "--experiment_dir",
-        type=str,
-        default=None,
-        help="指定训练实验目录路径，如果不指定则自动加载最新训练实验"
-    )
-
-    args = parser.parse_args()
-
-    eval_lstm(train_experiment_dir=args.experiment_dir)
-
-
-if __name__ == "__main__":
-    main()

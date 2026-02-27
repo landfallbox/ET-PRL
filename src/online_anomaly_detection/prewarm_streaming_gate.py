@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 
 import numpy as np
@@ -84,20 +83,3 @@ def prewarm_gate(output_path: Path) -> Path:
         )
 
     return output_path
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="预热 StreamingAnomalyGate 并保存状态")
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=str(DQNConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
-        help="状态文件输出路径",
-    )
-    args = parser.parse_args()
-
-    prewarm_gate(Path(args.output))
-
-
-if __name__ == "__main__":
-    main()

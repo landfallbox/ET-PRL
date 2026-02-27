@@ -9,7 +9,7 @@ from ml_toolkit.data_processing import DatasetLoader
 from ml_toolkit.evaluation import LSTMEvaluator
 from ml_toolkit.models import LSTM
 from ml_toolkit.training import LSTMTrainer
-from ml_toolkit.utils import Logger, ConfigManager, MetricsRecorder, create_loss_fn, create_optimizer, CheckpointManager
+from ml_toolkit.utils import create_experiment_context, create_loss_fn, create_optimizer
 
 
 def train_lstm():
@@ -17,15 +17,16 @@ def train_lstm():
     # 1. 初始化配置
     config = LSTMConfig()
 
-    # 初始化管理器
     experiment_dir = config.get_train_experiment_dir()
-    logger = Logger(experiment_dir)
-    config_manager = ConfigManager(experiment_dir)
-    metrics_recorder = MetricsRecorder(experiment_dir)
-    checkpoint_manager = CheckpointManager(experiment_dir)
-
-    # 保存配置
-    config_manager.save_config(config.to_dict())
+    context = create_experiment_context(
+        experiment_dir=experiment_dir,
+        config_dict=config.to_dict(),
+        with_checkpoint_manager=True,
+        checkpoint_dir_name=config.CHECKPOINT_DIR_NAME,
+    )
+    logger = context.logger
+    metrics_recorder = context.metrics_recorder
+    checkpoint_manager = context.checkpoint_manager
 
     logger.info("配置初始化完成")
     logger.info(f"实验名称: {config.EXPERIMENT_NAME}")
@@ -112,7 +113,3 @@ def train_lstm():
     logger.info("训练历史已保存")
 
     logger.info("训练流程完成！")
-
-
-if __name__ == "__main__":
-    train_lstm()
