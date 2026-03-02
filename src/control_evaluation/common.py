@@ -127,6 +127,14 @@ def create_streaming_gate(
         reference_samples=config.GATE_REFERENCE_SAMPLES,
         contamination=config.GATE_CONTAMINATION,
         alpha_local_weight=config.GATE_ALPHA_LOCAL_WEIGHT,
+        threshold_bias=config.GATE_THRESHOLD_BIAS,
+        threshold_quantile=config.THRESHOLD_QUANTILE,
+        threshold_mad_scale=config.THRESHOLD_MAD_SCALE,
+        threshold_local_update_rate=config.THRESHOLD_LOCAL_UPDATE_RATE,
+        threshold_quantile_weight=config.THRESHOLD_QUANTILE_WEIGHT,
+        score_short_weight=config.GATE_SCORE_SHORT_WEIGHT,
+        score_medium_weight=config.GATE_SCORE_MEDIUM_WEIGHT,
+        score_long_weight=config.GATE_SCORE_LONG_WEIGHT,
     )
 
     if gate_state_path is not None:

@@ -44,6 +44,14 @@ class StreamingAnomalyGate:
         reference_samples: Optional[int] = None,
         contamination: Optional[float] = None,
         alpha_local_weight: Optional[float] = None,
+        threshold_bias: Optional[float] = None,
+        threshold_quantile: Optional[float] = None,
+        threshold_mad_scale: Optional[float] = None,
+        threshold_local_update_rate: Optional[float] = None,
+        threshold_quantile_weight: Optional[float] = None,
+        score_short_weight: Optional[float] = None,
+        score_medium_weight: Optional[float] = None,
+        score_long_weight: Optional[float] = None,
     ):
         """
         初始化在线异常检测门控
@@ -69,6 +77,31 @@ class StreamingAnomalyGate:
             contamination = OnlineAnomalyDetectionConfig.GATE_CONTAMINATION
         if alpha_local_weight is None:
             alpha_local_weight = OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT
+        if threshold_bias is None:
+            threshold_bias = OnlineAnomalyDetectionConfig.GATE_THRESHOLD_BIAS
+        if threshold_quantile is None:
+            threshold_quantile = OnlineAnomalyDetectionConfig.THRESHOLD_QUANTILE
+        if threshold_mad_scale is None:
+            threshold_mad_scale = OnlineAnomalyDetectionConfig.THRESHOLD_MAD_SCALE
+        if threshold_local_update_rate is None:
+            threshold_local_update_rate = OnlineAnomalyDetectionConfig.THRESHOLD_LOCAL_UPDATE_RATE
+        if threshold_quantile_weight is None:
+            threshold_quantile_weight = OnlineAnomalyDetectionConfig.THRESHOLD_QUANTILE_WEIGHT
+        if score_short_weight is None:
+            score_short_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_SHORT_WEIGHT
+        if score_medium_weight is None:
+            score_medium_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_MEDIUM_WEIGHT
+        if score_long_weight is None:
+            score_long_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_LONG_WEIGHT
+
+        score_weight_sum = float(score_short_weight + score_medium_weight + score_long_weight)
+        if score_weight_sum <= 0.0:
+            raise ValueError("分数融合权重之和必须大于 0")
+
+        self.score_short_weight = float(score_short_weight / score_weight_sum)
+        self.score_medium_weight = float(score_medium_weight / score_weight_sum)
+        self.score_long_weight = float(score_long_weight / score_weight_sum)
+        self.threshold_bias = float(threshold_bias)
 
         # 1. 流式特征统计维护器
         self.feature_stats = StreamingStats(
@@ -92,6 +125,10 @@ class StreamingAnomalyGate:
             global_ema_decay=global_ema_decay,
             alpha=alpha_local_weight,
             min_samples_for_optimization=OnlineAnomalyDetectionConfig.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
+            quantile=threshold_quantile,
+            mad_scale=threshold_mad_scale,
+            local_update_rate=threshold_local_update_rate,
+            quantile_weight=threshold_quantile_weight,
         )
 
         # 4. 多尺度分布追踪器
@@ -167,10 +204,15 @@ class StreamingAnomalyGate:
 
         # 3. 融合多尺度分数（加权平均）
         # 权重配置：短期50% (快速响应) + 中期30% (稳定) + 长期20% (趋势)
-        fused_anomaly_score = 0.5 * short_score + 0.3 * medium_score + 0.2 * long_score
+        fused_anomaly_score = (
+            self.score_short_weight * short_score
+            + self.score_medium_weight * medium_score
+            + self.score_long_weight * long_score
+        )
 
         # 4. 获取自适应阈值
-        adaptive_threshold = self.threshold_optimizer.get_adaptive_threshold()
+        adaptive_threshold = self.threshold_optimizer.get_adaptive_threshold() + self.threshold_bias
+        adaptive_threshold = float(np.clip(adaptive_threshold, 0.0, 1.0))
 
         # 5. 做二值决策
         gate_signal = 1 if fused_anomaly_score > adaptive_threshold else 0
@@ -273,6 +315,12 @@ class StreamingAnomalyGate:
         return {
             "sample_count": self.sample_count,
             "initialized": self._initialized,
+            "score_weights": {
+                "short": self.score_short_weight,
+                "medium": self.score_medium_weight,
+                "long": self.score_long_weight,
+            },
+            "threshold_bias": self.threshold_bias,
             "feature_stats": self.feature_stats.get_statistics(),
             "anomaly_detector": self.anomaly_detector.get_statistics(),
             "threshold_optimizer": self.threshold_optimizer.get_statistics(),
@@ -335,7 +383,12 @@ class StreamingAnomalyGate:
             raise FileNotFoundError(f"网关状态文件不存在: {source_path}")
 
         with open(source_path, "rb") as file:
-            payload = pickle.load(file)
+            try:
+                payload = pickle.load(file)
+            except ModuleNotFoundError as exc:
+                raise ModuleNotFoundError(
+                    "网关状态文件引用了不存在的旧模块路径，请使用当前代码重新生成 gate state 文件后再加载。"
+                ) from exc
 
         saved_feature_dim = int(payload.get("feature_dim", -1))
         if saved_feature_dim != self.feature_dim:
