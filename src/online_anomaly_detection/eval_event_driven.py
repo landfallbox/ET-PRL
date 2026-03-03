@@ -11,6 +11,7 @@ from src.control_evaluation.common import (
     build_eval_components,
     copy_train_config,
     create_streaming_gate,
+    get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
 from src.control_evaluation.strategies import evaluate_event_driven
@@ -67,6 +68,7 @@ def eval_event_driven(
         "best_metrics_from_train": checkpoint.get("metrics", {}),
         "mode": "event_driven",
         "gate_state_path": str(gate_state_path) if gate_state_path is not None else None,
+        "paper_symbol_mapping": get_paper_symbol_field_mapping(),
         "event_driven_summary": summary,
     }
     metrics_recorder.save_metrics(output_payload)

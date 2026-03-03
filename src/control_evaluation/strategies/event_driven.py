@@ -4,7 +4,11 @@ import numpy as np
 import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 
-from src.control_evaluation.common import compute_violation_metrics, find_nearest_action_index
+from src.control_evaluation.common import (
+    compute_extended_evaluation_metrics,
+    compute_violation_metrics,
+    find_nearest_action_index,
+)
 from src.dqn.agent import DQNAgent
 from src.online_anomaly_detection.streaming_anomaly_gate import StreamingAnomalyGate
 
@@ -27,6 +31,7 @@ def evaluate_event_driven(
     supply_temperature_values: list[float] = []
     records: list[dict] = []
     action_update_count = 0
+    action_values: list[float] = []
 
     current_action_idx = find_nearest_action_index(action_space, supply_temp_ref)
     current_action_value = float(action_space[current_action_idx])
@@ -64,6 +69,7 @@ def evaluate_event_driven(
         comfort_scores.append(comfort_score)
         power_values.append(power_chiller)
         supply_temperature_values.append(chiller_supply_temp)
+        action_values.append(current_action_value)
 
         records.append(
             {
@@ -93,6 +99,15 @@ def evaluate_event_driven(
     violation_count, violation_time_pct = compute_violation_metrics(supply_temperature_values)
     gate_trigger_count = int(sum(int(record["gate_signal"] == 1) for record in records)) if records else 0
     gate_trigger_rate = gate_trigger_count / steps if steps > 0 else 0.0
+    extended_metrics = compute_extended_evaluation_metrics(
+        power_values=power_values,
+        action_values=action_values,
+        supply_temperature_values=supply_temperature_values,
+        action_count=action_update_count,
+        sample_interval_minutes=5.0,
+        comfort_reference_temp=supply_temp_ref,
+        severe_violation_delta=3.0,
+    )
 
     summary = {
         "strategy": "event_driven",
@@ -108,6 +123,13 @@ def evaluate_event_driven(
         "violation_time_pct": float(violation_time_pct),
         "event_trigger_count": int(gate_trigger_count),
         "event_trigger_rate": float(gate_trigger_rate),
+        "E_total_kwh": float(extended_metrics["E_total_kwh"]),
+        "E_daily_kwh_per_day": float(extended_metrics["E_daily_kwh_per_day"]),
+        "N_daily_count_per_day": float(extended_metrics["N_daily_count_per_day"]),
+        "sigma_delta_a": float(extended_metrics["sigma_delta_a"]),
+        "severe_violation_count": int(extended_metrics["severe_violation_count"]),
+        "severe_violation_rate_pct": float(extended_metrics["severe_violation_rate_pct"]),
+        "severe_violation_monthly_mean": float(extended_metrics["severe_violation_monthly_mean"]),
     }
 
     return summary, pd.DataFrame(records)

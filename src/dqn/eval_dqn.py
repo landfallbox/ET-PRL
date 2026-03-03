@@ -9,6 +9,7 @@ from config.dqn_config import DQNConfig
 from src.control_evaluation.common import (
     build_eval_components,
     copy_train_config,
+    get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
 from src.control_evaluation.strategies import evaluate_fixed_interval
@@ -67,6 +68,7 @@ def eval_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
         "best_metrics_from_train": checkpoint.get("metrics", {}),
         "mode": "fixed_interval",
         "fixed_interval": int(fixed_interval),
+        "paper_symbol_mapping": get_paper_symbol_field_mapping(),
         "test_summary": summary,
         "action_distribution": action_distribution,
     }

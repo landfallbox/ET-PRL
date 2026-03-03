@@ -168,3 +168,71 @@ def compute_violation_metrics(
     )
     violation_rate = violation_count / len(chiller_supply_temperature)
     return int(violation_count), float(violation_rate * 100.0)
+
+
+def compute_extended_evaluation_metrics(
+    power_values: list[float],
+    action_values: list[float],
+    supply_temperature_values: list[float],
+    action_count: int,
+    sample_interval_minutes: float = 5.0,
+    comfort_reference_temp: float = 17.0,
+    severe_violation_delta: float = 3.0,
+) -> dict[str, float | int]:
+    steps = len(power_values)
+    if steps == 0:
+        return {
+            "duration_days": 0.0,
+            "E_total_kwh": 0.0,
+            "E_daily_kwh_per_day": 0.0,
+            "N_daily_count_per_day": 0.0,
+            "sigma_delta_a": 0.0,
+            "severe_violation_count": 0,
+            "severe_violation_rate_pct": 0.0,
+            "severe_violation_monthly_mean": 0.0,
+        }
+
+    dt_hours = float(sample_interval_minutes) / 60.0
+    steps_per_day = max(1.0, 24.0 / dt_hours)
+    duration_days = float(steps / steps_per_day)
+
+    power_array = np.asarray(power_values, dtype=np.float64)
+    action_array = np.asarray(action_values, dtype=np.float64)
+    temp_array = np.asarray(supply_temperature_values, dtype=np.float64)
+
+    e_total_kwh = float(np.sum(power_array) * dt_hours)
+    e_daily_kwh_per_day = float(e_total_kwh / duration_days) if duration_days > 0 else 0.0
+    n_daily = float(action_count / duration_days) if duration_days > 0 else 0.0
+
+    if action_array.size <= 1:
+        sigma_delta_a = 0.0
+    else:
+        sigma_delta_a = float(np.mean(np.abs(np.diff(action_array))))
+
+    severe_mask = np.abs(temp_array - float(comfort_reference_temp)) > float(severe_violation_delta)
+    severe_count = int(np.sum(severe_mask))
+    severe_rate_pct = float(severe_count / steps * 100.0)
+    severe_monthly_mean = float(severe_count * (30.0 / duration_days)) if duration_days > 0 else 0.0
+
+    return {
+        "duration_days": duration_days,
+        "E_total_kwh": e_total_kwh,
+        "E_daily_kwh_per_day": e_daily_kwh_per_day,
+        "N_daily_count_per_day": n_daily,
+        "sigma_delta_a": sigma_delta_a,
+        "severe_violation_count": severe_count,
+        "severe_violation_rate_pct": severe_rate_pct,
+        "severe_violation_monthly_mean": severe_monthly_mean,
+    }
+
+
+def get_paper_symbol_field_mapping() -> dict[str, str]:
+    return {
+        "E_daily": "E_daily_kwh_per_day",
+        "eta_saving": "eta_saving_pct",
+        "V_comfort": "violation_time_pct",
+        "PPR": "PPR_percent",
+        "sigma_delta_a": "sigma_delta_a",
+        "N_daily": "N_daily_count_per_day",
+        "ACR": "ACR",
+    }

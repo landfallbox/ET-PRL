@@ -10,6 +10,7 @@ from src.control_evaluation.common import (
     build_eval_components,
     copy_train_config,
     create_streaming_gate,
+    get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
 from src.control_evaluation.strategies import evaluate_event_driven, evaluate_fixed_interval
@@ -26,6 +27,9 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
 
     ppr = (event_reward / fixed_reward) if fixed_reward != 0 else 0.0
     acr = (fixed_actions / event_actions) if event_actions > 0 else float("inf")
+    e_fixed = float(fixed_summary.get("E_total_kwh", 0.0))
+    e_event = float(event_summary.get("E_total_kwh", 0.0))
+    eta_saving_pct = ((e_fixed - e_event) / e_fixed * 100.0) if e_fixed > 0 else 0.0
 
     return {
         "reward_change": event_reward - fixed_reward,
@@ -41,6 +45,12 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         "PPR": float(ppr),
         "PPR_percent": float(ppr * 100.0),
         "ACR": float(acr),
+        "eta_saving_pct": float(eta_saving_pct),
+        "E_baseline_total_kwh": float(e_fixed),
+        "E_ET_PRL_total_kwh": float(e_event),
+        "delta_V_pct_point": float(
+            float(event_summary.get("violation_time_pct", 0.0)) - float(fixed_summary.get("violation_time_pct", 0.0))
+        ),
     }
 
 
@@ -115,6 +125,7 @@ def compare_control_strategies(
     metrics_recorder.save_metrics(
         {
             **base_payload,
+            "paper_symbol_mapping": get_paper_symbol_field_mapping(),
             "fixed_interval_summary": fixed_summary,
             "event_driven_summary": event_summary,
             "comparison": comparison,
