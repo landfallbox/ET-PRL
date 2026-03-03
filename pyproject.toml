@@ -41,6 +41,9 @@ allow-direct-references = true
 [tool.hatch.build.targets.wheel]
 packages = ["src", "config"]
 
+[tool.uv]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
 [tool.uv.sources]
 ml-toolkit = { git = "https://github.com/landfallbox/ml-toolkit.git" }
 
