@@ -21,3 +21,7 @@ def main() -> None:
         fixed_interval=int(args.fixed_interval),
         gate_state_path=Path(args.gate_state_path) if args.gate_state_path else None,
     )
+
+
+if __name__ == "__main__":
+    main()

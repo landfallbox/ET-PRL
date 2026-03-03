@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import torch
 from ml_toolkit.rl import SequenceEnv
-from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger
+from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger, configure_reproducibility
 
 from config.dqn_config import DQNConfig
 from src.dqn.agent import DQNAgent
@@ -202,6 +202,17 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = Logger(output_dir)
+    reproducibility = configure_reproducibility(
+        seed=int(base_config.RANDOM_STATE),
+        deterministic_cudnn=bool(base_config.CUDNN_DETERMINISTIC),
+    )
+    logger.info(
+        "随机性配置(优化全局): "
+        f"seed={reproducibility['seed']}, "
+        f"deterministic_cudnn={reproducibility['deterministic_cudnn']}, "
+        f"cudnn_benchmark={reproducibility['cudnn_benchmark']}, "
+        f"cuda_available={reproducibility['cuda_available']}"
+    )
     logger.info("开始 DQN 贝叶斯超参优化")
     logger.info(f"试验次数: {n_trials}, 每个 trial 最大轮数: {max_episodes}, 并行任务数: {n_jobs}")
 
@@ -214,7 +225,7 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
         space=space,
         output_dir=output_dir,
         sampler="tpe",
-        seed=42,
+        seed=int(base_config.RANDOM_STATE),
     )
 
     objective = _create_objective(

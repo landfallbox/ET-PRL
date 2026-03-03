@@ -31,6 +31,15 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
     e_event = float(event_summary.get("E_total_kwh", 0.0))
     eta_saving_pct = ((e_fixed - e_event) / e_fixed * 100.0) if e_fixed > 0 else 0.0
 
+    e_daily_fixed = float(fixed_summary.get("E_daily_kwh_per_day", 0.0))
+    e_daily_event = float(event_summary.get("E_daily_kwh_per_day", 0.0))
+    n_daily_fixed = float(fixed_summary.get("N_daily_count_per_day", 0.0))
+    n_daily_event = float(event_summary.get("N_daily_count_per_day", 0.0))
+    sigma_delta_a_fixed = float(fixed_summary.get("sigma_delta_a", 0.0))
+    sigma_delta_a_event = float(event_summary.get("sigma_delta_a", 0.0))
+    trigger_rate_fixed = float(fixed_summary.get("event_trigger_rate", 0.0))
+    trigger_rate_event = float(event_summary.get("event_trigger_rate", 0.0))
+
     return {
         "reward_change": event_reward - fixed_reward,
         "reward_change_pct": ((event_reward - fixed_reward) / fixed_reward * 100.0) if fixed_reward != 0 else 0.0,
@@ -48,6 +57,26 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         "eta_saving_pct": float(eta_saving_pct),
         "E_baseline_total_kwh": float(e_fixed),
         "E_ET_PRL_total_kwh": float(e_event),
+        "E_baseline_daily_kwh_per_day": float(e_daily_fixed),
+        "E_ET_PRL_daily_kwh_per_day": float(e_daily_event),
+        "E_daily_change": float(e_daily_event - e_daily_fixed),
+        "E_daily_change_pct": float(((e_daily_event - e_daily_fixed) / e_daily_fixed * 100.0) if e_daily_fixed > 0 else 0.0),
+        "N_daily_baseline": float(n_daily_fixed),
+        "N_daily_ET_PRL": float(n_daily_event),
+        "N_daily_change": float(n_daily_event - n_daily_fixed),
+        "N_daily_change_pct": float(((n_daily_event - n_daily_fixed) / n_daily_fixed * 100.0) if n_daily_fixed > 0 else 0.0),
+        "sigma_delta_a_baseline": float(sigma_delta_a_fixed),
+        "sigma_delta_a_ET_PRL": float(sigma_delta_a_event),
+        "sigma_delta_a_change": float(sigma_delta_a_event - sigma_delta_a_fixed),
+        "sigma_delta_a_change_pct": float(
+            ((sigma_delta_a_event - sigma_delta_a_fixed) / sigma_delta_a_fixed * 100.0) if sigma_delta_a_fixed > 0 else 0.0
+        ),
+        "trigger_rate_baseline": float(trigger_rate_fixed),
+        "trigger_rate_ET_PRL": float(trigger_rate_event),
+        "trigger_rate_change": float(trigger_rate_event - trigger_rate_fixed),
+        "trigger_rate_change_pct": float(
+            ((trigger_rate_event - trigger_rate_fixed) / trigger_rate_fixed * 100.0) if trigger_rate_fixed > 0 else 0.0
+        ),
         "delta_V_pct_point": float(
             float(event_summary.get("violation_time_pct", 0.0)) - float(fixed_summary.get("violation_time_pct", 0.0))
         ),

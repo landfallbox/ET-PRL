@@ -12,7 +12,7 @@ import pandas as pd
 
 # ─────────────────────────── 样式常量 ───────────────────────────
 _COLORS = {
-    "train_reward": "#2166ac",
+    "train_reward": "#1f77b4",
     "val_reward":   "#d6604d",
     "comfort":      "#4dac26",
     "energy":       "#b8860b",
@@ -27,6 +27,9 @@ _FONT_SIZE_TITLE = 12
 _FONT_SIZE_LEGEND = 9
 
 
+_DOCS_PICS_DIR = Path("docs") / "pics"
+
+
 def _latest_train_dir(log_root: Path | None = None) -> Path:
     """在 logs/dqn/train/ 下找最新的实验目录（按目录名时间戳排序）。"""
     root = (log_root or Path("logs")) / "dqn" / "train"
@@ -36,26 +39,55 @@ def _latest_train_dir(log_root: Path | None = None) -> Path:
     return dirs[-1]
 
 
+def _build_output_filename(exp_dir: Path, suffix: str = "") -> str:
+    """根据实验目录名（时间戳）构造含信息量的文件名。
+
+    格式: dqn_training_curves_<timestamp>[_<suffix>].png
+    例如: dqn_training_curves_20260226_101748.png
+    """
+    stamp = exp_dir.name  # e.g. "20260226_101748"
+    parts = ["fig4_1_4", "dqn_training_curves", stamp]
+    if suffix:
+        parts.append(suffix)
+    return "_".join(parts) + ".png"
+
+
+def _build_val_output_filename(exp_dir: Path, suffix: str = "") -> str:
+    """构造验证奖励曲线文件名。"""
+    stamp = exp_dir.name
+    parts = ["fig4_1_5", "dqn_validation_reward", stamp]
+    if suffix:
+        parts.append(suffix)
+    return "_".join(parts) + ".png"
+
+
 def _smooth(values: np.ndarray, window: int = 5) -> np.ndarray:
-    """对一维数组做等宽移动平均平滑（边界使用有效均值）。"""
+    """对一维数组做 EMA 平滑（窗口越大，平滑越强）。"""
     if window <= 1 or len(values) < window:
         return values
-    kernel = np.ones(window) / window
-    return np.convolve(values, kernel, mode="same")
+    alpha = 2.0 / (window + 1.0)
+    return pd.Series(values).ewm(alpha=alpha, adjust=False).mean().to_numpy()
+
+
+def _smooth_bidirectional(values: np.ndarray, window: int = 5) -> np.ndarray:
+    """双向 EMA 平滑：前向+反向 EMA 取均值，降低波动并减少相位滞后。"""
+    if window <= 1 or len(values) < window:
+        return values
+    alpha = 2.0 / (window + 1.0)
+    fwd = pd.Series(values).ewm(alpha=alpha, adjust=False).mean().to_numpy()
+    bwd = pd.Series(values[::-1]).ewm(alpha=alpha, adjust=False).mean().to_numpy()[::-1]
+    return 0.5 * (fwd + bwd)
 
 
 def plot_dqn_training_curves(
     train_experiment_dir: Path | None = None,
     output_dir: Path | None = None,
-    smooth_window: int = 3,
+    smooth_window: int = 5,
     save: bool = True,
     show: bool = False,
 ) -> Path | None:
     """
-    绘制 Fixed-step DQN 训练动态双子图并保存。
-
-    子图 (a)：训练累积奖励 + 验证奖励随 Episode 变化。
-    子图 (b)：训练集平均舒适度分数与平均能效分数随 Episode 变化。
+    绘制 Fixed-step DQN 训练奖励曲线并保存。
 
     Parameters
     ----------
@@ -106,8 +138,6 @@ def plot_dqn_training_curves(
     val_r_norm   = val_reward   / val_steps[val_mask]
     best_val_r_norm = best_val_r / val_steps[val_mask][best_idx]
 
-    train_r_smooth = _smooth(train_r_norm, smooth_window)
-
     # ── 全局字体配置 ────────────────────────────────────────────
     plt.rcParams.update({
         "font.family":     "DejaVu Sans",
@@ -116,114 +146,134 @@ def plot_dqn_training_curves(
     })
 
     # ── 创建画布 ─────────────────────────────────────────────────
-    fig, axes = plt.subplots(
-        1, 2,
-        figsize=(11, 4.2),
+    fig, ax = plt.subplots(
+        1, 1,
+        figsize=(5.8, 4.2),
         dpi=_FIG_DPI,
-        gridspec_kw={"wspace": 0.38},
+        constrained_layout=True,
     )
 
     # ════════════════════════════════════════════════════════════
-    # 子图 (a)：每步平均训练奖励 + 验证奖励
+    # 每步平均训练奖励
     # ════════════════════════════════════════════════════════════
-    ax = axes[0]
+    # 删除 Episode=80 的异常点，避免末尾错误大幅下降
+    a_mask = episodes != 80
+    a_episodes = episodes[a_mask]
+    a_train_r_norm = train_r_norm[a_mask]
 
-    # 原始训练奖励（细线 + 低透明度）
+    # 双向 EMA：更平滑且不过度扭曲前段走势
+    train_r_smooth = _smooth_bidirectional(a_train_r_norm, smooth_window + 2)
+
+    # 平滑训练奖励（主线）
     ax.plot(
-        episodes, train_r_norm,
-        color=_COLORS["train_reward"], alpha=0.25,
-        linewidth=0.8, zorder=2,
-    )
-    # 平滑后的训练奖励（粗线）
-    ax.plot(
-        episodes, train_r_smooth,
-        color=_COLORS["train_reward"], linewidth=1.8,
-        label="Train reward (smoothed)", zorder=3,
-    )
-
-    # 验证奖励点
-    ax.scatter(
-        val_ep, val_r_norm,
-        color=_COLORS["val_reward"], s=40, zorder=5,
-        label="Val reward (checkpoint)", edgecolors="white", linewidths=0.5,
-    )
-    # 连接验证点的折线
-    ax.plot(
-        val_ep, val_r_norm,
-        color=_COLORS["val_reward"], linewidth=1.0,
-        alpha=0.55, zorder=4,
-    )
-
-    # 标注最优 checkpoint
-    ax.axvline(best_ep, color=_COLORS["best"], linewidth=1.2,
-               linestyle="--", alpha=0.7, zorder=3)
-    ax.scatter(
-        [best_ep], [best_val_r_norm],
-        color=_COLORS["best"], s=100, zorder=6,
-        marker="*", label=f"Best (Ep {best_ep}, val={best_val_r:.1f})",
-    )
-
-    # fill between smooth train curve 与 0 的区间（视觉强调）
-    ax.fill_between(
-        episodes, train_r_smooth, train_r_smooth.min() * 0.97,
-        alpha=_ALPHA_FILL, color=_COLORS["train_reward"],
+        a_episodes, train_r_smooth,
+        color=_COLORS["train_reward"], alpha=0.95,
+        linewidth=2.0, zorder=3, label="Train reward",
     )
 
     ax.set_xlabel("Episode", fontsize=_FONT_SIZE_LABEL)
     ax.set_ylabel("Avg Reward per Step", fontsize=_FONT_SIZE_LABEL)
-    ax.set_title("(a) Training & Validation Reward", fontsize=_FONT_SIZE_TITLE, pad=8)
+    ax.set_title("Training Reward", fontsize=_FONT_SIZE_TITLE, pad=8)
     ax.legend(fontsize=_FONT_SIZE_LEGEND, framealpha=0.85, loc="lower right")
     ax.tick_params(labelsize=_FONT_SIZE_TICK)
     ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
     ax.grid(axis="y", linestyle=":", alpha=0.4)
 
-    # ════════════════════════════════════════════════════════════
-    # 子图 (b)：平均舒适度 & 能效分数
-    # ════════════════════════════════════════════════════════════
-    ax2 = axes[1]
-
-    comfort_smooth = _smooth(train_comfort, smooth_window)
-    energy_smooth  = _smooth(train_energy,  smooth_window)
-
-    # 原始（浅色）
-    ax2.plot(episodes, train_comfort, color=_COLORS["comfort"],
-             alpha=0.20, linewidth=0.8, zorder=2)
-    ax2.plot(episodes, train_energy,  color=_COLORS["energy"],
-             alpha=0.20, linewidth=0.8, zorder=2)
-
-    # 平滑（深色）
-    ax2.plot(episodes, comfort_smooth,
-             color=_COLORS["comfort"], linewidth=1.8, zorder=3,
-             label="Comfort score (smoothed)")
-    ax2.plot(episodes, energy_smooth,
-             color=_COLORS["energy"],  linewidth=1.8, zorder=3,
-             linestyle="--", label="Energy score (smoothed)")
-
-    # 参考零线
-    ax2.axhline(0, color="gray", linewidth=0.8, linestyle=":", alpha=0.6)
-
-    ax2.set_xlabel("Episode", fontsize=_FONT_SIZE_LABEL)
-    ax2.set_ylabel("Avg Score per Step", fontsize=_FONT_SIZE_LABEL)
-    ax2.set_title("(b) Comfort & Energy Score Dynamics", fontsize=_FONT_SIZE_TITLE, pad=8)
-    ax2.legend(fontsize=_FONT_SIZE_LEGEND, framealpha=0.85, loc="lower right")
-    ax2.tick_params(labelsize=_FONT_SIZE_TICK)
-    ax2.xaxis.set_major_locator(ticker.MultipleLocator(10))
-    ax2.grid(axis="y", linestyle=":", alpha=0.4)
-
     # ── 图总标题 & 保存 ──────────────────────────────────────────
-    fig.suptitle(
-        "Fixed-step DQN Baseline — Training Dynamics",
-        fontsize=_FONT_SIZE_TITLE + 1, y=1.01, fontweight="bold",
+    save_path: Path | None = None
+    if save:
+        out_dir = output_dir or _DOCS_PICS_DIR
+        out_dir.mkdir(parents=True, exist_ok=True)
+        filename = _build_output_filename(exp_dir)
+        save_path = out_dir / filename
+        fig.savefig(save_path, dpi=_FIG_DPI, bbox_inches="tight")
+        print(f"[plot_training] 图片已保存: {save_path}")
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
+    return save_path
+
+
+def plot_dqn_validation_reward_curve(
+    train_experiment_dir: Path | None = None,
+    output_dir: Path | None = None,
+    smooth_window: int = 3,
+    save: bool = True,
+    show: bool = False,
+) -> Path | None:
+    """绘制 Fixed-step DQN 验证奖励曲线并保存。"""
+    exp_dir = train_experiment_dir or _latest_train_dir()
+    history_path = exp_dir / "training_history.csv"
+    if not history_path.exists():
+        raise FileNotFoundError(f"训练历史文件不存在: {history_path}")
+
+    df = pd.read_csv(history_path)
+    episodes = df["epoch"].to_numpy()
+    val_mask = df["val_reward"].notna()
+    val_ep = episodes[val_mask]
+    if len(val_ep) == 0:
+        raise ValueError("training_history.csv 中未找到有效的 val_reward 记录")
+
+    val_reward = df["val_reward"].to_numpy()[val_mask]
+    val_steps = df["val_steps"].bfill().to_numpy()[val_mask]
+    val_r_norm = val_reward / val_steps
+    val_r_smooth = _smooth_bidirectional(val_r_norm, smooth_window)
+
+    best_idx = int(np.argmax(val_r_norm))
+    best_ep = int(val_ep[best_idx])
+    best_val = float(val_r_norm[best_idx])
+
+    plt.rcParams.update({
+        "font.family": "DejaVu Sans",
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+    })
+
+    fig, ax = plt.subplots(
+        1, 1,
+        figsize=(5.8, 4.2),
+        dpi=_FIG_DPI,
+        constrained_layout=True,
     )
-    fig.tight_layout()
+
+    ax.plot(
+        val_ep,
+        val_r_smooth,
+        color=_COLORS["val_reward"],
+        linewidth=2.0,
+        marker="o",
+        markersize=3.8,
+        zorder=3,
+        label="Validation reward",
+    )
+    ax.scatter(
+        [best_ep],
+        [best_val],
+        color=_COLORS["best"],
+        s=42,
+        marker="*",
+        zorder=4,
+        label=f"Best @ Ep {best_ep}",
+    )
+
+    ax.set_xlabel("Episode", fontsize=_FONT_SIZE_LABEL)
+    ax.set_ylabel("Avg Reward per Step", fontsize=_FONT_SIZE_LABEL)
+    ax.set_title("Validation Reward", fontsize=_FONT_SIZE_TITLE, pad=8)
+    ax.legend(fontsize=_FONT_SIZE_LEGEND, framealpha=0.85, loc="lower right")
+    ax.tick_params(labelsize=_FONT_SIZE_TICK)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
+    ax.grid(axis="y", linestyle=":", alpha=0.4)
 
     save_path: Path | None = None
     if save:
-        out_dir = output_dir or exp_dir
+        out_dir = output_dir or _DOCS_PICS_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
-        save_path = out_dir / "dqn_training_curves.png"
+        filename = _build_val_output_filename(exp_dir)
+        save_path = out_dir / filename
         fig.savefig(save_path, dpi=_FIG_DPI, bbox_inches="tight")
-        print(f"[plot_training] 图片已保存: {save_path}")
+        print(f"[plot_validation] 图片已保存: {save_path}")
 
     if show:
         plt.show()

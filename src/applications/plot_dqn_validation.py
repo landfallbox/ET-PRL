@@ -1,13 +1,13 @@
-"""绘制 Fixed-step DQN 基准模型训练动态曲线（论文图）。"""
+"""绘制 Fixed-step DQN 基准模型验证奖励曲线（论文图）。"""
 
 import argparse
 from pathlib import Path
 
-from src.dqn.plot_training import plot_dqn_training_curves
+from src.dqn.plot_training import plot_dqn_validation_reward_curve
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="绘制 DQN 训练曲线（论文配图）")
+    parser = argparse.ArgumentParser(description="绘制 DQN 验证奖励曲线（论文配图）")
     parser.add_argument(
         "--experiment_dir",
         type=str,
@@ -24,7 +24,7 @@ def main() -> None:
         "--smooth_window",
         type=int,
         default=3,
-        help="训练奖励平滑窗口（默认 3）",
+        help="验证奖励平滑窗口（默认 3）",
     )
     parser.add_argument(
         "--show",
@@ -33,7 +33,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    plot_dqn_training_curves(
+    plot_dqn_validation_reward_curve(
         train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
         output_dir=Path(args.output_dir) if args.output_dir else None,
         smooth_window=args.smooth_window,

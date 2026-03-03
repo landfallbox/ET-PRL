@@ -22,6 +22,8 @@ class CommonConfig:
     SHUFFLE_DATA = False
     # 随机种子
     RANDOM_STATE = 42
+    # 是否启用 cuDNN 确定性（开启后可复现性更好，但可能降低性能）
+    CUDNN_DETERMINISTIC = False
 
     # 数据划分比例（默认值，可由子类覆盖）
     TRAIN_RATIO = 0.7

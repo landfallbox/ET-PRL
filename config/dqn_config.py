@@ -38,7 +38,7 @@ class DQNConfig(CommonConfig):
     TARGET_UPDATE_FREQ = 126
 
     # ==================== 训练控制 ====================
-    NUM_EPISODES = 80
+    NUM_EPISODES = 120
     EARLY_STOPPING_PATIENCE = 5
     VAL_INTERVAL = 5
 

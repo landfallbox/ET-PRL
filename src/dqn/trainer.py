@@ -25,6 +25,11 @@ class DQNTrainer:
     def train(self) -> None:
         self.config.validate()
         self.logger.info("配置校验完成")
+        self.logger.info(
+            "训练随机性参数: "
+            f"RANDOM_STATE={getattr(self.config, 'RANDOM_STATE', None)}, "
+            f"CUDNN_DETERMINISTIC={getattr(self.config, 'CUDNN_DETERMINISTIC', None)}"
+        )
 
         train_data = self._load_data(self.config.get_train_data_path(), self.config.STATE_COLUMNS)
         val_data = self._load_data(self.config.get_val_data_path(), self.config.STATE_COLUMNS)
