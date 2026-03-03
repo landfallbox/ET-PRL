@@ -8,10 +8,11 @@ from pathlib import Path
 import pandas as pd
 import torch
 from ml_toolkit.rl import SequenceEnv
-from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger, configure_reproducibility
+from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
 from config.dqn_config import DQNConfig
 from src.dqn.agent import DQNAgent
+from src.dqn.reproducibility import configure_reproducibility
 from src.dqn.rewards import RewardCalculator
 from src.dqn.trainer import DQNTrainer
 
