@@ -10,10 +10,26 @@ from src.control_evaluation.common import (
     build_eval_components,
     copy_train_config,
     create_streaming_gate,
-    get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
 from src.control_evaluation.strategies import evaluate_event_driven, evaluate_fixed_interval
+
+
+def _get_paper_symbol_field_mapping() -> dict[str, str]:
+    try:
+        from src.control_evaluation.common import get_paper_symbol_field_mapping
+
+        return get_paper_symbol_field_mapping()
+    except (ImportError, AttributeError):
+        return {
+            "E_daily": "E_daily_kwh_per_day",
+            "eta_saving": "eta_saving_pct",
+            "V_comfort": "violation_time_pct",
+            "PPR": "PPR_percent",
+            "sigma_delta_a": "sigma_delta_a",
+            "N_daily": "N_daily_count_per_day",
+            "ACR": "ACR",
+        }
 
 
 def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
@@ -154,7 +170,7 @@ def compare_control_strategies(
     metrics_recorder.save_metrics(
         {
             **base_payload,
-            "paper_symbol_mapping": get_paper_symbol_field_mapping(),
+            "paper_symbol_mapping": _get_paper_symbol_field_mapping(),
             "fixed_interval_summary": fixed_summary,
             "event_driven_summary": event_summary,
             "comparison": comparison,
