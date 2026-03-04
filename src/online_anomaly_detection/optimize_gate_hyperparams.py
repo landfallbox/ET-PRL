@@ -127,17 +127,23 @@ def _calculate_recall_metrics(step_results: pd.DataFrame) -> dict:
     tp = int(((gate_signal == 1) & (violation == 1)).sum())
     fp = int(((gate_signal == 1) & (violation == 0)).sum())
     fn = int(((gate_signal == 0) & (violation == 1)).sum())
+    tn = int(((gate_signal == 0) & (violation == 0)).sum())
 
     recall = float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
     precision = float(tp / (tp + fp)) if (tp + fp) > 0 else 0.0
+    false_discovery_rate = float(fp / (tp + fp)) if (tp + fp) > 0 else 0.0
+    false_positive_rate = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
     action_rate = float(step_results["action_updated"].mean()) if not step_results.empty else 0.0
 
     return {
         "tp": tp,
         "fp": fp,
         "fn": fn,
+        "tn": tn,
         "recall": recall,
         "precision": precision,
+        "false_discovery_rate": false_discovery_rate,
+        "false_positive_rate": false_positive_rate,
         "action_rate": action_rate,
     }
 
@@ -158,8 +164,14 @@ def optimize_gate_hyperparameters(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = Logger(output_dir)
-    logger.info("开始 Gate 召回超参优化")
+    logger.info("开始 Gate 多目标超参优化（召回 - 误触发惩罚）")
     logger.info(f"试验次数: {n_trials}, 并行任务数: {n_jobs}")
+
+    recall_weight = float(base_config.GATE_OPT_RECALL_WEIGHT)
+    fp_penalty_weight = float(base_config.GATE_OPT_FP_PENALTY_WEIGHT)
+    logger.info(
+        f"目标函数: composite = {recall_weight:.3f}*recall - {fp_penalty_weight:.3f}*false_discovery_rate"
+    )
 
     resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
     logger.info(f"使用训练实验目录: {resolved_train_dir}")
@@ -219,21 +231,27 @@ def optimize_gate_hyperparameters(
 
             metrics = _calculate_recall_metrics(step_results)
             recall = float(metrics["recall"])
+            false_discovery_rate = float(metrics["false_discovery_rate"])
+            composite_score = recall_weight * recall - fp_penalty_weight * false_discovery_rate
 
             trial.set_user_attr("recall", recall)
             trial.set_user_attr("precision", float(metrics["precision"]))
+            trial.set_user_attr("false_discovery_rate", false_discovery_rate)
+            trial.set_user_attr("false_positive_rate", float(metrics["false_positive_rate"]))
             trial.set_user_attr("action_rate", float(metrics["action_rate"]))
             trial.set_user_attr("total_reward", float(summary["total_reward"]))
             trial.set_user_attr("violation_time_pct", float(summary["violation_time_pct"]))
+            trial.set_user_attr("composite_score", composite_score)
 
             elapsed = time.perf_counter() - start_time
             logger.info(
-                f"Trial {trial.number} 完成: recall={recall:.6f}, precision={metrics['precision']:.6f}, "
+                f"Trial {trial.number} 完成: composite={composite_score:.6f}, recall={recall:.6f}, "
+                f"fdr={false_discovery_rate:.6f}, precision={metrics['precision']:.6f}, "
                 f"action_rate={metrics['action_rate']:.4f}, total_reward={summary['total_reward']:.2f}, "
                 f"elapsed={elapsed:.1f}s"
             )
 
-            return -recall
+            return -composite_score
 
         except Exception as exc:
             elapsed = time.perf_counter() - start_time
@@ -253,8 +271,12 @@ def optimize_gate_hyperparameters(
         n_jobs=int(n_jobs),
     )
 
-    best_recall = -float(result["best_value"])
+    best_composite_score = -float(result["best_value"])
     best_params = result["best_params"]
+    best_trial = optimizer.study.best_trial if optimizer.study is not None else None
+    best_recall = float(best_trial.user_attrs.get("recall", 0.0)) if best_trial is not None else 0.0
+    best_precision = float(best_trial.user_attrs.get("precision", 0.0)) if best_trial is not None else 0.0
+    best_fdr = float(best_trial.user_attrs.get("false_discovery_rate", 0.0)) if best_trial is not None else 0.0
     best_config_overrides = {
         "GATE_ALPHA_LOCAL_WEIGHT": float(best_params["alpha_local_weight"]),
         "GATE_LOCAL_WINDOW_SIZE": int(best_params["local_window_size"]),
@@ -275,7 +297,15 @@ def optimize_gate_hyperparameters(
         "train_experiment_dir": str(resolved_train_dir),
         "base_best_epoch": int(checkpoint.get("epoch", -1)) + 1,
         "n_trials": int(result["n_trials"]),
+        "objective": {
+            "type": "recall_minus_false_discovery_penalty",
+            "recall_weight": recall_weight,
+            "fp_penalty_weight": fp_penalty_weight,
+        },
+        "best_composite_score": best_composite_score,
         "best_recall": best_recall,
+        "best_precision": best_precision,
+        "best_false_discovery_rate": best_fdr,
         "best_params": best_params,
         "best_config_overrides": best_config_overrides,
     }
@@ -292,8 +322,11 @@ def optimize_gate_hyperparameters(
                     "trial_number": trial.number,
                     "state": trial.state.name,
                     "objective_value": trial.value,
+                    "composite_score": trial.user_attrs.get("composite_score"),
                     "recall": trial.user_attrs.get("recall"),
                     "precision": trial.user_attrs.get("precision"),
+                    "false_discovery_rate": trial.user_attrs.get("false_discovery_rate"),
+                    "false_positive_rate": trial.user_attrs.get("false_positive_rate"),
                     "action_rate": trial.user_attrs.get("action_rate"),
                     "total_reward": trial.user_attrs.get("total_reward"),
                     "violation_time_pct": trial.user_attrs.get("violation_time_pct"),
@@ -302,7 +335,10 @@ def optimize_gate_hyperparameters(
             )
         pd.DataFrame(records).to_csv(output_dir / "gate_trials.csv", index=False)
 
-    logger.info(f"优化完成，最优召回: {best_recall:.6f}")
+    logger.info(
+        f"优化完成，最优 composite={best_composite_score:.6f}, recall={best_recall:.6f}, "
+        f"precision={best_precision:.6f}, fdr={best_fdr:.6f}"
+    )
     logger.info(f"最优配置已保存: {summary_path}")
 
     return summary
