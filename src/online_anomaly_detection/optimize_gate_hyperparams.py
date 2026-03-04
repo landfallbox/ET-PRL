@@ -11,6 +11,7 @@ from ml_toolkit.rl import SequenceEnv
 from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
 from config.compare_dqn_config import CompareDQNConfig
+from config.online_anomaly_detection_config import OnlineAnomalyDetectionConfig
 from src.control_evaluation.common import (
     build_eval_components,
     create_streaming_gate,
@@ -89,6 +90,16 @@ def _create_search_space(config: type[CompareDQNConfig]) -> HyperparameterSpace:
             config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MIN,
             config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MAX,
         )
+        .add_float(
+            "trigger_hysteresis_margin",
+            config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MIN,
+            config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MAX,
+        )
+        .add_int(
+            "min_trigger_interval_steps",
+            config.GATE_OPT_MIN_TRIGGER_INTERVAL_STEPS_MIN,
+            config.GATE_OPT_MIN_TRIGGER_INTERVAL_STEPS_MAX,
+        )
     )
     return space
 
@@ -114,6 +125,8 @@ def _build_trial_config(base_cls: type[CompareDQNConfig], params: dict) -> type[
     setattr(TrialConfig, "GATE_SCORE_SHORT_WEIGHT", score_short_weight)
     setattr(TrialConfig, "GATE_SCORE_MEDIUM_WEIGHT", score_medium_weight)
     setattr(TrialConfig, "GATE_SCORE_LONG_WEIGHT", float(score_long_weight))
+    setattr(TrialConfig, "GATE_TRIGGER_HYSTERESIS_MARGIN", float(params["trigger_hysteresis_margin"]))
+    setattr(TrialConfig, "GATE_MIN_TRIGGER_INTERVAL_STEPS", int(params["min_trigger_interval_steps"]))
 
     return TrialConfig
 
@@ -160,7 +173,7 @@ def optimize_gate_hyperparameters(
     if n_jobs is None:
         n_jobs = int(base_config.GATE_OPTIMIZATION_DEFAULT_N_JOBS)
 
-    output_dir = base_config.get_optimization_dir() / base_config.TIMESTAMP / "gate"
+    output_dir = OnlineAnomalyDetectionConfig.get_optimization_dir() / OnlineAnomalyDetectionConfig.TIMESTAMP / "gate"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = Logger(output_dir)
@@ -169,8 +182,15 @@ def optimize_gate_hyperparameters(
 
     recall_weight = float(base_config.GATE_OPT_RECALL_WEIGHT)
     fp_penalty_weight = float(base_config.GATE_OPT_FP_PENALTY_WEIGHT)
+    min_action_rate = float(base_config.GATE_OPT_MIN_ACTION_RATE)
+    min_action_rate_penalty_weight = float(base_config.GATE_OPT_MIN_ACTION_RATE_PENALTY_WEIGHT)
+    max_action_rate = float(base_config.GATE_OPT_MAX_ACTION_RATE)
+    max_action_rate_penalty_weight = float(base_config.GATE_OPT_MAX_ACTION_RATE_PENALTY_WEIGHT)
     logger.info(
-        f"目标函数: composite = {recall_weight:.3f}*recall - {fp_penalty_weight:.3f}*false_discovery_rate"
+        "目标函数: composite = "
+        f"{recall_weight:.3f}*recall - {fp_penalty_weight:.3f}*false_discovery_rate "
+        f"- {min_action_rate_penalty_weight:.3f}*(max(0, {min_action_rate:.4f}-action_rate)/{min_action_rate:.4f})^2 "
+        f"- {max_action_rate_penalty_weight:.3f}*(max(0, action_rate-{max_action_rate:.4f})/{max_action_rate:.4f})^2"
     )
 
     resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
@@ -232,13 +252,33 @@ def optimize_gate_hyperparameters(
             metrics = _calculate_recall_metrics(step_results)
             recall = float(metrics["recall"])
             false_discovery_rate = float(metrics["false_discovery_rate"])
-            composite_score = recall_weight * recall - fp_penalty_weight * false_discovery_rate
+            action_rate = float(metrics["action_rate"])
+            action_rate_shortfall = max(0.0, min_action_rate - action_rate)
+            action_rate_shortfall_ratio = action_rate_shortfall / max(min_action_rate, 1e-8)
+            min_action_penalty = min_action_rate_penalty_weight * (action_rate_shortfall_ratio**2)
+
+            action_rate_excess = max(0.0, action_rate - max_action_rate)
+            action_rate_excess_ratio = action_rate_excess / max(max_action_rate, 1e-8)
+            max_action_penalty = max_action_rate_penalty_weight * (action_rate_excess_ratio**2)
+
+            composite_score = (
+                recall_weight * recall
+                - fp_penalty_weight * false_discovery_rate
+                - min_action_penalty
+                - max_action_penalty
+            )
 
             trial.set_user_attr("recall", recall)
             trial.set_user_attr("precision", float(metrics["precision"]))
             trial.set_user_attr("false_discovery_rate", false_discovery_rate)
             trial.set_user_attr("false_positive_rate", float(metrics["false_positive_rate"]))
-            trial.set_user_attr("action_rate", float(metrics["action_rate"]))
+            trial.set_user_attr("action_rate", action_rate)
+            trial.set_user_attr("action_rate_shortfall", action_rate_shortfall)
+            trial.set_user_attr("action_rate_shortfall_ratio", action_rate_shortfall_ratio)
+            trial.set_user_attr("min_action_penalty", min_action_penalty)
+            trial.set_user_attr("action_rate_excess", action_rate_excess)
+            trial.set_user_attr("action_rate_excess_ratio", action_rate_excess_ratio)
+            trial.set_user_attr("max_action_penalty", max_action_penalty)
             trial.set_user_attr("total_reward", float(summary["total_reward"]))
             trial.set_user_attr("violation_time_pct", float(summary["violation_time_pct"]))
             trial.set_user_attr("composite_score", composite_score)
@@ -247,7 +287,9 @@ def optimize_gate_hyperparameters(
             logger.info(
                 f"Trial {trial.number} 完成: composite={composite_score:.6f}, recall={recall:.6f}, "
                 f"fdr={false_discovery_rate:.6f}, precision={metrics['precision']:.6f}, "
-                f"action_rate={metrics['action_rate']:.4f}, total_reward={summary['total_reward']:.2f}, "
+                f"action_rate={action_rate:.4f}, min_action_penalty={min_action_penalty:.6f}, "
+                f"max_action_penalty={max_action_penalty:.6f}, "
+                f"total_reward={summary['total_reward']:.2f}, "
                 f"elapsed={elapsed:.1f}s"
             )
 
@@ -291,6 +333,8 @@ def optimize_gate_hyperparameters(
         "GATE_SCORE_LONG_WEIGHT": float(
             max(0.01, 1.0 - float(best_params["score_short_weight"]) - float(best_params["score_medium_weight"]))
         ),
+        "GATE_TRIGGER_HYSTERESIS_MARGIN": float(best_params["trigger_hysteresis_margin"]),
+        "GATE_MIN_TRIGGER_INTERVAL_STEPS": int(best_params["min_trigger_interval_steps"]),
     }
 
     summary = {
@@ -298,9 +342,13 @@ def optimize_gate_hyperparameters(
         "base_best_epoch": int(checkpoint.get("epoch", -1)) + 1,
         "n_trials": int(result["n_trials"]),
         "objective": {
-            "type": "recall_minus_false_discovery_penalty",
+            "type": "recall_minus_false_discovery_with_action_rate_band_penalty",
             "recall_weight": recall_weight,
             "fp_penalty_weight": fp_penalty_weight,
+            "min_action_rate": min_action_rate,
+            "min_action_rate_penalty_weight": min_action_rate_penalty_weight,
+            "max_action_rate": max_action_rate,
+            "max_action_rate_penalty_weight": max_action_rate_penalty_weight,
         },
         "best_composite_score": best_composite_score,
         "best_recall": best_recall,
@@ -328,6 +376,12 @@ def optimize_gate_hyperparameters(
                     "false_discovery_rate": trial.user_attrs.get("false_discovery_rate"),
                     "false_positive_rate": trial.user_attrs.get("false_positive_rate"),
                     "action_rate": trial.user_attrs.get("action_rate"),
+                    "action_rate_shortfall": trial.user_attrs.get("action_rate_shortfall"),
+                    "action_rate_shortfall_ratio": trial.user_attrs.get("action_rate_shortfall_ratio"),
+                    "min_action_penalty": trial.user_attrs.get("min_action_penalty"),
+                    "action_rate_excess": trial.user_attrs.get("action_rate_excess"),
+                    "action_rate_excess_ratio": trial.user_attrs.get("action_rate_excess_ratio"),
+                    "max_action_penalty": trial.user_attrs.get("max_action_penalty"),
                     "total_reward": trial.user_attrs.get("total_reward"),
                     "violation_time_pct": trial.user_attrs.get("violation_time_pct"),
                     **trial.params,

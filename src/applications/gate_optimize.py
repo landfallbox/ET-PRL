@@ -16,3 +16,7 @@ def main() -> None:
         n_trials=args.n_trials,
         n_jobs=args.n_jobs,
     )
+
+
+if __name__ == "__main__":
+    main()

@@ -135,6 +135,8 @@ def create_streaming_gate(
         score_short_weight=config.GATE_SCORE_SHORT_WEIGHT,
         score_medium_weight=config.GATE_SCORE_MEDIUM_WEIGHT,
         score_long_weight=config.GATE_SCORE_LONG_WEIGHT,
+        trigger_hysteresis_margin=config.GATE_TRIGGER_HYSTERESIS_MARGIN,
+        min_trigger_interval_steps=config.GATE_MIN_TRIGGER_INTERVAL_STEPS,
     )
 
     if gate_state_path is not None:
