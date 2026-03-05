@@ -42,18 +42,6 @@ def _validate_columns(df: pd.DataFrame) -> None:
         raise ValueError(f"event_driven_step_results.csv 缺少必要列: {sorted(missing)}")
 
 
-def _sample_mask(mask: pd.Series, max_points: int) -> pd.Series:
-    if max_points <= 0:
-        return mask
-    idx = np.flatnonzero(mask.to_numpy(dtype=bool))
-    if idx.size <= max_points:
-        return mask
-    sampled_idx = np.linspace(0, idx.size - 1, num=max_points, dtype=int)
-    keep = np.zeros(mask.shape[0], dtype=bool)
-    keep[idx[sampled_idx]] = True
-    return pd.Series(keep, index=mask.index)
-
-
 def _rolling_mean(values: np.ndarray, window: int) -> np.ndarray:
     if window <= 1:
         return values
@@ -162,10 +150,7 @@ def _build_alignment_figure(
     high_change_quantile: float,
     output_prefix: Path,
     dpi: int,
-    clip_quantile: float,
-    max_trigger_points: int,
     smooth_window: int,
-    show_fp_points: bool,
     green_rule: str,
     lambda_col: str,
     occupancy_col: str,
@@ -202,22 +187,11 @@ def _build_alignment_figure(
         region_label = "High-change region"
     trigger_mask = event_df["action_updated"].astype(int) == 1
     criterion_mask = event_df["anomaly_score"] > event_df["adaptive_threshold"]
-    trigger_edge_mask = trigger_mask & (~trigger_mask.shift(1, fill_value=False))
     overlap_mask = trigger_mask & high_change_mask
-    false_positive_mask = trigger_mask & (~high_change_mask)
-    false_negative_mask = (~trigger_mask) & high_change_mask
 
     steps = event_df["step"].to_numpy(dtype=int)
     anomaly = event_df["anomaly_score"].to_numpy(dtype=float)
     adaptive_threshold = event_df["adaptive_threshold"].to_numpy(dtype=float)
-    delta_power_abs = event_df["delta_power_abs"].to_numpy(dtype=float)
-    y_cap = float(np.quantile(delta_power_abs, clip_quantile))
-    delta_power_plot = np.minimum(delta_power_abs, y_cap)
-
-    trigger_edge_sample_mask = _sample_mask(trigger_edge_mask, max_trigger_points)
-    overlap_sample_mask = _sample_mask(overlap_mask, max_trigger_points)
-    fp_sample_mask = _sample_mask(false_positive_mask, max_trigger_points)
-    fn_sample_mask = _sample_mask(false_negative_mask, max_trigger_points)
 
     anomaly_smooth = _rolling_mean(anomaly, smooth_window)
     threshold_smooth = _rolling_mean(adaptive_threshold, smooth_window)
@@ -244,6 +218,9 @@ def _build_alignment_figure(
     ax1.plot(steps, anomaly_smooth, linewidth=1.4, alpha=0.95, label=r"$A(x_t)$")
     ax1.plot(steps, threshold_smooth, linewidth=1.6, alpha=0.95, label=r"$\tau_t^*$")
     ax1.set_ylabel("Score")
+    ax1.grid(False)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
     ax1.legend(
         loc="lower center",
         bbox_to_anchor=(0.5, 1.02),
@@ -312,81 +289,28 @@ def _build_alignment_figure(
             Patch(facecolor="tab:green", label=region_label),
             Patch(facecolor="tab:purple", label="Both (trigger ∩ region)"),
         ],
-        loc="upper right",
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.02),
+        ncol=3,
+        frameon=True,
+        borderaxespad=0.2,
     )
-
-    fig3, ax3 = plt.subplots(1, 1, figsize=(14, 3.8), sharex=True)
-    ax3.plot(steps, delta_power_plot, linewidth=1.0, alpha=0.9, label=r"$|\Delta P_{chiller}|$ (clipped for display)")
-    if green_rule != "paper_events":
-        ax3.axhline(threshold, linestyle="--", linewidth=1.2, label=f"q={high_change_quantile:.2f} threshold")
-    ax3.fill_between(
-        steps,
-        0.0,
-        delta_power_plot,
-        where=high_change_mask.to_numpy(dtype=bool),
-        alpha=0.2,
-        label=region_label,
-    )
-    ax3.scatter(
-        event_df.loc[overlap_sample_mask, "step"],
-        np.minimum(event_df.loc[overlap_sample_mask, "delta_power_abs"].to_numpy(dtype=float), y_cap),
-        s=14,
-        alpha=0.85,
-        c="tab:green",
-        label=f"TP: trigger ∩ region (n={int(overlap_sample_mask.sum())})",
-    )
-    if show_fp_points:
-        ax3.scatter(
-            event_df.loc[fp_sample_mask, "step"],
-            np.minimum(event_df.loc[fp_sample_mask, "delta_power_abs"].to_numpy(dtype=float), y_cap),
-            s=8,
-            alpha=0.45,
-            c="tab:orange",
-            label=f"FP: trigger only (n={int(fp_sample_mask.sum())})",
-        )
-    ax3.scatter(
-        event_df.loc[fn_sample_mask, "step"],
-        np.minimum(event_df.loc[fn_sample_mask, "delta_power_abs"].to_numpy(dtype=float), y_cap),
-        s=16,
-        alpha=0.85,
-        c="tab:red",
-        label=f"FN: region only (n={int(fn_sample_mask.sum())})",
-    )
-    ax3.set_ylim(bottom=0.0, top=max(y_cap * 1.05, threshold * 1.2))
-    ax3.set_xlabel("Step")
-    ax3.set_ylabel(r"$|\Delta P_{chiller}|$")
-    ax3.legend(loc="upper right")
-
-    if clip_quantile < 1.0:
-        ax3.text(
-            0.01,
-            0.96,
-            f"Display clip: q={clip_quantile:.3f}, cap={y_cap:.2f}",
-            transform=ax3.transAxes,
-            fontsize=9,
-            va="top",
-        )
 
     output_prefix.parent.mkdir(parents=True, exist_ok=True)
     panel1_path = output_prefix.parent / f"{output_prefix.name}_criterion.png"
     panel2_path = output_prefix.parent / f"{output_prefix.name}_logic.png"
-    panel3_path = output_prefix.parent / f"{output_prefix.name}_engineering.png"
 
     fig1.tight_layout(rect=(0, 0, 1, 0.96))
-    fig2.tight_layout()
-    fig3.tight_layout()
+    fig2.tight_layout(rect=(0, 0, 1, 0.96))
 
     fig1.savefig(panel1_path, dpi=dpi)
     fig2.savefig(panel2_path, dpi=dpi)
-    fig3.savefig(panel3_path, dpi=dpi)
     plt.close(fig1)
     plt.close(fig2)
-    plt.close(fig3)
 
     overlap_count = int((trigger_mask & high_change_mask).sum())
     print(f"图像已保存: {panel1_path}")
     print(f"图像已保存: {panel2_path}")
-    print(f"图像已保存: {panel3_path}")
     if green_rule == "paper_events":
         print(f"绿色区域定义: 论文事件规则 (a,b,c,d)=({th_a:.3f},{th_b:.3f},{th_c:.3f},{th_d:.3f})")
         print(f"规则说明: {paper_note}")
@@ -416,7 +340,7 @@ def main() -> None:
         "--output_prefix",
         type=str,
         default="docs/pics/trigger_alignment",
-        help="输出图片名前缀（默认 docs/pics/trigger_alignment，将生成 *_criterion.png / *_logic.png / *_engineering.png）",
+        help="输出图片名前缀（默认 docs/pics/trigger_alignment，将生成 *_criterion.png / *_logic.png）",
     )
     parser.add_argument(
         "--high_change_quantile",
@@ -451,27 +375,10 @@ def main() -> None:
         help="输出图像分辨率（默认 300）",
     )
     parser.add_argument(
-        "--clip_quantile",
-        type=float,
-        default=0.995,
-        help="用于显示的 |Δpower| 上分位裁剪（默认 0.995；仅影响可视化，不影响统计）",
-    )
-    parser.add_argument(
-        "--max_trigger_points",
-        type=int,
-        default=400,
-        help="触发散点最大绘制数量（默认 400，等间隔抽样）",
-    )
-    parser.add_argument(
         "--smooth_window",
         type=int,
         default=9,
         help="上图平滑窗口（默认 9）",
-    )
-    parser.add_argument(
-        "--show_fp_points",
-        action="store_true",
-        help="是否在下图显示 FP 散点（默认关闭以减少视觉拥挤）",
     )
     parser.add_argument(
         "--logic_band_columns",
@@ -507,8 +414,6 @@ def main() -> None:
 
     if not (0.0 < args.high_change_quantile < 1.0):
         raise ValueError("--high_change_quantile 必须在 (0,1) 区间")
-    if not (0.0 < args.clip_quantile <= 1.0):
-        raise ValueError("--clip_quantile 必须在 (0,1] 区间")
     if not (0.0 <= args.logic_both_min_ratio <= 1.0):
         raise ValueError("--logic_both_min_ratio 必须在 [0,1] 区间")
     if not (0.0 <= args.logic_green_min_ratio <= 1.0):
@@ -530,10 +435,7 @@ def main() -> None:
         high_change_quantile=float(args.high_change_quantile),
         output_prefix=Path(args.output_prefix),
         dpi=int(args.dpi),
-        clip_quantile=float(args.clip_quantile),
-        max_trigger_points=int(args.max_trigger_points),
         smooth_window=max(1, int(args.smooth_window)),
-        show_fp_points=bool(args.show_fp_points),
         green_rule=str(args.green_rule),
         lambda_col=str(args.lambda_col),
         occupancy_col=str(args.occupancy_col),
