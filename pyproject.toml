@@ -30,6 +30,7 @@ event-dqn-eval-event-driven = "src.applications.event_driven_eval:main"
 event-dqn-prewarm-gate = "src.applications.gate_prewarm:main"
 event-dqn-optimize-gate = "src.applications.gate_optimize:main"
 event-dqn-generate-labels = "src.applications.generate_labels:main"
+event-dqn-run-ablation-all = "src.applications.ablation_run_all:main"
 
 [build-system]
 requires = ["hatchling"]
