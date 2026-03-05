@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 
-from config.compare_dqn_config import CompareDQNConfig
 from src.ablation.wo_dual_threshold import run_wo_dual_threshold_ablation
 
 
@@ -12,7 +11,8 @@ def main() -> None:
     parser.add_argument(
         "--gate_state_path",
         type=str,
-        default=str(CompareDQNConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
+        default=None,
+        help="门控状态文件路径；默认不加载（冷启动）",
     )
     args = parser.parse_args()
 

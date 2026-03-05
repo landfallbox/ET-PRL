@@ -427,7 +427,17 @@ class StreamingAnomalyGate:
         self._last_trigger_step = int(payload.get("last_trigger_step", -10**9))
         self.feature_stats = payload["feature_stats"]
         self.anomaly_detector = payload["anomaly_detector"]
-        self.threshold_optimizer = payload["threshold_optimizer"]
+        configured_threshold_optimizer = self.threshold_optimizer
+        loaded_threshold_optimizer = payload["threshold_optimizer"]
+        loaded_threshold_optimizer.local_window_size = configured_threshold_optimizer.local_window_size
+        loaded_threshold_optimizer.global_ema_decay = configured_threshold_optimizer.global_ema_decay
+        loaded_threshold_optimizer.alpha = configured_threshold_optimizer.alpha
+        loaded_threshold_optimizer.min_samples_for_optimization = configured_threshold_optimizer.min_samples_for_optimization
+        loaded_threshold_optimizer.quantile = configured_threshold_optimizer.quantile
+        loaded_threshold_optimizer.mad_scale = configured_threshold_optimizer.mad_scale
+        loaded_threshold_optimizer.local_update_rate = configured_threshold_optimizer.local_update_rate
+        loaded_threshold_optimizer.quantile_weight = configured_threshold_optimizer.quantile_weight
+        self.threshold_optimizer = loaded_threshold_optimizer
         self.multi_scale_tracker = payload["multi_scale_tracker"]
 
 
