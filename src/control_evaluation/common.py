@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
+import yaml
 from ml_toolkit.utils import CheckpointManager, ConfigManager, Logger, resolve_experiment_dir
 
 from config.dqn_config import DQNConfig
@@ -38,6 +39,21 @@ def copy_train_config(
     except FileNotFoundError:
         train_config = {}
         logger.warning(f"训练配置文件不存在，使用当前配置类快照: {resolved_train_dir / config.CONFIG_FILENAME}")
+    except Exception as err:
+        # YAML parser may raise ConstructorError or other subclasses of YAMLError.
+        if isinstance(err, yaml.YAMLError):
+            config_path = resolved_train_dir / config.CONFIG_FILENAME
+            logger.warning(f"解析训练配置时出错，尝试使用 FullLoader: {err}")
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    train_config = yaml.load(f, Loader=yaml.FullLoader) or {}
+                logger.info("已使用 FullLoader 成功加载训练配置")
+            except Exception as ex:
+                logger.warning(f"使用 FullLoader 仍然失败，忽略训练配置: {ex}")
+                train_config = {}
+        else:
+            # re-raise unexpected errors
+            raise
 
     # 优先保留训练快照中的参数（如已调优的 DQN 参数），并补齐 compare 流程涉及模块的缺失超参（如门控参数）。
     merged_config = {
