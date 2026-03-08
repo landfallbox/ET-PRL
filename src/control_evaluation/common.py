@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
-from ml_toolkit.utils import CheckpointManager, Logger, copy_config_snapshot, resolve_experiment_dir
+from ml_toolkit.utils import CheckpointManager, ConfigManager, Logger, resolve_experiment_dir
 
 from config.dqn_config import DQNConfig
 from src.dqn.agent import DQNAgent
@@ -30,12 +30,22 @@ def copy_train_config(
     config: type[DQNConfig],
     logger: Logger,
 ) -> None:
-    copy_config_snapshot(
-        source_experiment_dir=resolved_train_dir,
-        target_experiment_dir=eval_experiment_dir,
-        config_filename=config.CONFIG_FILENAME,
-        logger=logger,
-    )
+    train_config_manager = ConfigManager(resolved_train_dir, config_filename=config.CONFIG_FILENAME)
+    eval_config_manager = ConfigManager(eval_experiment_dir, config_filename=config.CONFIG_FILENAME)
+
+    try:
+        train_config = train_config_manager.load_config()
+    except FileNotFoundError:
+        train_config = {}
+        logger.warning(f"训练配置文件不存在，使用当前配置类快照: {resolved_train_dir / config.CONFIG_FILENAME}")
+
+    # 优先保留训练快照中的参数（如已调优的 DQN 参数），并补齐 compare 流程涉及模块的缺失超参（如门控参数）。
+    merged_config = {
+        **config.to_dict(),
+        **train_config,
+    }
+    eval_config_manager.save_config(merged_config)
+    logger.info(f"已写入合并配置快照: {eval_experiment_dir / config.CONFIG_FILENAME}")
 
 
 def _create_agent(config: type[DQNConfig], action_space: np.ndarray, device: torch.device) -> DQNAgent:
