@@ -1,0 +1,50 @@
+<mxfile host="65bd71144e">
+    <diagram id="gate-init-refined" name="Gate Initialization Refined">
+        <mxGraphModel dx="1650" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+
+                <mxCell id="bg" value="门控初始化冷启动流程 (Gate Initialization Warm-up)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffaf2;strokeColor=#d6b656;strokeWidth=2;fontStyle=1;fontSize=16;align=left;spacingLeft=12;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="120" width="1540" height="640" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="input_data" value="历史运行数据&#xa;负荷 / 温度 / 功率 / 动作" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="180" y="350" width="260" height="95" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="step1" value="步骤1: 参考样本预热&#xa;Reference Pool Warm-up&#xa;抽取前 N_ref 个样本&#xa;构建门控参考样本池" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="520" y="300" width="280" height="170" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="step2" value="步骤2: 初始统计量构建&#xa;Initial Stats Computation&#xa;得到 A_0 并初始化窗口 W&#xa;计算 med(A_0), MAD(A_0), Q_q(A_0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="860" y="300" width="320" height="170" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="step3" value="步骤3: 阈值先验定标&#xa;Threshold Prior Assignment&#xa;初始化 tau_local^(0), tau_global^(0)&#xa;生成基础阈值 tau_tilde_0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="1240" y="300" width="320" height="170" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="out_gate" value="在线流式门控模块&#xa;接收先验参数与初始缓冲池" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="1240" y="560" width="320" height="95" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="e1" value="输入预热数据" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontSize=12;" parent="1" source="input_data" target="step1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="e2" value="输出 A_0 统计基础" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontSize=12;" parent="1" source="step1" target="step2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="e3" value="注入阈值先验" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;fontSize=12;" parent="1" source="step2" target="step3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="e4" value="Prior Params + Buffer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;dashed=1;dashPattern=8 4;fontSize=12;" parent="1" source="step3" target="out_gate" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -23,4 +23,3 @@ src/core
 src/unsupervised_label_generation
 uv.lock
 /config/unsupervised_label_generation_config.py
-/docs/*
