@@ -117,9 +117,6 @@ def _build_summary(
             "event_action_count": int(event_summary.get("action_count", 0)),
             "action_reduction_pct": float(comparison.get("action_reduction_pct", 0.0)),
             "ACR": float(comparison.get("ACR", 0.0)),
-            "fixed_violation_pct": float(fixed_summary.get("violation_time_pct", 0.0)),
-            "event_violation_pct": float(event_summary.get("violation_time_pct", 0.0)),
-            "delta_violation_pct_point": float(comparison.get("delta_V_pct_point", 0.0)),
             "fixed_avg_power": float(fixed_summary.get("avg_power_chiller", 0.0)),
             "event_avg_power": float(event_summary.get("avg_power_chiller", 0.0)),
             "delta_power_pct": float(
@@ -242,7 +239,6 @@ def _write_markdown_report(summary: dict, output_path: Path) -> None:
         "## 4.3.3 执行层收益",
         f"- 动作更新次数: Fixed={e['fixed_action_count']}, Event={e['event_action_count']}, 降幅={e['action_reduction_pct']:.2f}%",
         f"- ACR={e['ACR']:.4f}, PPR={e['PPR_percent']:.2f}%",
-        f"- 温度违规率: Fixed={e['fixed_violation_pct']:.4f}%, Event={e['event_violation_pct']:.4f}%, Δ={e['delta_violation_pct_point']:.4f} pct-point",
         f"- 平均冷机功率: Fixed={e['fixed_avg_power']:.4f}kW, Event={e['event_avg_power']:.4f}kW, Δ={e['delta_power_pct']:.2f}%",
         f"- 动作平滑度 sigma_delta_a: Fixed={e['fixed_sigma_delta_a']:.6f}, Event={e['event_sigma_delta_a']:.6f}, Δ={e['sigma_delta_a_change_pct']:.2f}%",
         "",

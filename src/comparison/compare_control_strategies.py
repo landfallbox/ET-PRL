@@ -24,7 +24,6 @@ def _get_paper_symbol_field_mapping() -> dict[str, str]:
         return {
             "E_daily": "E_daily_kwh_per_day",
             "eta_saving": "eta_saving_pct",
-            "V_comfort": "violation_time_pct",
             "PPR": "PPR_percent",
             "sigma_delta_a": "sigma_delta_a",
             "N_daily": "N_daily_count_per_day",
@@ -63,8 +62,6 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         - float(fixed_summary.get("avg_comfort_score", 0.0)),
         "energy_change": float(event_summary.get("avg_energy_score", 0.0))
         - float(fixed_summary.get("avg_energy_score", 0.0)),
-        "violation_time_pct_change": float(event_summary.get("violation_time_pct", 0.0))
-        - float(fixed_summary.get("violation_time_pct", 0.0)),
         "action_reduction": int(action_reduction),
         "action_reduction_pct": float(action_reduction_pct),
         "PPR": float(ppr),
@@ -92,9 +89,6 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         "trigger_rate_change": float(trigger_rate_event - trigger_rate_fixed),
         "trigger_rate_change_pct": float(
             ((trigger_rate_event - trigger_rate_fixed) / trigger_rate_fixed * 100.0) if trigger_rate_fixed > 0 else 0.0
-        ),
-        "delta_V_pct_point": float(
-            float(event_summary.get("violation_time_pct", 0.0)) - float(fixed_summary.get("violation_time_pct", 0.0))
         ),
     }
 
@@ -152,6 +146,8 @@ def compare_control_strategies(
         action_space=action_space,
         fixed_interval=fixed_interval,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
+        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
@@ -164,6 +160,8 @@ def compare_control_strategies(
         gate=event_gate,
         feature_columns=config.FEATURE_COLUMNS,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
+        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)
@@ -186,15 +184,13 @@ def compare_control_strategies(
     logger.info(
         "固定间隔: "
         f"total_reward={fixed_summary['total_reward']:.4f}, "
-        f"action_count={fixed_summary['action_count']}, "
-        f"violation_time_pct={fixed_summary['violation_time_pct']:.2f}%"
+        f"action_count={fixed_summary['action_count']}"
     )
     logger.info(
         "事件驱动: "
         f"total_reward={event_summary['total_reward']:.4f}, "
         f"action_count={event_summary['action_count']}, "
-        f"event_trigger_rate={event_summary['event_trigger_rate']:.4f}, "
-        f"violation_time_pct={event_summary['violation_time_pct']:.2f}%"
+        f"event_trigger_rate={event_summary['event_trigger_rate']:.4f}"
     )
     logger.info(
         "对比指标: "

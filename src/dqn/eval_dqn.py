@@ -55,6 +55,8 @@ def eval_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
         action_space=action_space,
         fixed_interval=fixed_interval,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
+        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     action_distribution = (
@@ -80,7 +82,8 @@ def eval_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
     logger.info(f"评估完成: steps={summary['steps']}, total_reward={summary['total_reward']:.4f}")
     logger.info(
         "关键指标: "
-        f"avg_reward_per_step={summary['avg_reward_per_step']:.4f}, "
+        f"avg_reward_per_action={float(summary.get('avg_reward_per_action', summary['avg_reward_per_step'])):.4f}, "
+        f"avg_reward_per_env_step={summary['avg_reward_per_env_step']:.4f}, "
         f"avg_energy_score={summary['avg_energy_score']:.4f}, "
         f"avg_comfort_score={summary['avg_comfort_score']:.4f}, "
         f"action_count={summary['action_count']}, "

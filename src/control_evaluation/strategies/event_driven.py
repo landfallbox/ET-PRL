@@ -6,7 +6,6 @@ from ml_toolkit.rl import SequenceEnv
 
 from src.control_evaluation.common import (
     compute_extended_evaluation_metrics,
-    compute_violation_metrics,
     find_nearest_action_index,
 )
 from src.dqn.agent import DQNAgent
@@ -21,6 +20,8 @@ def evaluate_event_driven(
     gate: StreamingAnomalyGate,
     feature_columns: list[str],
     supply_temp_ref: float,
+    comfort_lower_bound: float = 13.0,
+    comfort_upper_bound: float = 21.0,
 ) -> tuple[dict, pd.DataFrame]:
     state, _ = env.reset()
     total_reward = 0.0
@@ -95,8 +96,8 @@ def evaluate_event_driven(
         if terminated:
             break
 
-    avg_reward_per_step = total_reward / steps if steps > 0 else 0.0
-    violation_count, violation_time_pct = compute_violation_metrics(supply_temperature_values)
+    avg_reward_per_env_step = total_reward / steps if steps > 0 else 0.0
+    avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
     gate_trigger_count = int(sum(int(record["gate_signal"] == 1) for record in records)) if records else 0
     gate_trigger_rate = gate_trigger_count / steps if steps > 0 else 0.0
     extended_metrics = compute_extended_evaluation_metrics(
@@ -113,14 +114,15 @@ def evaluate_event_driven(
         "strategy": "event_driven",
         "steps": steps,
         "total_reward": float(total_reward),
-        "avg_reward_per_step": float(avg_reward_per_step),
+        "avg_reward_per_action": float(avg_reward_per_action),
+        # Backward-compatible alias; same value as avg_reward_per_action.
+        "avg_reward_per_step": float(avg_reward_per_action),
+        "avg_reward_per_env_step": float(avg_reward_per_env_step),
         "avg_energy_score": float(np.mean(energy_scores)) if energy_scores else 0.0,
         "avg_comfort_score": float(np.mean(comfort_scores)) if comfort_scores else 0.0,
         "avg_power_chiller": float(np.mean(power_values)) if power_values else 0.0,
         "action_count": int(action_update_count),
         "action_frequency": float(action_update_count / steps) if steps > 0 else 0.0,
-        "temperature_violations": int(violation_count),
-        "violation_time_pct": float(violation_time_pct),
         "event_trigger_count": int(gate_trigger_count),
         "event_trigger_rate": float(gate_trigger_rate),
         "E_total_kwh": float(extended_metrics["E_total_kwh"]),

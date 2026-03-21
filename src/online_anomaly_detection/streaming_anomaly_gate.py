@@ -49,6 +49,7 @@ class StreamingAnomalyGate:
         threshold_mad_scale: Optional[float] = None,
         threshold_local_update_rate: Optional[float] = None,
         threshold_quantile_weight: Optional[float] = None,
+        threshold_min_samples_for_optimization: Optional[int] = None,
         score_short_weight: Optional[float] = None,
         score_medium_weight: Optional[float] = None,
         score_long_weight: Optional[float] = None,
@@ -65,6 +66,17 @@ class StreamingAnomalyGate:
             reference_samples: 流式IF参考集大小
             contamination: 异常比例先验
             alpha_local_weight: 本地阈值权重（0-1，越大越快反应漂移）
+            threshold_bias: 阈值偏置项（对自适应阈值做整体平移）
+            threshold_quantile: 分位数阈值（高分位越高，触发越保守）
+            threshold_mad_scale: MAD尺度系数（越大越保守）
+            threshold_local_update_rate: 本地阈值更新率（越大越快）
+            threshold_quantile_weight: 分位数与MAD阈值融合权重（0-1）
+            threshold_min_samples_for_optimization: 启用阈值优化所需最小样本数
+            score_short_weight: 短时异常分数权重
+            score_medium_weight: 中时异常分数权重
+            score_long_weight: 长时异常分数权重
+            trigger_hysteresis_margin: 触发滞回边际（抑制阈值附近抖动）
+            min_trigger_interval_steps: 最小触发间隔步数（抑制高频连续触发）
         """
         self.feature_dim = feature_dim
         self.sample_count = 0
@@ -89,6 +101,10 @@ class StreamingAnomalyGate:
             threshold_local_update_rate = OnlineAnomalyDetectionConfig.THRESHOLD_LOCAL_UPDATE_RATE
         if threshold_quantile_weight is None:
             threshold_quantile_weight = OnlineAnomalyDetectionConfig.THRESHOLD_QUANTILE_WEIGHT
+        if threshold_min_samples_for_optimization is None:
+            threshold_min_samples_for_optimization = (
+                OnlineAnomalyDetectionConfig.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION
+            )
         if score_short_weight is None:
             score_short_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_SHORT_WEIGHT
         if score_medium_weight is None:
@@ -121,7 +137,7 @@ class StreamingAnomalyGate:
         # 2. 流式异常检测器（替代IsolationForest）
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
-            update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
+            min_samples_for_optimization=threshold_min_samples_for_optimization,
             distance_metric=OnlineAnomalyDetectionConfig.ISOLATION_DISTANCE_METRIC,
             contamination=contamination,
             decay_strategy=OnlineAnomalyDetectionConfig.ISOLATION_DECAY_STRATEGY,
@@ -132,7 +148,7 @@ class StreamingAnomalyGate:
             local_window_size=local_window_size,
             global_ema_decay=global_ema_decay,
             alpha=alpha_local_weight,
-            min_samples_for_optimization=OnlineAnomalyDetectionConfig.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
+            min_samples_for_optimization=int(threshold_min_samples_for_optimization),
             quantile=threshold_quantile,
             mad_scale=threshold_mad_scale,
             local_update_rate=threshold_local_update_rate,

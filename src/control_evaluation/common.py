@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import pickle
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,9 @@ from src.dqn.agent import DQNAgent
 from src.dqn.rewards import RewardCalculator
 from src.dqn.trainer import DQNTrainer
 from src.online_anomaly_detection.streaming_anomaly_gate import StreamingAnomalyGate
+
+
+EvalDataSplit = Literal["test", "val", "train"]
 
 
 def resolve_train_experiment_dir(train_experiment_dir: Path | None) -> Path:
@@ -112,10 +116,21 @@ def _create_reward_calculator(
 def build_eval_components(
     config: type[DQNConfig],
     resolved_train_dir: Path,
+    data_split: EvalDataSplit = "test",
 ) -> tuple[pd.DataFrame, np.ndarray, DQNAgent, dict, RewardCalculator]:
-    test_data = DQNTrainer._load_data(config.get_test_data_path(), config.STATE_COLUMNS)
+    split_key = str(data_split).lower().strip()
+    if split_key == "test":
+        eval_data_path = config.get_test_data_path()
+    elif split_key == "val":
+        eval_data_path = config.get_val_data_path()
+    elif split_key == "train":
+        eval_data_path = config.get_train_data_path()
+    else:
+        raise ValueError(f"不支持的数据划分: {data_split}")
+
+    test_data = DQNTrainer._load_data(eval_data_path, config.STATE_COLUMNS)
     if test_data.empty:
-        raise ValueError(f"测试数据为空: {config.get_test_data_path()}")
+        raise ValueError(f"{split_key} 数据为空: {eval_data_path}")
 
     action_space = DQNTrainer._load_action_space(config.ACTION_SPACE_PATH)
     device = torch.device(config.DEVICE)
@@ -158,6 +173,7 @@ def create_streaming_gate(
         threshold_mad_scale=config.THRESHOLD_MAD_SCALE,
         threshold_local_update_rate=config.THRESHOLD_LOCAL_UPDATE_RATE,
         threshold_quantile_weight=config.THRESHOLD_QUANTILE_WEIGHT,
+        threshold_min_samples_for_optimization=config.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
         score_short_weight=config.GATE_SCORE_SHORT_WEIGHT,
         score_medium_weight=config.GATE_SCORE_MEDIUM_WEIGHT,
         score_long_weight=config.GATE_SCORE_LONG_WEIGHT,
@@ -168,8 +184,14 @@ def create_streaming_gate(
     if gate_state_path is not None:
         resolved_gate_state_path = Path(gate_state_path)
         if resolved_gate_state_path.exists():
-            gate.load_state(resolved_gate_state_path)
-            logger.info(f"已加载预热门控状态: {resolved_gate_state_path}")
+            try:
+                gate.load_state(resolved_gate_state_path)
+                logger.info(f"已加载预热门控状态: {resolved_gate_state_path}")
+            except (ModuleNotFoundError, ValueError, pickle.UnpicklingError) as exc:
+                logger.warning(
+                    f"门控状态文件不兼容，已回退到冷启动在线门控: {resolved_gate_state_path}; "
+                    f"原因: {exc}"
+                )
         else:
             logger.warning(f"门控状态文件不存在，使用冷启动在线门控: {resolved_gate_state_path}")
 
@@ -258,7 +280,6 @@ def get_paper_symbol_field_mapping() -> dict[str, str]:
     return {
         "E_daily": "E_daily_kwh_per_day",
         "eta_saving": "eta_saving_pct",
-        "V_comfort": "violation_time_pct",
         "PPR": "PPR_percent",
         "sigma_delta_a": "sigma_delta_a",
         "N_daily": "N_daily_count_per_day",

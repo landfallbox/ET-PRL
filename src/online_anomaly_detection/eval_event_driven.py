@@ -80,7 +80,6 @@ def eval_event_driven(
         "事件驱动评估完成: "
         f"total_reward={summary['total_reward']:.4f}, "
         f"action_count={summary['action_count']}, "
-        f"event_trigger_rate={summary['event_trigger_rate']:.4f}, "
-        f"violation_time_pct={summary['violation_time_pct']:.2f}%"
+        f"event_trigger_rate={summary['event_trigger_rate']:.4f}"
     )
     logger.info(f"结果保存: {step_results_path}")

@@ -48,8 +48,6 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         - float(fixed_summary.get("avg_comfort_score", 0.0)),
         "energy_change": float(event_summary.get("avg_energy_score", 0.0))
         - float(fixed_summary.get("avg_energy_score", 0.0)),
-        "violation_time_pct_change": float(event_summary.get("violation_time_pct", 0.0))
-        - float(fixed_summary.get("violation_time_pct", 0.0)),
         "action_reduction": int(action_reduction),
         "action_reduction_pct": float(action_reduction_pct),
         "PPR": float(ppr),
@@ -77,9 +75,6 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         "trigger_rate_change": float(trigger_rate_event - trigger_rate_fixed),
         "trigger_rate_change_pct": float(
             ((trigger_rate_event - trigger_rate_fixed) / trigger_rate_fixed * 100.0) if trigger_rate_fixed > 0 else 0.0
-        ),
-        "delta_V_pct_point": float(
-            float(event_summary.get("violation_time_pct", 0.0)) - float(fixed_summary.get("violation_time_pct", 0.0))
         ),
     }
 
@@ -134,6 +129,8 @@ def run_ablation_experiment(
         action_space=action_space,
         fixed_interval=fixed_interval,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
+        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
@@ -146,6 +143,8 @@ def run_ablation_experiment(
         gate=event_gate,
         feature_columns=config.FEATURE_COLUMNS,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
+        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)
