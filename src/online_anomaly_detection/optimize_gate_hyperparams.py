@@ -248,15 +248,10 @@ def optimize_gate_hyperparameters(
 
     baseline_env = SequenceEnv(fit_data, base_config.STATE_COLUMNS, reward_calc)
     baseline_summary, _ = evaluate_fixed_interval(
-        hyperparams = {
-            "alpha_local_weight": float(params["alpha_local_weight"]),
-            "threshold_quantile": float(params["threshold_quantile"]),
-            "contamination": float(params["contamination"]),
-            "reference_samples": int(params["reference_samples"]),
-        }
-        logger.info(
-            f"Trial {trial.number} 开始 | worker={worker_name} | active_trials={current_active} | "
-            f"hyperparams={json.dumps(hyperparams, ensure_ascii=False)}"
+        agent=agent,
+        env=baseline_env,
+        action_space=action_space,
+        fixed_interval=baseline_fixed_interval,
         supply_temp_ref=base_config.CHILLER_SUPPLY_TEMP_REF,
         comfort_lower_bound=base_config.COMFORT_LOWER_BOUND,
         comfort_upper_bound=base_config.COMFORT_UPPER_BOUND,
