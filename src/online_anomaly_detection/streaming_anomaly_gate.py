@@ -137,7 +137,7 @@ class StreamingAnomalyGate:
         # 2. 流式异常检测器（替代IsolationForest）
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
-            min_samples_for_optimization=threshold_min_samples_for_optimization,
+            update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
             distance_metric=OnlineAnomalyDetectionConfig.ISOLATION_DISTANCE_METRIC,
             contamination=contamination,
             decay_strategy=OnlineAnomalyDetectionConfig.ISOLATION_DECAY_STRATEGY,
