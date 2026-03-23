@@ -264,18 +264,30 @@ def combine_svgs(
     label_band_h = 56.0
     figure_shift_x = 8.0
     left_extra_whitespace = 56.0
-    canvas_w = padding + left_extra_whitespace + lw_layout + gap + rw_layout + legend_width + padding + figure_shift_x
+    b_left_shift = 14.0
+    inter_panel_gap = gap - 40.0
+    canvas_w = (
+        padding
+        + left_extra_whitespace
+        + rw_layout
+        + inter_panel_gap
+        + lw_layout
+        + legend_width
+        + padding
+        + figure_shift_x
+    )
     canvas_h = padding + content_h + label_band_h + padding
 
     # Center each sub-figure vertically within the combined canvas.
     ly = padding + (content_h - lh) / 2.0
     ry = padding + (content_h - rh) / 2.0
 
-    lx = padding + left_extra_whitespace + figure_shift_x
-    rx = padding + left_extra_whitespace + lw_layout + gap + figure_shift_x
-    # Anchor legend to the actual right edge of subplot-b plotting area,
-    # and keep the gap slightly smaller than the gap between subplots.
-    b_plot_right_global = rx + 940.0
+    # Swap panel positions: subplot-b on the left, subplot-a on the right.
+    b_right_nudge = 10.0
+    bx = padding + left_extra_whitespace + figure_shift_x - b_left_shift + b_right_nudge
+    ax = padding + left_extra_whitespace + rw_layout + inter_panel_gap + figure_shift_x - b_left_shift
+    # Anchor legend to the right edge of the right subplot area.
+    right_plot_right_global = ax + lw_layout
     legend_gap_to_b = max(gap + 46.0, 64.0)
 
     legend_box_w = legend_width - 56.0
@@ -283,13 +295,14 @@ def combine_svgs(
     legend_item_step = 34.0
     legend_inner_pad = 16.0
     legend_box_h = legend_inner_pad * 2 + marker_size + (len(methods) - 1) * legend_item_step
-    legend_box_x = b_plot_right_global + legend_gap_to_b
+    legend_box_x = right_plot_right_global + legend_gap_to_b
+    legend_box_x += 12.0
     legend_right_margin = 90.0
     max_legend_x = canvas_w - legend_right_margin - legend_box_w
     if legend_box_x > max_legend_x:
         legend_box_x = max_legend_x
-    # Keep legend vertically centered, then shift slightly upward.
-    legend_box_y = padding + (content_h - legend_box_h) / 2.0 - 26.0
+    # Place legend near the top-right area (as requested by visual annotation).
+    legend_box_y = padding + 8.0
     legend_x = legend_box_x + 16.0
     legend_first_center_y = legend_box_y + legend_inner_pad + marker_size / 2.0
 
@@ -301,14 +314,14 @@ def combine_svgs(
     )
     lines.append(f'<rect width="100%" height="100%" fill="{background}"/>')
 
-    # Subfigure A (left)
-    lines.append(f'<g transform="translate({lx:.2f},{ly:.2f})">')
-    lines.append(lbody)
+    # Subfigure B (left)
+    lines.append(f'<g transform="translate({bx:.2f},{ry:.2f})">')
+    lines.append(rbody)
     lines.append("</g>")
 
-    # Subfigure B (right)
-    lines.append(f'<g transform="translate({rx:.2f},{ry:.2f})">')
-    lines.append(rbody)
+    # Subfigure A (right)
+    lines.append(f'<g transform="translate({ax:.2f},{ly:.2f})">')
+    lines.append(lbody)
     lines.append("</g>")
 
     # Shared legend on the top-right side of the combined figure.
@@ -325,8 +338,8 @@ def combine_svgs(
         )
 
     # Subfigure titles and labels centered below each subplot.
-    a_center_x = lx + 430.0
-    b_center_x = rx + rw_layout / 2.0
+    b_center_x = bx + rw_layout / 2.0
+    a_center_x = ax + 430.0
     title_y = padding + content_h + 16.0
     label_y = padding + content_h + 20.0
     lines.append(
