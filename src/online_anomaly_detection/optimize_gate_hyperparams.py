@@ -41,80 +41,175 @@ def _load_prewarm_features(
     return merged.to_numpy(dtype=np.float32)
 
 
-def _create_search_space(config: type[CompareDQNConfig]) -> HyperparameterSpace:
+def _get_dynamic_param_range(
+    param_name: str,
+    config: type[CompareDQNConfig],
+    phase: str,
+    previous_best_value: float | None,
+    shrink_ratio: float = 0.2,
+) -> tuple[float | int, float | int]:
+    """
+    根据阶段和前阶段最优值，计算动态搜索范围
+    
+    参数：
+        param_name: 参数名（如'global_ema_decay'）
+        config: 配置类
+        phase: 当前阶段（'phase1', 'phase2', 'phase3'）
+        previous_best_value: 前阶段的最优值（None表示phase1或不需要动态缩小）
+        shrink_ratio: 范围缩小比例（默认±20%）
+    """
+    min_attr = f"GATE_OPT_{param_name.upper()}_MIN"
+    max_attr = f"GATE_OPT_{param_name.upper()}_MAX"
+    
+    default_min = getattr(config, min_attr)
+    default_max = getattr(config, max_attr)
+    
+    # Phase 1: 使用原始范围
+    if phase == "phase1" or previous_best_value is None:
+        return default_min, default_max
+    
+    # Phase 2/3: 在前阶段最优值周围缩小范围
+    range_width = default_max - default_min
+    shrink_amount = range_width * shrink_ratio
+    
+    new_min = max(default_min, previous_best_value - shrink_amount)
+    new_max = min(default_max, previous_best_value + shrink_amount)
+    
+    return new_min, new_max
+
+
+def _get_phase_params(phase: str) -> dict:
+    """获取每个阶段应该优化的参数列表"""
+    params_config = {
+        "phase1": {
+            "description": "Layer A: 核心决策参数（6个）",
+            "params": [
+                "threshold_bias",
+                "trigger_hysteresis_margin",
+                "threshold_quantile",
+                "threshold_mad_scale",
+                "contamination",
+                "threshold_local_update_rate",
+            ],
+            "trials": 60,
+        },
+        "phase2": {
+            "description": "Layer B: 自适应参数（5个）",
+            "params": [
+                "alpha_local_weight",
+                "global_ema_decay",
+                "threshold_min_samples_for_optimization",
+                "local_window_size",
+                "reference_samples",
+            ],
+            "trials": 50,
+        },
+        "phase3": {
+            "description": "Layer C+D: 融合与风格参数（3个）",
+            "params": [
+                "score_short_weight",
+                "score_medium_weight",
+                "threshold_quantile_weight",
+            ],
+            "trials": 40,
+        },
+    }
+    return params_config.get(phase, params_config["phase1"])
+
+
+def _load_previous_phase_best(
+    output_dir: Path,
+    current_phase: str,
+) -> dict | None:
+    """从前一个阶段加载最优参数"""
+    if current_phase == "phase1":
+        return None
+    
+    phase_order = {"phase2": "phase1", "phase3": "phase2"}
+    prev_phase = phase_order.get(current_phase)
+    if prev_phase is None:
+        return None
+    
+    prev_best_path = output_dir.parent / prev_phase / "best_params.json"
+    if not prev_best_path.exists():
+        return None
+    
+    try:
+        with open(prev_best_path) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _create_search_space(
+    config: type[CompareDQNConfig],
+    phase: str = "phase1",
+    previous_best_params: dict | None = None,
+    shrink_ratio: float = 0.2,
+) -> HyperparameterSpace:
+    """
+    构建超参搜索空间（支持多阶段）
+    
+    参数：
+        config: 配置类
+        phase: 当前优化阶段 ('phase1', 'phase2', 'phase3')
+        previous_best_params: 前一阶段的最优参数
+        shrink_ratio: 搜索范围缩小比例（相对于原始范围）
+    """
+    phase_cfg = _get_phase_params(phase)
+    params_to_optimize = phase_cfg["params"]
+    
     space = HyperparameterSpace()
-    (
-        space.add_float(
-            "global_ema_decay",
-            config.GATE_OPT_GLOBAL_EMA_DECAY_MIN,
-            config.GATE_OPT_GLOBAL_EMA_DECAY_MAX,
+    
+    # 参数->属性名的映射，便于在phase2/3中固定前阶段的参数
+    param_mapping = {
+        "global_ema_decay": ("float", config.GATE_OPT_GLOBAL_EMA_DECAY_MIN, config.GATE_OPT_GLOBAL_EMA_DECAY_MAX),
+        "alpha_local_weight": ("float", config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MIN, config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MAX),
+        "local_window_size": ("int", config.GATE_OPT_LOCAL_WINDOW_SIZE_MIN, config.GATE_OPT_LOCAL_WINDOW_SIZE_MAX),
+        "reference_samples": ("int", config.GATE_OPT_REFERENCE_SAMPLES_MIN, config.GATE_OPT_REFERENCE_SAMPLES_MAX),
+        "contamination": ("float", config.GATE_OPT_CONTAMINATION_MIN, config.GATE_OPT_CONTAMINATION_MAX),
+        "threshold_bias": ("float", config.GATE_OPT_THRESHOLD_BIAS_MIN, config.GATE_OPT_THRESHOLD_BIAS_MAX),
+        "threshold_quantile": ("float", config.GATE_OPT_THRESHOLD_QUANTILE_MIN, config.GATE_OPT_THRESHOLD_QUANTILE_MAX),
+        "threshold_mad_scale": ("float", config.GATE_OPT_THRESHOLD_MAD_SCALE_MIN, config.GATE_OPT_THRESHOLD_MAD_SCALE_MAX),
+        "threshold_local_update_rate": ("float", config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MIN, config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MAX),
+        "threshold_quantile_weight": ("float", config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MIN, config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MAX),
+        "threshold_min_samples_for_optimization": ("int", config.GATE_OPT_THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION_MIN, config.GATE_OPT_THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION_MAX),
+        "score_short_weight": ("float", config.GATE_OPT_SCORE_SHORT_WEIGHT_MIN, config.GATE_OPT_SCORE_SHORT_WEIGHT_MAX),
+        "score_medium_weight": ("float", config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MIN, config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MAX),
+        "trigger_hysteresis_margin": ("float", config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MIN, config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MAX),
+    }
+    
+    # 按顺序添加参数
+    for idx, param_name in enumerate(params_to_optimize):
+        if param_name not in param_mapping:
+            continue
+        
+        param_type, default_min, default_max = param_mapping[param_name]
+        
+        # 如果不是phase1，尝试从previous_best_params获取最优值并缩小范围
+        prev_value = None
+        if previous_best_params is not None and param_name in previous_best_params:
+            prev_value = previous_best_params[param_name]
+        
+        min_val, max_val = _get_dynamic_param_range(
+            param_name,
+            config,
+            phase,
+            prev_value,
+            shrink_ratio,
         )
-        .add_float(
-            "alpha_local_weight",
-            config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MIN,
-            config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MAX,
-        )
-        .add_int(
-            "local_window_size",
-            config.GATE_OPT_LOCAL_WINDOW_SIZE_MIN,
-            config.GATE_OPT_LOCAL_WINDOW_SIZE_MAX,
-        )
-        .add_int(
-            "reference_samples",
-            config.GATE_OPT_REFERENCE_SAMPLES_MIN,
-            config.GATE_OPT_REFERENCE_SAMPLES_MAX,
-        )
-        .add_float(
-            "contamination",
-            config.GATE_OPT_CONTAMINATION_MIN,
-            config.GATE_OPT_CONTAMINATION_MAX,
-        )
-        .add_float(
-            "threshold_bias",
-            config.GATE_OPT_THRESHOLD_BIAS_MIN,
-            config.GATE_OPT_THRESHOLD_BIAS_MAX,
-        )
-        .add_float(
-            "threshold_quantile",
-            config.GATE_OPT_THRESHOLD_QUANTILE_MIN,
-            config.GATE_OPT_THRESHOLD_QUANTILE_MAX,
-        )
-        .add_float(
-            "threshold_mad_scale",
-            config.GATE_OPT_THRESHOLD_MAD_SCALE_MIN,
-            config.GATE_OPT_THRESHOLD_MAD_SCALE_MAX,
-        )
-        .add_float(
-            "threshold_local_update_rate",
-            config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MIN,
-            config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MAX,
-        )
-        .add_float(
-            "threshold_quantile_weight",
-            config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MIN,
-            config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MAX,
-        )
-        .add_int(
-            "threshold_min_samples_for_optimization",
-            config.GATE_OPT_THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION_MIN,
-            config.GATE_OPT_THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION_MAX,
-        )
-        .add_float(
-            "score_short_weight",
-            config.GATE_OPT_SCORE_SHORT_WEIGHT_MIN,
-            config.GATE_OPT_SCORE_SHORT_WEIGHT_MAX,
-        )
-        .add_float(
-            "score_medium_weight",
-            config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MIN,
-            config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MAX,
-        )
-        .add_float(
-            "trigger_hysteresis_margin",
-            config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MIN,
-            config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MAX,
-        )
-    )
+        
+        if param_type == "float":
+            if idx == 0:
+                space.add_float(param_name, min_val, max_val)
+            else:
+                space.add_float(param_name, min_val, max_val)
+        else:  # int
+            if idx == 0:
+                space.add_int(param_name, int(min_val), int(max_val))
+            else:
+                space.add_int(param_name, int(min_val), int(max_val))
+    
     return space
 
 
@@ -212,18 +307,34 @@ def optimize_gate_hyperparameters(
     n_jobs: int | None = None,
 ) -> dict:
     base_config = CompareDQNConfig
+    
+    # 多阶段优化配置
+    current_phase = getattr(base_config, "GATE_OPTIMIZATION_PHASE", "phase1")
+    phase_cfg = _get_phase_params(current_phase)
+    phase_shrink_ratio = float(getattr(base_config, "GATE_OPTIMIZATION_PHASE_RANGE_SHRINK_RATIO", 0.2))
 
     if n_trials is None:
-        n_trials = int(base_config.GATE_OPTIMIZATION_DEFAULT_TRIALS)
+        # 根据phase使用对应的trials数
+        phase_trials_attr = f"GATE_OPTIMIZATION_{current_phase.upper()}_TRIALS"
+        n_trials = int(getattr(base_config, phase_trials_attr, base_config.GATE_OPTIMIZATION_DEFAULT_TRIALS))
     if n_jobs is None:
         n_jobs = int(base_config.GATE_OPTIMIZATION_DEFAULT_N_JOBS)
 
-    output_dir = OnlineAnomalyDetectionConfig.get_optimization_dir() / OnlineAnomalyDetectionConfig.TIMESTAMP / "gate"
+    # 为每个phase创建独立目录
+    base_output_dir = OnlineAnomalyDetectionConfig.get_optimization_dir() / OnlineAnomalyDetectionConfig.TIMESTAMP
+    output_dir = base_output_dir / current_phase / "gate"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = Logger(output_dir)
-    logger.info("开始 Gate 超参优化（最小动作频率 + 性能退化约束惩罚）")
+    logger.info(f"开始 Gate 超参优化 [{current_phase.upper()}] - {phase_cfg['description']}")
     logger.info(f"试验次数: {n_trials}, 并行任务数: {n_jobs}")
+    
+    # 加载前一阶段的最优参数（仅phase2/3）
+    previous_best_params = _load_previous_phase_best(output_dir, current_phase)
+    if previous_best_params is not None:
+        logger.info(f"已加载 {list(previous_best_params.keys())} 的最优值(来自前阶段)")
+    
+    logger.info(f"本阶段优化参数: {phase_cfg['params']}")
 
     reward_drop_tolerance_ratio = float(base_config.GATE_OPT_REWARD_DROP_TOLERANCE_RATIO)
     energy_increase_tolerance_ratio = float(base_config.GATE_OPT_ENERGY_INCREASE_TOLERANCE_RATIO)
@@ -283,7 +394,12 @@ def optimize_gate_hyperparameters(
         f"energy_daily={baseline_energy_daily:.4f}, action_rate={baseline_action_rate:.4f}"
     )
 
-    space = _create_search_space(base_config)
+    space = _create_search_space(
+        config=base_config,
+        phase=current_phase,
+        previous_best_params=previous_best_params,
+        shrink_ratio=phase_shrink_ratio,
+    )
     optimizer = BayesianOptimizer(
         space=space,
         output_dir=output_dir,
@@ -404,29 +520,60 @@ def optimize_gate_hyperparameters(
     best_precision = float(best_trial.user_attrs.get("precision", 0.0)) if best_trial is not None else 0.0
     best_fdr = float(best_trial.user_attrs.get("false_discovery_rate", 0.0)) if best_trial is not None else 0.0
     best_action_rate = float(best_trial.user_attrs.get("action_rate", 0.0)) if best_trial is not None else 0.0
+    
+    # 合并多阶段参数：前阶段best + 当前阶段best + 配置默认值
+    merged_best_params = {}
+    all_params = [
+        "global_ema_decay", "alpha_local_weight", "local_window_size", "reference_samples",
+        "contamination", "threshold_bias", "threshold_quantile", "threshold_mad_scale",
+        "threshold_local_update_rate", "threshold_quantile_weight", "threshold_min_samples_for_optimization",
+        "score_short_weight", "score_medium_weight", "trigger_hysteresis_margin",
+    ]
+    
+    # 初始化：使用config默认值或previous_best_params
+    for param in all_params:
+        if previous_best_params is not None and param in previous_best_params:
+            merged_best_params[param] = previous_best_params[param]
+        elif param in best_params:
+            merged_best_params[param] = best_params[param]
+        else:
+            # 从config获取默认值
+            min_attr = f"GATE_OPT_{param.upper()}_MIN"
+            max_attr = f"GATE_OPT_{param.upper()}_MAX"
+            default_val = (getattr(base_config, min_attr, None) + getattr(base_config, max_attr, None)) / 2
+            if default_val is not None:
+                merged_best_params[param] = default_val
+    
+    # 保存本阶段best_params为JSON，供下一阶段加载
+    best_params_json_path = output_dir / "best_params.json"
+    with open(best_params_json_path, "w") as f:
+        # 只保存本阶段的best_params，避免与default混淆
+        json.dump(best_params, f, indent=2)
+    logger.info(f"已保存 {current_phase} 最优参数到: {best_params_json_path}")
+    
     best_config_overrides = {
-        "GATE_GLOBAL_EMA_DECAY": float(best_params["global_ema_decay"]),
-        "GATE_ALPHA_LOCAL_WEIGHT": float(best_params["alpha_local_weight"]),
-        "GATE_LOCAL_WINDOW_SIZE": int(best_params["local_window_size"]),
-        "GATE_REFERENCE_SAMPLES": int(best_params["reference_samples"]),
-        "GATE_CONTAMINATION": float(best_params["contamination"]),
-        "GATE_THRESHOLD_BIAS": float(best_params["threshold_bias"]),
-        "THRESHOLD_QUANTILE": float(best_params["threshold_quantile"]),
-        "THRESHOLD_MAD_SCALE": float(best_params["threshold_mad_scale"]),
-        "THRESHOLD_LOCAL_UPDATE_RATE": float(best_params["threshold_local_update_rate"]),
-        "THRESHOLD_QUANTILE_WEIGHT": float(best_params["threshold_quantile_weight"]),
-        "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION": int(best_params["threshold_min_samples_for_optimization"]),
-        "GATE_SCORE_SHORT_WEIGHT": float(best_params["score_short_weight"]),
-        "GATE_SCORE_MEDIUM_WEIGHT": float(best_params["score_medium_weight"]),
+        "GATE_GLOBAL_EMA_DECAY": float(merged_best_params["global_ema_decay"]),
+        "GATE_ALPHA_LOCAL_WEIGHT": float(merged_best_params["alpha_local_weight"]),
+        "GATE_LOCAL_WINDOW_SIZE": int(merged_best_params["local_window_size"]),
+        "GATE_REFERENCE_SAMPLES": int(merged_best_params["reference_samples"]),
+        "GATE_CONTAMINATION": float(merged_best_params["contamination"]),
+        "GATE_THRESHOLD_BIAS": float(merged_best_params["threshold_bias"]),
+        "THRESHOLD_QUANTILE": float(merged_best_params["threshold_quantile"]),
+        "THRESHOLD_MAD_SCALE": float(merged_best_params["threshold_mad_scale"]),
+        "THRESHOLD_LOCAL_UPDATE_RATE": float(merged_best_params["threshold_local_update_rate"]),
+        "THRESHOLD_QUANTILE_WEIGHT": float(merged_best_params["threshold_quantile_weight"]),
+        "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION": int(merged_best_params["threshold_min_samples_for_optimization"]),
+        "GATE_SCORE_SHORT_WEIGHT": float(merged_best_params["score_short_weight"]),
+        "GATE_SCORE_MEDIUM_WEIGHT": float(merged_best_params["score_medium_weight"]),
         "GATE_SCORE_LONG_WEIGHT": float(
-            max(0.01, 1.0 - float(best_params["score_short_weight"]) - float(best_params["score_medium_weight"]))
+            max(0.01, 1.0 - float(merged_best_params["score_short_weight"]) - float(merged_best_params["score_medium_weight"]))
         ),
-        "GATE_TRIGGER_HYSTERESIS_MARGIN": float(best_params["trigger_hysteresis_margin"]),
+        "GATE_TRIGGER_HYSTERESIS_MARGIN": float(merged_best_params["trigger_hysteresis_margin"]),
     }
 
     holdout_evaluation: dict | None = None
     if holdout_data is not None and not holdout_data.empty:
-        best_trial_config = _build_trial_config(base_config, best_params)
+        best_trial_config = _build_trial_config(base_config, merged_best_params)
 
         holdout_baseline_env = SequenceEnv(holdout_data, base_config.STATE_COLUMNS, reward_calc)
         holdout_baseline_summary, _ = evaluate_fixed_interval(
