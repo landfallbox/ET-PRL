@@ -99,6 +99,11 @@ def _create_search_space(config: type[CompareDQNConfig]) -> HyperparameterSpace:
             config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MIN,
             config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MAX,
         )
+        .add_int(
+            "min_trigger_interval_steps",
+            config.GATE_OPT_MIN_TRIGGER_INTERVAL_STEPS_MIN,
+            config.GATE_OPT_MIN_TRIGGER_INTERVAL_STEPS_MAX,
+        )
     )
     return space
 
@@ -129,6 +134,7 @@ def _build_trial_config(base_cls: type[CompareDQNConfig], params: dict) -> type[
     setattr(TrialConfig, "GATE_SCORE_MEDIUM_WEIGHT", score_medium_weight)
     setattr(TrialConfig, "GATE_SCORE_LONG_WEIGHT", float(score_long_weight))
     setattr(TrialConfig, "GATE_TRIGGER_HYSTERESIS_MARGIN", float(params["trigger_hysteresis_margin"]))
+    setattr(TrialConfig, "GATE_MIN_TRIGGER_INTERVAL_STEPS", int(params["min_trigger_interval_steps"]))
 
     return TrialConfig
 
@@ -286,7 +292,8 @@ def optimize_gate_hyperparameters(
         logger.info(
             f"Trial {trial.number} 开始 | worker={worker_name} | active_trials={current_active} | "
             f"alpha={params['alpha_local_weight']:.3f}, q={params['threshold_quantile']:.3f}, "
-            f"cont={params['contamination']:.3f}, ref={params['reference_samples']}"
+            f"cont={params['contamination']:.3f}, ref={params['reference_samples']}, "
+            f"delta_min={params['min_trigger_interval_steps']}"
         )
 
         try:
@@ -399,6 +406,7 @@ def optimize_gate_hyperparameters(
             max(0.01, 1.0 - float(best_params["score_short_weight"]) - float(best_params["score_medium_weight"]))
         ),
         "GATE_TRIGGER_HYSTERESIS_MARGIN": float(best_params["trigger_hysteresis_margin"]),
+        "GATE_MIN_TRIGGER_INTERVAL_STEPS": int(best_params["min_trigger_interval_steps"]),
     }
 
     holdout_evaluation: dict | None = None
