@@ -138,9 +138,7 @@ class StreamingAnomalyGate:
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
             update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
-            distance_metric=OnlineAnomalyDetectionConfig.ISOLATION_DISTANCE_METRIC,
             contamination=contamination,
-            decay_strategy=OnlineAnomalyDetectionConfig.ISOLATION_DECAY_STRATEGY,
         )
 
         # 3. 双层阈值优化器

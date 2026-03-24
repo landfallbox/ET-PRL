@@ -45,6 +45,11 @@ def _create_search_space(config: type[CompareDQNConfig]) -> HyperparameterSpace:
     space = HyperparameterSpace()
     (
         space.add_float(
+            "global_ema_decay",
+            config.GATE_OPT_GLOBAL_EMA_DECAY_MIN,
+            config.GATE_OPT_GLOBAL_EMA_DECAY_MAX,
+        )
+        .add_float(
             "alpha_local_weight",
             config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MIN,
             config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MAX,
@@ -65,6 +70,11 @@ def _create_search_space(config: type[CompareDQNConfig]) -> HyperparameterSpace:
             config.GATE_OPT_CONTAMINATION_MAX,
         )
         .add_float(
+            "threshold_bias",
+            config.GATE_OPT_THRESHOLD_BIAS_MIN,
+            config.GATE_OPT_THRESHOLD_BIAS_MAX,
+        )
+        .add_float(
             "threshold_quantile",
             config.GATE_OPT_THRESHOLD_QUANTILE_MIN,
             config.GATE_OPT_THRESHOLD_QUANTILE_MAX,
@@ -78,6 +88,11 @@ def _create_search_space(config: type[CompareDQNConfig]) -> HyperparameterSpace:
             "threshold_local_update_rate",
             config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MIN,
             config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MAX,
+        )
+        .add_float(
+            "threshold_quantile_weight",
+            config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MIN,
+            config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MAX,
         )
         .add_int(
             "threshold_min_samples_for_optimization",
@@ -112,14 +127,17 @@ def _build_trial_config(base_cls: type[CompareDQNConfig], params: dict) -> type[
     class TrialConfig(base_cls):
         pass
 
+    setattr(TrialConfig, "GATE_GLOBAL_EMA_DECAY", float(params["global_ema_decay"]))
     setattr(TrialConfig, "GATE_ALPHA_LOCAL_WEIGHT", float(params["alpha_local_weight"]))
     setattr(TrialConfig, "GATE_LOCAL_WINDOW_SIZE", int(params["local_window_size"]))
     setattr(TrialConfig, "GATE_REFERENCE_SAMPLES", int(params["reference_samples"]))
     setattr(TrialConfig, "GATE_CONTAMINATION", float(params["contamination"]))
 
+    setattr(TrialConfig, "GATE_THRESHOLD_BIAS", float(params["threshold_bias"]))
     setattr(TrialConfig, "THRESHOLD_QUANTILE", float(params["threshold_quantile"]))
     setattr(TrialConfig, "THRESHOLD_MAD_SCALE", float(params["threshold_mad_scale"]))
     setattr(TrialConfig, "THRESHOLD_LOCAL_UPDATE_RATE", float(params["threshold_local_update_rate"]))
+    setattr(TrialConfig, "THRESHOLD_QUANTILE_WEIGHT", float(params["threshold_quantile_weight"]))
     setattr(
         TrialConfig,
         "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION",
@@ -291,7 +309,9 @@ def optimize_gate_hyperparameters(
 
         logger.info(
             f"Trial {trial.number} 开始 | worker={worker_name} | active_trials={current_active} | "
-            f"alpha={params['alpha_local_weight']:.3f}, q={params['threshold_quantile']:.3f}, "
+            f"alpha={params['alpha_local_weight']:.3f}, ema={params['global_ema_decay']:.4f}, "
+            f"q={params['threshold_quantile']:.3f}, qw={params['threshold_quantile_weight']:.3f}, "
+            f"bias={params['threshold_bias']:.3f}, "
             f"cont={params['contamination']:.3f}, ref={params['reference_samples']}, "
             f"delta_min={params['min_trigger_interval_steps']}"
         )
@@ -392,13 +412,16 @@ def optimize_gate_hyperparameters(
     best_fdr = float(best_trial.user_attrs.get("false_discovery_rate", 0.0)) if best_trial is not None else 0.0
     best_action_rate = float(best_trial.user_attrs.get("action_rate", 0.0)) if best_trial is not None else 0.0
     best_config_overrides = {
+        "GATE_GLOBAL_EMA_DECAY": float(best_params["global_ema_decay"]),
         "GATE_ALPHA_LOCAL_WEIGHT": float(best_params["alpha_local_weight"]),
         "GATE_LOCAL_WINDOW_SIZE": int(best_params["local_window_size"]),
         "GATE_REFERENCE_SAMPLES": int(best_params["reference_samples"]),
         "GATE_CONTAMINATION": float(best_params["contamination"]),
+        "GATE_THRESHOLD_BIAS": float(best_params["threshold_bias"]),
         "THRESHOLD_QUANTILE": float(best_params["threshold_quantile"]),
         "THRESHOLD_MAD_SCALE": float(best_params["threshold_mad_scale"]),
         "THRESHOLD_LOCAL_UPDATE_RATE": float(best_params["threshold_local_update_rate"]),
+        "THRESHOLD_QUANTILE_WEIGHT": float(best_params["threshold_quantile_weight"]),
         "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION": int(best_params["threshold_min_samples_for_optimization"]),
         "GATE_SCORE_SHORT_WEIGHT": float(best_params["score_short_weight"]),
         "GATE_SCORE_MEDIUM_WEIGHT": float(best_params["score_medium_weight"]),
