@@ -9,9 +9,6 @@ class OnlineAnomalyDetectionConfig(CommonConfig):
     # 输入特征
     FEATURE_COLUMNS = ["CL", "Twb", "CL_predict"]
 
-    # OnlineFeatureEnhancer
-    FEATURE_WINDOW_SIZES = [3, 5, 12, 24]
-
     # StreamingAnomalyGate
     GATE_LOCAL_WINDOW_SIZE = 187
     GATE_GLOBAL_EMA_DECAY = 0.0368
@@ -21,9 +18,7 @@ class OnlineAnomalyDetectionConfig(CommonConfig):
     GATE_THRESHOLD_BIAS = -0.106
     GATE_SCORE_SHORT_WEIGHT = 0.36
     GATE_SCORE_MEDIUM_WEIGHT = 0.40
-    GATE_SCORE_LONG_WEIGHT = 0.23
     GATE_TRIGGER_HYSTERESIS_MARGIN = 0.020815156921978026
-    GATE_MIN_TRIGGER_INTERVAL_STEPS = 1
 
     # StreamingStats
     STATS_EMA_DECAY = 0.01
@@ -79,13 +74,3 @@ class OnlineAnomalyDetectionConfig(CommonConfig):
     GATE_OPT_SCORE_MEDIUM_WEIGHT_MAX = 0.5
     GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MIN = 0.0
     GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MAX = 0.12
-    GATE_OPT_MIN_TRIGGER_INTERVAL_STEPS_MIN = 1
-    GATE_OPT_MIN_TRIGGER_INTERVAL_STEPS_MAX = 12
-
-    # MultiScaleDistributionTracker
-    TRACKER_WINDOWS = {
-        "short": 100,
-        "medium": 1440,
-        "long": 10080,
-    }
-    TRACKER_EMA_DECAY = 0.01

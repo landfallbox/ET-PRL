@@ -20,7 +20,6 @@ class GateDecision:
 
     gate_signal: int  # 0=正常, 1=异常(触发DQN)
     anomaly_score: float  # 0-1的异常分数
-    confidence: float  # 0-1的置信度
     adaptive_threshold: float  # 当前自适应阈值
     timestamp: Optional[float] = None  # 样本时间戳
 
@@ -54,7 +53,6 @@ class StreamingAnomalyGate:
         score_medium_weight: Optional[float] = None,
         score_long_weight: Optional[float] = None,
         trigger_hysteresis_margin: Optional[float] = None,
-        min_trigger_interval_steps: Optional[int] = None,
     ):
         """
         初始化在线异常检测门控
@@ -76,7 +74,6 @@ class StreamingAnomalyGate:
             score_medium_weight: 中时异常分数权重
             score_long_weight: 长时异常分数权重
             trigger_hysteresis_margin: 触发滞回边际（抑制阈值附近抖动）
-            min_trigger_interval_steps: 最小触发间隔步数（抑制高频连续触发）
         """
         self.feature_dim = feature_dim
         self.sample_count = 0
@@ -113,8 +110,6 @@ class StreamingAnomalyGate:
             score_long_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_LONG_WEIGHT
         if trigger_hysteresis_margin is None:
             trigger_hysteresis_margin = OnlineAnomalyDetectionConfig.GATE_TRIGGER_HYSTERESIS_MARGIN
-        if min_trigger_interval_steps is None:
-            min_trigger_interval_steps = OnlineAnomalyDetectionConfig.GATE_MIN_TRIGGER_INTERVAL_STEPS
 
         score_weight_sum = float(score_short_weight + score_medium_weight + score_long_weight)
         if score_weight_sum <= 0.0:
@@ -125,7 +120,6 @@ class StreamingAnomalyGate:
         self.score_long_weight = float(score_long_weight / score_weight_sum)
         self.threshold_bias = float(threshold_bias)
         self.trigger_hysteresis_margin = float(max(0.0, trigger_hysteresis_margin))
-        self.min_trigger_interval_steps = int(max(0, min_trigger_interval_steps))
 
         # 1. 流式特征统计维护器
         self.feature_stats = StreamingStats(
@@ -154,11 +148,7 @@ class StreamingAnomalyGate:
         )
 
         # 4. 多尺度分布追踪器
-        self.multi_scale_tracker = MultiScaleDistributionTracker(
-            feature_dim=feature_dim,
-            windows=OnlineAnomalyDetectionConfig.TRACKER_WINDOWS,
-            ema_decay=OnlineAnomalyDetectionConfig.TRACKER_EMA_DECAY,
-        )
+
 
         # 初始化状态
         self._initialized = False
@@ -240,15 +230,11 @@ class StreamingAnomalyGate:
         # 5. 做二值决策（含防抖约束）
         trigger_threshold = float(np.clip(adaptive_threshold + self.trigger_hysteresis_margin, 0.0, 1.0))
         is_above_trigger_threshold = fused_anomaly_score > trigger_threshold
-        enough_interval = (self.sample_count - self._last_trigger_step) > self.min_trigger_interval_steps
-        gate_signal = 1 if (is_above_trigger_threshold and enough_interval) else 0
+        gate_signal = 1 if is_above_trigger_threshold else 0
         if gate_signal == 1:
             self._last_trigger_step = self.sample_count
 
-        # 6. 计算置信度（分数离阈值的距离）
-        confidence = self._compute_confidence(fused_anomaly_score, adaptive_threshold)
-
-        # 7. 更新模块（关键步骤：在线学习）
+        # 6. 更新模块（关键步骤：在线学习）
         self._update_on_new_sample(
             sample=sample,
             normalized_sample=normalized_sample,
@@ -260,21 +246,9 @@ class StreamingAnomalyGate:
         return GateDecision(
             gate_signal=gate_signal,
             anomaly_score=fused_anomaly_score,
-            confidence=confidence,
             adaptive_threshold=trigger_threshold,
             timestamp=timestamp,
         )
-
-    def _compute_confidence(self, score: float, threshold: float) -> float:
-        """
-        计算置信度（分数离阈值的距离）
-
-        分数离阈值越远，置信度越高
-        """
-        distance_to_threshold = abs(score - threshold)
-        # 使用sigmoid函数映射到(0, 1)
-        confidence = 1.0 / (1.0 + np.exp(-2 * (distance_to_threshold - 0.1)))
-        return float(np.clip(confidence, 0.0, 1.0))
 
     def _update_on_new_sample(
         self,
@@ -309,8 +283,7 @@ class StreamingAnomalyGate:
             perform_optimization=True,
         )
 
-        # 4. 更新多尺度分布追踪
-        self.multi_scale_tracker.update(normalized_sample)
+
 
     def predict_batch(
         self,
@@ -350,12 +323,11 @@ class StreamingAnomalyGate:
             },
             "threshold_bias": self.threshold_bias,
             "trigger_hysteresis_margin": self.trigger_hysteresis_margin,
-            "min_trigger_interval_steps": self.min_trigger_interval_steps,
             "last_trigger_step": self._last_trigger_step,
             "feature_stats": self.feature_stats.get_statistics(),
             "anomaly_detector": self.anomaly_detector.get_statistics(),
             "threshold_optimizer": self.threshold_optimizer.get_statistics(),
-            "multi_scale_tracker": self.multi_scale_tracker.get_all_statistics(),
+
         }
 
     def report_feedback(self, decision_id: int, true_label: int) -> None:
@@ -394,12 +366,11 @@ class StreamingAnomalyGate:
             "sample_count": self.sample_count,
             "initialized": self._initialized,
             "trigger_hysteresis_margin": self.trigger_hysteresis_margin,
-            "min_trigger_interval_steps": self.min_trigger_interval_steps,
             "last_trigger_step": self._last_trigger_step,
             "feature_stats": self.feature_stats,
             "anomaly_detector": self.anomaly_detector,
             "threshold_optimizer": self.threshold_optimizer,
-            "multi_scale_tracker": self.multi_scale_tracker,
+
         }
 
         with open(target_path, "wb") as file:
@@ -435,9 +406,6 @@ class StreamingAnomalyGate:
         self.trigger_hysteresis_margin = float(
             payload.get("trigger_hysteresis_margin", self.trigger_hysteresis_margin)
         )
-        self.min_trigger_interval_steps = int(
-            payload.get("min_trigger_interval_steps", self.min_trigger_interval_steps)
-        )
         self._last_trigger_step = int(payload.get("last_trigger_step", -10**9))
         self.feature_stats = payload["feature_stats"]
         self.anomaly_detector = payload["anomaly_detector"]
@@ -452,6 +420,6 @@ class StreamingAnomalyGate:
         loaded_threshold_optimizer.local_update_rate = configured_threshold_optimizer.local_update_rate
         loaded_threshold_optimizer.quantile_weight = configured_threshold_optimizer.quantile_weight
         self.threshold_optimizer = loaded_threshold_optimizer
-        self.multi_scale_tracker = payload["multi_scale_tracker"]
+
 
 

@@ -176,9 +176,8 @@ def create_streaming_gate(
         threshold_min_samples_for_optimization=config.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
         score_short_weight=config.GATE_SCORE_SHORT_WEIGHT,
         score_medium_weight=config.GATE_SCORE_MEDIUM_WEIGHT,
-        score_long_weight=config.GATE_SCORE_LONG_WEIGHT,
+        score_long_weight=0.0,  # 在gate内部动态计算: max(0.01, 1.0 - short - medium)
         trigger_hysteresis_margin=config.GATE_TRIGGER_HYSTERESIS_MARGIN,
-        min_trigger_interval_steps=config.GATE_MIN_TRIGGER_INTERVAL_STEPS,
     )
 
     if gate_state_path is not None:
