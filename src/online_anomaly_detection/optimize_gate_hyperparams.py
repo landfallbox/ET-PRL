@@ -120,9 +120,23 @@ def _get_phase_params(phase: str) -> dict:
 def _load_previous_phase_best(
     output_dir: Path,
     current_phase: str,
+    previous_phase_result_dir: Path | None = None,
+    logger: Logger | None = None,
 ) -> dict | None:
-    """从前一个阶段加载最优参数"""
+    """从前一个阶段加载最优参数
+    
+    Args:
+        output_dir: 当前phase的输出目录
+        current_phase: 当前阶段（'phase1', 'phase2', 'phase3'）
+        previous_phase_result_dir: 显式指定的前阶段结果目录路径
+        logger: 日志对象，用于详细的输出信息
+    
+    Returns:
+        前阶段最优参数dict，或None（phase1或找不到结果）
+    """
     if current_phase == "phase1":
+        if logger:
+            logger.info("[Phase 1] 初始阶段，无前阶段结果可继承")
         return None
     
     phase_order = {"phase2": "phase1", "phase3": "phase2"}
@@ -130,13 +144,50 @@ def _load_previous_phase_best(
     if prev_phase is None:
         return None
     
-    prev_best_path = output_dir.parent / prev_phase / "best_params.json"
-    if not prev_best_path.exists():
+    # 确定前阶段最优参数文件的路径
+    candidate_paths: list[Path] = []
+    if previous_phase_result_dir is not None:
+        # 显式路径兼容两种输入：
+        # 1) .../phase1
+        # 2) .../phase1/gate
+        candidate_paths = [
+            previous_phase_result_dir / "best_params.json",
+            previous_phase_result_dir / "gate" / "best_params.json",
+        ]
+        source_hint = f"(显式指定: {previous_phase_result_dir})"
+    else:
+        # 回退：自动检测（相同timestamp）下的标准gate目录
+        candidate_paths = [
+            output_dir.parent / prev_phase / "gate" / "best_params.json",
+            output_dir.parent / prev_phase / "best_params.json",
+        ]
+        source_hint = f"(自动检测: {output_dir.parent})"
+
+    prev_best_path = next((path for path in candidate_paths if path.exists()), None)
+
+    if prev_best_path is None:
+        if logger:
+            logger.warning(
+                f"[{current_phase.upper()}] 前阶段结果不存在 {source_hint}\n"
+                f"      尝试路径: {[str(p) for p in candidate_paths]}\n"
+                f"      这可能意味着 {prev_phase} 尚未运行，请先执行该阶段"
+            )
         return None
     
     try:
         with open(prev_best_path) as f:
-            return json.load(f)
+            params = json.load(f)
+        if logger:
+            logger.info(
+                f"[{current_phase.upper()}] ✓ 已加载 {prev_phase.upper()} 的最优参数 {source_hint}"
+            )
+            logger.info(
+                f"             文件: {prev_best_path}"
+            )
+            logger.info(
+                f"             参数: {list(params.keys())}"
+            )
+        return params
     except Exception:
         return None
 
@@ -322,6 +373,7 @@ def optimize_gate_hyperparameters(
     train_experiment_dir: Path | None = None,
     n_trials: int | None = None,
     n_jobs: int | None = None,
+    previous_phase_result_dir: Path | None = None,
 ) -> dict:
     base_config = CompareDQNConfig
     
@@ -343,15 +395,26 @@ def optimize_gate_hyperparameters(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = Logger(output_dir)
-    logger.info(f"开始 Gate 超参优化 [{current_phase.upper()}] - {phase_cfg['description']}")
+    
+    # 设置清晰的日志头
+    logger.info("" + "="*70)
+    logger.info(f"多阶段超参优化调度")
+    logger.info("="*70)
+    logger.info(f"当前阶段: {current_phase.upper()}")
+    logger.info(f"阶段描述: {phase_cfg['description']}")
     logger.info(f"试验次数: {n_trials}, 并行任务数: {n_jobs}")
+    logger.info(f"输出目录: {output_dir}")
     
     # 加载前一阶段的最优参数（仅phase2/3）
-    previous_best_params = _load_previous_phase_best(output_dir, current_phase)
-    if previous_best_params is not None:
-        logger.info(f"已加载 {list(previous_best_params.keys())} 的最优值(来自前阶段)")
+    previous_best_params = _load_previous_phase_best(
+        output_dir, current_phase, previous_phase_result_dir, logger
+    )
     
-    logger.info(f"本阶段优化参数: {phase_cfg['params']}")
+    if previous_best_params is not None:
+        logger.info(f"搜索范围: 在前阶段最优值周围±{phase_shrink_ratio:.0%}缩小")
+    
+    logger.info(f"本阶段优化参数({len(phase_cfg['params'])}个): {phase_cfg['params']}")
+    logger.info("")
 
     reward_drop_tolerance_ratio = float(base_config.GATE_OPT_REWARD_DROP_TOLERANCE_RATIO)
     energy_increase_tolerance_ratio = float(base_config.GATE_OPT_ENERGY_INCREASE_TOLERANCE_RATIO)

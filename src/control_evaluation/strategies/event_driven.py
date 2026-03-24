@@ -44,7 +44,7 @@ def evaluate_event_driven(
         gate_signal = int(gate_decision.gate_signal)
         anomaly_score = float(gate_decision.anomaly_score)
         adaptive_threshold = float(gate_decision.adaptive_threshold)
-        decision_confidence = float(gate_decision.confidence)
+        decision_confidence = float(getattr(gate_decision, "confidence", np.nan))
 
         should_update_action = gate_signal == 1
         action_reason = "gate_trigger" if should_update_action else "hold"
