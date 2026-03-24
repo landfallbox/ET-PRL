@@ -217,31 +217,48 @@ def _build_trial_config(base_cls: type[CompareDQNConfig], params: dict) -> type[
     class TrialConfig(base_cls):
         pass
 
-    setattr(TrialConfig, "GATE_GLOBAL_EMA_DECAY", float(params["global_ema_decay"]))
-    setattr(TrialConfig, "GATE_ALPHA_LOCAL_WEIGHT", float(params["alpha_local_weight"]))
-    setattr(TrialConfig, "GATE_LOCAL_WINDOW_SIZE", int(params["local_window_size"]))
-    setattr(TrialConfig, "GATE_REFERENCE_SAMPLES", int(params["reference_samples"]))
-    setattr(TrialConfig, "GATE_CONTAMINATION", float(params["contamination"]))
-
-    setattr(TrialConfig, "GATE_THRESHOLD_BIAS", float(params["threshold_bias"]))
-    setattr(TrialConfig, "THRESHOLD_QUANTILE", float(params["threshold_quantile"]))
-    setattr(TrialConfig, "THRESHOLD_MAD_SCALE", float(params["threshold_mad_scale"]))
-    setattr(TrialConfig, "THRESHOLD_LOCAL_UPDATE_RATE", float(params["threshold_local_update_rate"]))
-    setattr(TrialConfig, "THRESHOLD_QUANTILE_WEIGHT", float(params["threshold_quantile_weight"]))
-    setattr(
-        TrialConfig,
-        "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION",
-        int(params["threshold_min_samples_for_optimization"]),
-    )
-
-    score_short_weight = float(params["score_short_weight"])
-    score_medium_weight = float(params["score_medium_weight"])
+    # 参数映射：参数名 -> (config属性名, 类型)
+    param_config_mapping = {
+        "global_ema_decay": ("GATE_GLOBAL_EMA_DECAY", float),
+        "alpha_local_weight": ("GATE_ALPHA_LOCAL_WEIGHT", float),
+        "local_window_size": ("GATE_LOCAL_WINDOW_SIZE", int),
+        "reference_samples": ("GATE_REFERENCE_SAMPLES", int),
+        "contamination": ("GATE_CONTAMINATION", float),
+        "threshold_bias": ("GATE_THRESHOLD_BIAS", float),
+        "threshold_quantile": ("THRESHOLD_QUANTILE", float),
+        "threshold_mad_scale": ("THRESHOLD_MAD_SCALE", float),
+        "threshold_local_update_rate": ("THRESHOLD_LOCAL_UPDATE_RATE", float),
+        "threshold_quantile_weight": ("THRESHOLD_QUANTILE_WEIGHT", float),
+        "threshold_min_samples_for_optimization": ("THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION", int),
+        "score_short_weight": ("GATE_SCORE_SHORT_WEIGHT", float),
+        "score_medium_weight": ("GATE_SCORE_MEDIUM_WEIGHT", float),
+        "trigger_hysteresis_margin": ("GATE_TRIGGER_HYSTERESIS_MARGIN", float),
+    }
+    
+    # 针对score_weight需要特别处理
+    has_score_short = "score_short_weight" in params
+    has_score_medium = "score_medium_weight" in params
+    
+    for param_name, (config_attr, param_type) in param_config_mapping.items():
+        if param_name in params:
+            # 使用优化进来的值
+            value = param_type(params[param_name])
+        else:
+            # 使用base_config的默认值
+            value = param_type(getattr(base_cls, config_attr))
+        
+        setattr(TrialConfig, config_attr, value)
+    
+    # 计算score_long_weight
+    if has_score_short and has_score_medium:
+        score_short_weight = float(params["score_short_weight"])
+        score_medium_weight = float(params["score_medium_weight"])
+    else:
+        score_short_weight = float(getattr(base_cls, "GATE_SCORE_SHORT_WEIGHT"))
+        score_medium_weight = float(getattr(base_cls, "GATE_SCORE_MEDIUM_WEIGHT"))
+    
     score_long_weight = max(0.01, 1.0 - score_short_weight - score_medium_weight)
-
-    setattr(TrialConfig, "GATE_SCORE_SHORT_WEIGHT", score_short_weight)
-    setattr(TrialConfig, "GATE_SCORE_MEDIUM_WEIGHT", score_medium_weight)
     setattr(TrialConfig, "GATE_SCORE_LONG_WEIGHT", float(score_long_weight))
-    setattr(TrialConfig, "GATE_TRIGGER_HYSTERESIS_MARGIN", float(params["trigger_hysteresis_margin"]))
 
     return TrialConfig
 
@@ -417,12 +434,36 @@ def optimize_gate_hyperparameters(
             active_trials["count"] += 1
             current_active = active_trials["count"]
 
+        # 构建日志字符串，只记录存在的参数
+        log_params = []
+        if "alpha_local_weight" in params:
+            log_params.append(f"alpha={params['alpha_local_weight']:.3f}")
+        if "global_ema_decay" in params:
+            log_params.append(f"ema={params['global_ema_decay']:.4f}")
+        if "threshold_quantile" in params:
+            log_params.append(f"q={params['threshold_quantile']:.3f}")
+        if "threshold_quantile_weight" in params:
+            log_params.append(f"qw={params['threshold_quantile_weight']:.3f}")
+        if "threshold_bias" in params:
+            log_params.append(f"bias={params['threshold_bias']:.3f}")
+        if "contamination" in params:
+            log_params.append(f"cont={params['contamination']:.3f}")
+        if "reference_samples" in params:
+            log_params.append(f"ref={params['reference_samples']}")
+        if "threshold_mad_scale" in params:
+            log_params.append(f"mad={params['threshold_mad_scale']:.3f}")
+        if "threshold_local_update_rate" in params:
+            log_params.append(f"lr={params['threshold_local_update_rate']:.3f}")
+        if "local_window_size" in params:
+            log_params.append(f"win={params['local_window_size']}")
+        if "score_short_weight" in params:
+            log_params.append(f"w_short={params['score_short_weight']:.3f}")
+        if "score_medium_weight" in params:
+            log_params.append(f"w_med={params['score_medium_weight']:.3f}")
+        
         logger.info(
             f"Trial {trial.number} 开始 | worker={worker_name} | active_trials={current_active} | "
-            f"alpha={params['alpha_local_weight']:.3f}, ema={params['global_ema_decay']:.4f}, "
-            f"q={params['threshold_quantile']:.3f}, qw={params['threshold_quantile_weight']:.3f}, "
-            f"bias={params['threshold_bias']:.3f}, "
-            f"cont={params['contamination']:.3f}, ref={params['reference_samples']}"
+            f"{', '.join(log_params)}"
         )
 
         try:
