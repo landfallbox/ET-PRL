@@ -106,6 +106,11 @@ def main() -> None:
         default=str(CompareDQNConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
         help="门控状态文件路径",
     )
+    parser.add_argument(
+        "--no-load-gate-state",
+        action="store_true",
+        help="跳过加载预热门控状态，从冷启动开始评估（用于新超参的精确性能评估）",
+    )
     args = parser.parse_args()
 
     if args.gate_config_path:
@@ -113,10 +118,13 @@ def main() -> None:
         gate_overrides = _load_overrides(gate_config_path)
         _apply_overrides_to_compare_config(CompareDQNConfig, gate_overrides, source_name="GATE")
 
+    # 如果指定了 --no-load-gate-state，则传 None 给 gate_state_path
+    gate_state_path = None if args.no_load_gate_state else (Path(args.gate_state_path) if args.gate_state_path else None)
+
     compare_control_strategies(
         train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
         fixed_interval=int(args.fixed_interval),
-        gate_state_path=Path(args.gate_state_path) if args.gate_state_path else None,
+        gate_state_path=gate_state_path,
     )
 
 
