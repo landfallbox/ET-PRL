@@ -103,11 +103,8 @@ def evaluate_event_driven(
     extended_metrics = compute_extended_evaluation_metrics(
         power_values=power_values,
         action_values=action_values,
-        supply_temperature_values=supply_temperature_values,
         action_count=action_update_count,
         sample_interval_minutes=5.0,
-        comfort_reference_temp=supply_temp_ref,
-        severe_violation_delta=3.0,
     )
 
     summary = {
@@ -129,9 +126,6 @@ def evaluate_event_driven(
         "E_daily_kwh_per_day": float(extended_metrics["E_daily_kwh_per_day"]),
         "N_daily_count_per_day": float(extended_metrics["N_daily_count_per_day"]),
         "sigma_delta_a": float(extended_metrics["sigma_delta_a"]),
-        "severe_violation_count": int(extended_metrics["severe_violation_count"]),
-        "severe_violation_rate_pct": float(extended_metrics["severe_violation_rate_pct"]),
-        "severe_violation_monthly_mean": float(extended_metrics["severe_violation_monthly_mean"]),
     }
 
     return summary, pd.DataFrame(records)
