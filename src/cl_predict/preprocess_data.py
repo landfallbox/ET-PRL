@@ -161,3 +161,8 @@ def preprocess_data():
     print(f"验证集已保存：{val_path}")
     print(f"测试集已保存：{test_path}")
     print("数据预处理完成！")
+
+
+def main() -> None:
+    """CLI 入口函数"""
+    preprocess_data()
