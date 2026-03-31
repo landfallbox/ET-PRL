@@ -29,7 +29,7 @@
 
 ## 目录约定
 
-- `src/applications/`：统一命令入口（CLI）
+- `src/cli/`：统一命令入口（CLI）
 - `src/dqn/`、`src/cl_predict/`、`src/control_evaluation/`：可复用业务模块
 - `src/online_anomaly_detection/`：在线异常门控与事件触发逻辑
 - `config/`：配置层（仅放配置，不放业务流程）
@@ -48,5 +48,5 @@
 ## 导入与工程规范
 
 - 统一通过包路径导入（例如 `src.*`、`config.*`），不要依赖当前工作目录的脚本相对导入
-- 可执行逻辑放在 `src/applications/`，业务目录仅保留可复用函数/类
+- 可执行逻辑放在 `src/cli/`，业务目录仅保留可复用函数/类
 - 通用编排能力优先沉淀到 `ml-toolkit`

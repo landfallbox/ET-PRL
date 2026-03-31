@@ -15,22 +15,22 @@ dependencies = [
 ]
 
 [project.scripts]
-event-dqn-train-dqn = "src.applications.dqn_train:main"
-event-dqn-eval-dqn = "src.applications.dqn_eval:main"
-event-dqn-optimize-dqn = "src.applications.dqn_optimize:main"
-event-dqn-preprocess-dqn = "src.applications.dqn_preprocess:main"
-event-dqn-train-lstm = "src.applications.lstm_train:main"
-event-dqn-eval-lstm = "src.applications.lstm_eval:main"
-event-dqn-optimize-lstm = "src.applications.lstm_optimize:main"
-event-dqn-preprocess-lstm = "src.applications.lstm_preprocess:main"
-event-dqn-predict-lstm = "src.applications.lstm_predict:main"
-event-dqn-eval-lstm-prediction = "src.applications.lstm_prediction_eval:main"
-event-dqn-compare-control = "src.applications.compare_control:main"
-event-dqn-eval-event-driven = "src.applications.event_driven_eval:main"
-event-dqn-prewarm-gate = "src.applications.gate_prewarm:main"
-event-dqn-optimize-gate = "src.applications.gate_optimize:main"
-event-dqn-generate-labels = "src.applications.generate_labels:main"
-event-dqn-run-ablation-all = "src.applications.ablation_run_all:main"
+event-dqn-train-dqn = "src.cli.dqn_train:main"
+event-dqn-eval-dqn = "src.cli.dqn_eval:main"
+event-dqn-optimize-dqn = "src.cli.dqn_optimize:main"
+event-dqn-preprocess-dqn = "src.cli.dqn_preprocess:main"
+event-dqn-train-lstm = "src.cli.lstm_train:main"
+event-dqn-eval-lstm = "src.cli.lstm_eval:main"
+event-dqn-optimize-lstm = "src.cli.lstm_optimize:main"
+event-dqn-preprocess-lstm = "src.cli.lstm_preprocess:main"
+event-dqn-predict-lstm = "src.cli.lstm_predict:main"
+event-dqn-eval-lstm-prediction = "src.cli.lstm_prediction_eval:main"
+event-dqn-compare-control = "src.cli.compare_control_cli:main"
+event-dqn-eval-event-driven = "src.cli.event_driven_eval:main"
+event-dqn-prewarm-gate = "src.cli.gate_prewarm:main"
+event-dqn-optimize-gate = "src.cli.gate_optimize:main"
+event-dqn-generate-labels = "src.cli.generate_labels:main"
+event-dqn-run-ablation-all = "src.cli.ablation_run_all:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Any
 
 from config.compare_dqn_config import CompareDQNConfig
+from config.dqn_config import DQNConfig
+from ml_toolkit.utils import CheckpointManager
 from src.comparison.compare_control_strategies import compare_control_strategies
 
 
@@ -90,10 +92,43 @@ def _apply_overrides_to_compare_config(
     print(f"[{source_name}] 已应用配置键数量: {len(applied_keys)}")
 
 
+def _resolve_dqn_model_path(dqn_model_arg: str | None) -> Path:
+    if dqn_model_arg:
+        explicit_model_path = Path(dqn_model_arg)
+        if not explicit_model_path.exists():
+            raise FileNotFoundError(f"指定的 DQN 模型文件不存在: {explicit_model_path}")
+        return explicit_model_path
+
+    latest_train_experiment = CheckpointManager.find_latest_experiment(
+        experiment_name=DQNConfig.EXPERIMENT_NAME,
+        mode="train",
+        log_root_dir=CompareDQNConfig.LOG_ROOT_DIR,
+    )
+    if latest_train_experiment is None:
+        raise FileNotFoundError(
+            "未提供 --dqn_model，且未找到任何 DQN 训练实验目录。"
+            f"请检查目录: {CompareDQNConfig.LOG_ROOT_DIR / DQNConfig.EXPERIMENT_NAME / CompareDQNConfig.TRAIN_SUBDIR}"
+        )
+
+    best_model_path = (
+        latest_train_experiment
+        / CompareDQNConfig.CHECKPOINT_DIR_NAME
+        / CompareDQNConfig.BEST_MODEL_FILENAME
+    )
+    if not best_model_path.exists():
+        raise FileNotFoundError(
+            "未提供 --dqn_model，自动选择最新实验失败：best model 不存在。"
+            f"期望路径: {best_model_path}"
+        )
+
+    print(f"[DQN] 未提供 --dqn_model，自动使用最新实验 best model: {best_model_path}")
+    return best_model_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="控制策略性能对比")
-    parser.add_argument("--experiment_dir", type=str, default=None, help="DQN 训练实验目录（如 logs/dqn/train/<timestamp>）")
-    parser.add_argument("--fixed_interval", type=int, default=1, help="固定间隔基线策略的动作更新间隔")
+    parser.add_argument("--dqn_model", type=str, default=None, help="DQN 训练模型的 .pth 文件路径")
+    parser.add_argument("--fixed_interval", type=int, nargs="+", default=[1], help="固定间隔基线策略的动作更新间隔，支持多个值进行对比（如 1 2 4）")
     parser.add_argument(
         "--gate_config_path",
         type=str,
@@ -109,7 +144,7 @@ def main() -> None:
     parser.add_argument(
         "--no-load-gate-state",
         action="store_true",
-        help="跳过加载预热门控状态，从冷启动开始评估（用于新超参的精确性能评估）",
+        help="跳过加载预热门控状态，从冷启动开始评估",
     )
     args = parser.parse_args()
 
@@ -118,12 +153,14 @@ def main() -> None:
         gate_overrides = _load_overrides(gate_config_path)
         _apply_overrides_to_compare_config(CompareDQNConfig, gate_overrides, source_name="GATE")
 
+    resolved_dqn_model_path = _resolve_dqn_model_path(args.dqn_model)
+
     # 如果指定了 --no-load-gate-state，则传 None 给 gate_state_path
     gate_state_path = None if args.no_load_gate_state else (Path(args.gate_state_path) if args.gate_state_path else None)
-
+    
     compare_control_strategies(
-        train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
-        fixed_interval=int(args.fixed_interval),
+        dqn_model_path=resolved_dqn_model_path,
+        fixed_intervals=[int(i) for i in args.fixed_interval],
         gate_state_path=gate_state_path,
     )
 
