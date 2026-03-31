@@ -88,3 +88,8 @@ def split_dqn_dataset() -> None:
     print(f"验证集形状: {val_data.shape} -> {val_path}")
     print(f"测试集形状: {test_data.shape} -> {test_path}")
     print("DQN 数据划分完成")
+
+
+def main() -> None:
+    """CLI 入口函数"""
+    split_dqn_dataset()

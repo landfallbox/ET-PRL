@@ -18,7 +18,6 @@ dependencies = [
 event-dqn-train-dqn = "src.cli.training.dqn_train:main"
 event-dqn-eval-dqn = "src.cli.evaluation.dqn_eval:main"
 event-dqn-optimize-dqn = "src.cli.optimization.dqn_optimize:main"
-event-dqn-preprocess-dqn = "src.cli.preprocessing.dqn_preprocess:main"
 event-dqn-train-lstm = "src.cli.training.lstm_train:main"
 event-dqn-eval-lstm = "src.cli.evaluation.lstm_eval:main"
 event-dqn-optimize-lstm = "src.cli.optimization.lstm_optimize:main"
