@@ -21,7 +21,6 @@
 - LSTM 评估：`uv run event-dqn-eval-lstm`
 - LSTM 超参优化：`uv run event-dqn-optimize-lstm`
 - LSTM 预测 CL_next：`uv run event-dqn-predict-lstm`
-- LSTM 预测评估：`uv run event-dqn-eval-lstm-prediction`
 - 控制策略对比：`uv run event-dqn-compare-control --fixed_interval 4`
 - 事件驱动评估：`uv run event-dqn-eval-event-driven`
 - 在线门控预热：`uv run event-dqn-prewarm-gate`
