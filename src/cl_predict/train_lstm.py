@@ -113,3 +113,8 @@ def train_lstm():
     logger.info("训练历史已保存")
 
     logger.info("训练流程完成！")
+
+
+def main() -> None:
+    """CLI 入口函数"""
+    train_lstm()

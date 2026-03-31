@@ -205,3 +205,8 @@ def optimize_hyperparameters():
 
     return result
 
+
+def main() -> None:
+    """CLI 入口函数"""
+    optimize_hyperparameters()
+
