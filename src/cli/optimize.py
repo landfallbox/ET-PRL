@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from src.cl_predict.lstm_hyperparams_optimize import optimize_hyperparameters
+from src.cl_predict.lstm_hyperparams_optimize import optimize_lstm_hyperparameters
 from src.dqn.dqn_hyperparams_optimize import optimize_dqn_hyperparameters
 from src.online_anomaly_detection.gate_hyperparams_optimize import optimize_gate_hyperparameters
 
@@ -21,7 +21,7 @@ def main_dqn() -> None:
 
 
 def main_lstm() -> None:
-    optimize_hyperparameters()
+    optimize_lstm_hyperparameters()
 
 
 def main_gate() -> None:

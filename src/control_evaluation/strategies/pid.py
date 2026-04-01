@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 
-from src.control_evaluation.common import compute_extended_evaluation_metrics, find_nearest_action_index
+from src.control_evaluation.common import compute_extended_test_metrics, find_nearest_action_index
 
 
-def evaluate_pid(
+def test_pid(
     env: SequenceEnv,
     action_space: np.ndarray,
     supply_temp_ref: float,
@@ -87,7 +87,7 @@ def evaluate_pid(
             break
 
     avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
-    extended_metrics = compute_extended_evaluation_metrics(
+    extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,

@@ -17,7 +17,7 @@ from src.dqn.trainer import DQNTrainer
 from src.online_anomaly_detection.streaming_anomaly_gate import StreamingAnomalyGate
 
 
-EvalDataSplit = Literal["test", "val", "train"]
+TestDataSplit = Literal["test", "val", "train"]
 
 
 def resolve_train_experiment_dir(train_experiment_dir: Path | None) -> Path:
@@ -31,12 +31,12 @@ def resolve_train_experiment_dir(train_experiment_dir: Path | None) -> Path:
 
 def copy_train_config(
     resolved_train_dir: Path,
-    eval_experiment_dir: Path,
+    test_experiment_dir: Path,
     config: type[DQNConfig],
     logger: Logger,
 ) -> None:
     train_config_manager = ConfigManager(resolved_train_dir, config_filename=config.CONFIG_FILENAME)
-    eval_config_manager = ConfigManager(eval_experiment_dir, config_filename=config.CONFIG_FILENAME)
+    test_config_manager = ConfigManager(test_experiment_dir, config_filename=config.CONFIG_FILENAME)
 
     try:
         train_config = train_config_manager.load_config()
@@ -64,8 +64,8 @@ def copy_train_config(
         **config.to_dict(),
         **train_config,
     }
-    eval_config_manager.save_config(merged_config)
-    logger.info(f"已写入合并配置快照: {eval_experiment_dir / config.CONFIG_FILENAME}")
+    test_config_manager.save_config(merged_config)
+    logger.info(f"已写入合并配置快照: {test_experiment_dir / config.CONFIG_FILENAME}")
 
 
 def _create_agent(config: type[DQNConfig], action_space: np.ndarray, device: torch.device) -> DQNAgent:
@@ -113,24 +113,24 @@ def _create_reward_calculator(
     )
 
 
-def build_eval_components(
+def build_test_components(
     config: type[DQNConfig],
     resolved_train_dir: Path,
-    data_split: EvalDataSplit = "test",
+    data_split: TestDataSplit = "test",
 ) -> tuple[pd.DataFrame, np.ndarray, DQNAgent, dict, RewardCalculator]:
     split_key = str(data_split).lower().strip()
     if split_key == "test":
-        eval_data_path = config.get_test_data_path()
+        split_data_path = config.get_test_data_path()
     elif split_key == "val":
-        eval_data_path = config.get_val_data_path()
+        split_data_path = config.get_val_data_path()
     elif split_key == "train":
-        eval_data_path = config.get_train_data_path()
+        split_data_path = config.get_train_data_path()
     else:
         raise ValueError(f"不支持的数据划分: {data_split}")
 
-    test_data = DQNTrainer._load_data(eval_data_path, config.STATE_COLUMNS)
+    test_data = DQNTrainer._load_data(split_data_path, config.STATE_COLUMNS)
     if test_data.empty:
-        raise ValueError(f"{split_key} 数据为空: {eval_data_path}")
+        raise ValueError(f"{split_key} 数据为空: {split_data_path}")
 
     action_space = DQNTrainer._load_action_space(config.ACTION_SPACE_PATH)
     device = torch.device(config.DEVICE)
@@ -219,7 +219,7 @@ def compute_violation_metrics(
     return int(violation_count), float(violation_rate * 100.0)
 
 
-def compute_extended_evaluation_metrics(
+def compute_extended_test_metrics(
     power_values: list[float],
     action_values: list[float],
     action_count: int,

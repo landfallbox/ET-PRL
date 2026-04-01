@@ -143,7 +143,7 @@ def create_objective_fn(train_loader, val_loader, logger):
     return objective
 
 
-def optimize_hyperparameters():
+def optimize_lstm_hyperparameters():
     """超参优化主函数"""
     config = LSTMConfig()
     output_dir = config.get_optimization_dir()
@@ -208,5 +208,5 @@ def optimize_hyperparameters():
 
 def main() -> None:
     """CLI 入口函数"""
-    optimize_hyperparameters()
+    optimize_lstm_hyperparameters()
 

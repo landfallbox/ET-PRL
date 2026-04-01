@@ -1,4 +1,4 @@
-from src.control_evaluation.strategies.event_driven import evaluate_event_driven
-from src.control_evaluation.strategies.fixed_interval import evaluate_fixed_interval
+from src.control_evaluation.strategies.event_driven import test_event_driven
+from src.control_evaluation.strategies.fixed_interval import test_fixed_interval
 
-__all__ = ["evaluate_fixed_interval", "evaluate_event_driven"]
+__all__ = ["test_fixed_interval", "test_event_driven"]

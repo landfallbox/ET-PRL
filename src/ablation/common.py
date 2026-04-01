@@ -8,13 +8,13 @@ from ml_toolkit.utils import create_experiment_context
 
 from config.compare_dqn_config import CompareDQNConfig
 from src.control_evaluation.common import (
-    build_eval_components,
+    build_test_components,
     copy_train_config,
     create_streaming_gate,
     get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
-from src.control_evaluation.strategies import evaluate_event_driven, evaluate_fixed_interval
+from src.control_evaluation.strategies import test_event_driven, test_fixed_interval
 
 
 def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
@@ -93,10 +93,10 @@ def run_ablation_experiment(
         raise ValueError(f"fixed_interval 必须大于 0，当前: {fixed_interval}")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    eval_experiment_dir = config.LOG_ROOT_DIR / "ablation" / ablation_id / timestamp
+    test_experiment_dir = config.LOG_ROOT_DIR / "ablation" / ablation_id / timestamp
 
     context = create_experiment_context(
-        experiment_dir=eval_experiment_dir,
+        experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
         log_filename=config.EVALUATION_LOG_FILENAME,
@@ -112,18 +112,18 @@ def run_ablation_experiment(
 
     copy_train_config(
         resolved_train_dir=resolved_train_dir,
-        eval_experiment_dir=eval_experiment_dir,
+        test_experiment_dir=test_experiment_dir,
         config=config,
         logger=logger,
     )
 
-    test_data, action_space, agent, checkpoint, reward_calc = build_eval_components(
+    test_data, action_space, agent, checkpoint, reward_calc = build_test_components(
         config=config,
         resolved_train_dir=resolved_train_dir,
     )
 
     fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    fixed_summary, fixed_step_results = evaluate_fixed_interval(
+    fixed_summary, fixed_step_results = test_fixed_interval(
         agent=agent,
         env=fixed_env,
         action_space=action_space,
@@ -135,7 +135,7 @@ def run_ablation_experiment(
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
-    event_summary, event_step_results = evaluate_event_driven(
+    event_summary, event_step_results = test_event_driven(
         agent=agent,
         env=event_env,
         data=test_data,
@@ -166,8 +166,8 @@ def run_ablation_experiment(
         }
     )
 
-    fixed_step_results_path = eval_experiment_dir / "fixed_interval_step_results.csv"
-    event_step_results_path = eval_experiment_dir / "event_driven_step_results.csv"
+    fixed_step_results_path = test_experiment_dir / "fixed_interval_step_results.csv"
+    event_step_results_path = test_experiment_dir / "event_driven_step_results.csv"
     fixed_step_results.to_csv(fixed_step_results_path, index=False)
     event_step_results.to_csv(event_step_results_path, index=False)
 

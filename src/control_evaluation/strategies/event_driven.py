@@ -5,14 +5,14 @@ import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 
 from src.control_evaluation.common import (
-    compute_extended_evaluation_metrics,
+    compute_extended_test_metrics,
     find_nearest_action_index,
 )
 from src.dqn.agent import DQNAgent
 from src.online_anomaly_detection.streaming_anomaly_gate import StreamingAnomalyGate
 
 
-def evaluate_event_driven(
+def test_event_driven(
     agent: DQNAgent,
     env: SequenceEnv,
     data: pd.DataFrame,
@@ -100,7 +100,7 @@ def evaluate_event_driven(
     avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
     gate_trigger_count = int(sum(int(record["gate_signal"] == 1) for record in records)) if records else 0
     gate_trigger_rate = gate_trigger_count / steps if steps > 0 else 0.0
-    extended_metrics = compute_extended_evaluation_metrics(
+    extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,

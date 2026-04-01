@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 
-from src.control_evaluation.common import compute_extended_evaluation_metrics, find_nearest_action_index
+from src.control_evaluation.common import compute_extended_test_metrics, find_nearest_action_index
 from src.dqn.agent import DQNAgent
 
 
-def evaluate_static_threshold_etc(
+def test_static_threshold_etc(
     agent: DQNAgent,
     env: SequenceEnv,
     data: pd.DataFrame,
@@ -105,7 +105,7 @@ def evaluate_static_threshold_etc(
             break
 
     avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
-    extended_metrics = compute_extended_evaluation_metrics(
+    extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,

@@ -158,7 +158,7 @@ def _create_objective(
                 trainer._train_episode(agent, train_env)
 
                 if trainer._should_validate(episode):
-                    val_info = trainer._eval_episode(agent, val_env)
+                    val_info = trainer._val_episode(agent, val_env)
                     val_reward = float(val_info["total_reward"])
 
                     if val_reward > best_val_reward:

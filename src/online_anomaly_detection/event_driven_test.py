@@ -8,13 +8,13 @@ from ml_toolkit.utils import create_experiment_context
 from config.dqn_config import DQNConfig
 from config.event_driven_dqn_config import EventDrivenDQNConfig
 from src.control_evaluation.common import (
-    build_eval_components,
+    build_test_components,
     copy_train_config,
     create_streaming_gate,
     get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
-from src.control_evaluation.strategies import evaluate_event_driven
+from src.control_evaluation.strategies import test_event_driven as test_event_driven_strategy
 
 
 def test_event_driven(
@@ -22,10 +22,10 @@ def test_event_driven(
     gate_state_path: Path | None = None,
 ) -> None:
     config = EventDrivenDQNConfig
-    eval_experiment_dir = config.get_eval_experiment_dir()
+    test_experiment_dir = config.get_eval_experiment_dir()
 
     context = create_experiment_context(
-        experiment_dir=eval_experiment_dir,
+        experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
         log_filename=config.EVALUATION_LOG_FILENAME,
@@ -40,19 +40,19 @@ def test_event_driven(
 
     copy_train_config(
         resolved_train_dir=resolved_train_dir,
-        eval_experiment_dir=eval_experiment_dir,
+        test_experiment_dir=test_experiment_dir,
         config=config,
         logger=logger,
     )
 
-    test_data, action_space, agent, checkpoint, reward_calc = build_eval_components(
+    test_data, action_space, agent, checkpoint, reward_calc = build_test_components(
         config=config,
         resolved_train_dir=resolved_train_dir,
     )
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
-    summary, step_results = evaluate_event_driven(
+    summary, step_results = test_event_driven_strategy(
         agent=agent,
         env=event_env,
         data=test_data,
@@ -73,7 +73,7 @@ def test_event_driven(
     }
     metrics_recorder.save_metrics(output_payload)
 
-    step_results_path = eval_experiment_dir / "event_driven_step_results.csv"
+    step_results_path = test_experiment_dir / "event_driven_step_results.csv"
     step_results.to_csv(step_results_path, index=False)
 
     logger.info(

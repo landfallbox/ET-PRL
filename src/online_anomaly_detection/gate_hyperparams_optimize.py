@@ -13,12 +13,12 @@ from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger
 from config.compare_dqn_config import CompareDQNConfig
 from config.online_anomaly_detection_config import OnlineAnomalyDetectionConfig
 from src.control_evaluation.common import (
-    build_eval_components,
+    build_test_components,
     create_streaming_gate,
     resolve_train_experiment_dir,
 )
-from src.control_evaluation.strategies.event_driven import evaluate_event_driven
-from src.control_evaluation.strategies.fixed_interval import evaluate_fixed_interval
+from src.control_evaluation.strategies.event_driven import test_event_driven
+from src.control_evaluation.strategies.fixed_interval import test_fixed_interval
 
 
 def _load_prewarm_features(
@@ -436,7 +436,7 @@ def optimize_gate_hyperparameters(
     resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
     logger.info(f"使用训练实验目录: {resolved_train_dir}")
 
-    val_data, action_space, agent, checkpoint, reward_calc = build_eval_components(
+    val_data, action_space, agent, checkpoint, reward_calc = build_test_components(
         config=base_config,
         resolved_train_dir=resolved_train_dir,
         data_split="val",
@@ -454,7 +454,7 @@ def optimize_gate_hyperparameters(
     )
 
     baseline_env = SequenceEnv(fit_data, base_config.STATE_COLUMNS, reward_calc)
-    baseline_summary, _ = evaluate_fixed_interval(
+    baseline_summary, _ = test_fixed_interval(
         agent=agent,
         env=baseline_env,
         action_space=action_space,
@@ -540,7 +540,7 @@ def optimize_gate_hyperparameters(
                 gate.predict(sample)
 
             env = SequenceEnv(fit_data, trial_config.STATE_COLUMNS, reward_calc)
-            summary, step_results = evaluate_event_driven(
+            summary, step_results = test_event_driven(
                 agent=agent,
                 env=env,
                 data=fit_data,
@@ -642,17 +642,16 @@ def optimize_gate_hyperparameters(
             # 从config获取默认值
             min_attr = f"GATE_OPT_{param.upper()}_MIN"
             max_attr = f"GATE_OPT_{param.upper()}_MAX"
-            default_val = (getattr(base_config, min_attr, None) + getattr(base_config, max_attr, None)) / 2
-            if default_val is not None:
-                merged_best_params[param] = default_val
-    
-    # 保存本阶段best_params为JSON，供下一阶段加载
-    best_params_json_path = output_dir / "best_params.json"
             min_val = getattr(base_config, min_attr, None)
             max_val = getattr(base_config, max_attr, None)
             if min_val is not None and max_val is not None:
                 default_val = (min_val + max_val) / 2
-        json.dump(best_params, f, indent=2)
+                merged_best_params[param] = default_val
+    
+    # 保存本阶段best_params为JSON，供下一阶段加载
+    best_params_json_path = output_dir / "best_params.json"
+    with open(best_params_json_path, "w", encoding="utf-8") as f:
+        json.dump(best_params, f, indent=2, ensure_ascii=False)
     logger.info(f"已保存 {current_phase} 最优参数到: {best_params_json_path}")
     
     best_config_overrides = {
@@ -675,12 +674,12 @@ def optimize_gate_hyperparameters(
         "GATE_TRIGGER_HYSTERESIS_MARGIN": float(merged_best_params["trigger_hysteresis_margin"]),
     }
 
-    holdout_evaluation: dict | None = None
+    holdout_test_result: dict | None = None
     if holdout_data is not None and not holdout_data.empty:
         best_trial_config = _build_trial_config(base_config, merged_best_params)
 
         holdout_baseline_env = SequenceEnv(holdout_data, base_config.STATE_COLUMNS, reward_calc)
-        holdout_baseline_summary, _ = evaluate_fixed_interval(
+        holdout_baseline_summary, _ = test_fixed_interval(
             agent=agent,
             env=holdout_baseline_env,
             action_space=action_space,
@@ -700,7 +699,7 @@ def optimize_gate_hyperparameters(
             holdout_gate.predict(sample)
 
         holdout_env = SequenceEnv(holdout_data, best_trial_config.STATE_COLUMNS, reward_calc)
-        holdout_summary, holdout_step_results = evaluate_event_driven(
+        holdout_summary, holdout_step_results = test_event_driven(
             agent=agent,
             env=holdout_env,
             data=holdout_data,
@@ -735,7 +734,7 @@ def optimize_gate_hyperparameters(
         holdout_energy_penalty = energy_increase_penalty_weight * (holdout_energy_violation_ratio**2)
         holdout_objective_score = holdout_action_rate + holdout_reward_penalty + holdout_energy_penalty
 
-        holdout_evaluation = {
+        holdout_test_result = {
             "samples": int(len(holdout_data)),
             "baseline": {
                 "total_reward": holdout_baseline_reward,
@@ -800,7 +799,7 @@ def optimize_gate_hyperparameters(
         "best_false_discovery_rate": best_fdr,
         "best_params": best_params,
         "best_config_overrides": best_config_overrides,
-        "holdout_evaluation": holdout_evaluation,
+        "holdout_evaluation": holdout_test_result,
     }
 
     summary_path = output_dir / "best_gate_config.json"

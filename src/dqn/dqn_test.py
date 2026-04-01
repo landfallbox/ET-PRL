@@ -7,20 +7,20 @@ from ml_toolkit.utils import create_experiment_context
 
 from config.dqn_config import DQNConfig
 from src.control_evaluation.common import (
-    build_eval_components,
+    build_test_components,
     copy_train_config,
     get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
-from src.control_evaluation.strategies import evaluate_fixed_interval
+from src.control_evaluation.strategies import test_fixed_interval
 
 
 def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) -> None:
     config = DQNConfig
-    eval_experiment_dir = config.get_eval_experiment_dir()
+    test_experiment_dir = config.get_eval_experiment_dir()
 
     context = create_experiment_context(
-        experiment_dir=eval_experiment_dir,
+        experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
         log_filename=config.EVALUATION_LOG_FILENAME,
@@ -38,18 +38,18 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
 
     copy_train_config(
         resolved_train_dir=resolved_train_dir,
-        eval_experiment_dir=eval_experiment_dir,
+        test_experiment_dir=test_experiment_dir,
         config=config,
         logger=logger,
     )
 
-    test_data, action_space, agent, checkpoint, reward_calc = build_eval_components(
+    test_data, action_space, agent, checkpoint, reward_calc = build_test_components(
         config=config,
         resolved_train_dir=resolved_train_dir,
     )
     test_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
 
-    summary, step_results = evaluate_fixed_interval(
+    summary, step_results = test_fixed_interval(
         agent=agent,
         env=test_env,
         action_space=action_space,
@@ -76,7 +76,7 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
     }
     metrics_recorder.save_metrics(output_payload)
 
-    step_results_path = eval_experiment_dir / "test_step_results.csv"
+    step_results_path = test_experiment_dir / "test_step_results.csv"
     step_results.to_csv(step_results_path, index=False)
 
     logger.info(f"评估完成: steps={summary['steps']}, total_reward={summary['total_reward']:.4f}")
@@ -89,5 +89,5 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
         f"action_count={summary['action_count']}, "
         f"action_frequency={summary['action_frequency']:.4f}"
     )
-    logger.info(f"评估指标已保存: {eval_experiment_dir / config.EVALUATION_METRICS_FILENAME}")
+    logger.info(f"评估指标已保存: {test_experiment_dir / config.EVALUATION_METRICS_FILENAME}")
     logger.info(f"逐步结果已保存: {step_results_path}")

@@ -31,9 +31,9 @@ def test_lstm(train_experiment_dir: Path = None):
     """
     # 1. 初始化配置并创建评估专用实验目录
     config = LSTMConfig()
-    eval_experiment_dir = config.get_eval_experiment_dir()
+    test_experiment_dir = config.get_eval_experiment_dir()
     context = create_experiment_context(
-        experiment_dir=eval_experiment_dir,
+        experiment_dir=test_experiment_dir,
         save_config=False,
         log_filename=config.EVALUATION_LOG_FILENAME,
         metrics_filename=config.EVALUATION_METRICS_FILENAME,
@@ -43,7 +43,7 @@ def test_lstm(train_experiment_dir: Path = None):
 
     logger.info("=" * 50)
     logger.info("开始模型评估")
-    logger.info(f"评估实验目录: {eval_experiment_dir}")
+    logger.info(f"评估实验目录: {test_experiment_dir}")
 
     # 2. 查找或指定训练实验目录
     train_experiment_dir = resolve_experiment_dir(
@@ -62,7 +62,7 @@ def test_lstm(train_experiment_dir: Path = None):
     # 保存训练配置到评估目录（便于追溯）
     copy_config_snapshot(
         source_experiment_dir=train_experiment_dir,
-        target_experiment_dir=eval_experiment_dir,
+        target_experiment_dir=test_experiment_dir,
         config_filename=config.CONFIG_FILENAME,
         logger=logger,
     )
@@ -145,7 +145,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info("生成可视化图表...")
 
     # 预测对比折线图
-    plot_save_path = eval_experiment_dir / config.PREDICTION_COMPARISON_PLOT_FILENAME
+    plot_save_path = test_experiment_dir / config.PREDICTION_COMPARISON_PLOT_FILENAME
     Visualizer.plot_prediction_comparison(
         predictions_np, targets_np, plot_save_path,
         max_samples=config.MAX_PLOT_SAMPLES,
@@ -156,7 +156,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info(f"预测对比图已保存: {plot_save_path}")
 
     # 误差分布直方图
-    error_dist_path = eval_experiment_dir / config.ERROR_DISTRIBUTION_PLOT_FILENAME
+    error_dist_path = test_experiment_dir / config.ERROR_DISTRIBUTION_PLOT_FILENAME
     Visualizer.plot_error_distribution(
         predictions_np, targets_np, error_dist_path,
         bins=config.ERROR_HIST_BINS,
@@ -166,7 +166,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info(f"误差分布图已保存: {error_dist_path}")
 
     # 预测散点图
-    scatter_path = eval_experiment_dir / config.PREDICTION_SCATTER_PLOT_FILENAME
+    scatter_path = test_experiment_dir / config.PREDICTION_SCATTER_PLOT_FILENAME
     Visualizer.plot_scatter_comparison(
         predictions_np, targets_np, scatter_path,
         figsize=config.PREDICTION_SCATTER_FIGSIZE,
@@ -178,8 +178,8 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info("保存测试结果...")
 
     # 保存评估结果到评估实验目录
-    metrics_file = eval_experiment_dir / config.EVALUATION_METRICS_FILENAME
-    eval_results = {
+    metrics_file = test_experiment_dir / config.EVALUATION_METRICS_FILENAME
+    test_results = {
         "train_experiment_dir": str(train_experiment_dir),
         "test_metrics": test_metrics,
         "best_epoch_from_train": best_epoch + 1 if best_epoch != 'Unknown' else 'Unknown',
@@ -187,7 +187,7 @@ def test_lstm(train_experiment_dir: Path = None):
     }
 
     with open(metrics_file, 'w', encoding='utf-8') as f:
-        json.dump(eval_results, f, indent=2, ensure_ascii=False)
+        json.dump(test_results, f, indent=2, ensure_ascii=False)
 
     logger.info(f"测试结果已保存: {metrics_file}")
     logger.info("评估完成！")

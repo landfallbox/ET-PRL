@@ -122,7 +122,7 @@ class DQNTrainer:
             )
 
             if self._should_validate(episode):
-                val_info = self._eval_episode(agent, val_env)
+                val_info = self._val_episode(agent, val_env)
                 val_reward = val_info["total_reward"]
                 train_record["val_reward"] = val_reward
                 train_record["val_steps"] = val_info["steps"]
@@ -223,7 +223,7 @@ class DQNTrainer:
             "avg_comfort_score": avg_comfort,
         }
 
-    def _eval_episode(self, agent: DQNAgent, env: SequenceEnv) -> dict:
+    def _val_episode(self, agent: DQNAgent, env: SequenceEnv) -> dict:
         state, _ = env.reset()
         total_reward = 0.0
         steps = 0

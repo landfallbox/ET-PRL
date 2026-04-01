@@ -5,13 +5,13 @@ import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 
 from src.control_evaluation.common import (
-    compute_extended_evaluation_metrics,
+    compute_extended_test_metrics,
     find_nearest_action_index,
 )
 from src.dqn.agent import DQNAgent
 
 
-def evaluate_fixed_interval(
+def test_fixed_interval(
     agent: DQNAgent,
     env: SequenceEnv,
     action_space: np.ndarray,
@@ -87,7 +87,7 @@ def evaluate_fixed_interval(
 
     avg_reward_per_env_step = total_reward / steps if steps > 0 else 0.0
     avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
-    extended_metrics = compute_extended_evaluation_metrics(
+    extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,

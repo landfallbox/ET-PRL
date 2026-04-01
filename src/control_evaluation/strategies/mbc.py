@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 
-from src.control_evaluation.common import compute_extended_evaluation_metrics
+from src.control_evaluation.common import compute_extended_test_metrics
 from src.dqn.rewards import RewardCalculator
 
 
-def evaluate_mbc(
+def test_mbc(
     env: SequenceEnv,
     action_space: np.ndarray,
     reward_calc: RewardCalculator,
@@ -68,7 +68,7 @@ def evaluate_mbc(
             break
 
     avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
-    extended_metrics = compute_extended_evaluation_metrics(
+    extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,
