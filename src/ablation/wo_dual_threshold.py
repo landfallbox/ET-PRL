@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from config.compare_dqn_config import CompareDQNConfig
+from config.control_compare_config import ControlCompareConfig
 from src.ablation.common import run_ablation_experiment
 
 
-class AblationWoDualThresholdConfig(CompareDQNConfig):
+class AblationWoDualThresholdConfig(ControlCompareConfig):
     """w/o Dual-Threshold: 单阈值门控（移除局部/全局融合）"""
 
     EXPERIMENT_NAME = "ablation_wo_dual_threshold"

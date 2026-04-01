@@ -6,7 +6,7 @@ from pathlib import Path
 from ml_toolkit.rl import SequenceEnv
 from ml_toolkit.utils import create_experiment_context
 
-from config.compare_dqn_config import CompareDQNConfig
+from config.control_compare_config import ControlCompareConfig
 from src.control_evaluation.common import (
     build_test_components,
     copy_train_config,
@@ -81,7 +81,7 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
 
 def run_ablation_experiment(
     *,
-    config: type[CompareDQNConfig],
+    config: type[ControlCompareConfig],
     ablation_id: str,
     ablation_name: str,
     ablation_description: str,

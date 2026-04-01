@@ -6,7 +6,7 @@ import numpy as np
 from ml_toolkit.rl import SequenceEnv
 from ml_toolkit.utils import create_experiment_context
 
-from config.compare_dqn_config import CompareDQNConfig
+from config.control_compare_config import ControlCompareConfig
 from src.control_evaluation.common import (
     build_test_components,
     copy_train_config,
@@ -107,7 +107,7 @@ def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | No
         raise FileNotFoundError(f"指定的 DQN 模型文件不存在: {resolved_model_path}")
 
     checkpoint_dir = resolved_model_path.parent
-    if checkpoint_dir.name != CompareDQNConfig.CHECKPOINT_DIR_NAME:
+    if checkpoint_dir.name != ControlCompareConfig.CHECKPOINT_DIR_NAME:
         raise ValueError(
             "dqn_model_path 的父目录应为 checkpoints 目录。"
             f"当前路径: {resolved_model_path}"
@@ -116,7 +116,7 @@ def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | No
     return checkpoint_dir.parent
 
 
-def _resolve_static_thresholds(config: type[CompareDQNConfig], test_data) -> tuple[float, float, float]:
+def _resolve_static_thresholds(config: type[ControlCompareConfig], test_data) -> tuple[float, float, float]:
     def _attr_or_std(column: str, attr_name: str, fallback: float) -> float:
         config_value = getattr(config, attr_name, None)
         if config_value is not None:
@@ -138,7 +138,7 @@ def compare_control_strategies(
     gate_state_path: Path | None = None,
     dqn_model_path: Path | None = None,
 ) -> None:
-    config = CompareDQNConfig
+    config = ControlCompareConfig
     test_experiment_dir = config.get_eval_experiment_dir()
 
     context = create_experiment_context(

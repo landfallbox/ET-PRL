@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from config.compare_dqn_config import CompareDQNConfig
+from config.control_compare_config import ControlCompareConfig
 from config.dqn_config import DQNConfig
 from ml_toolkit.utils import CheckpointManager
 from src.comparison.compare_control_strategies import compare_control_strategies
@@ -63,7 +63,7 @@ def _load_overrides(config_path: Path) -> dict[str, Any]:
 
 
 def _apply_overrides_to_compare_config(
-    compare_config: type[CompareDQNConfig],
+    compare_config: type[ControlCompareConfig],
     overrides: dict[str, Any],
     source_name: str,
 ) -> None:
@@ -102,18 +102,18 @@ def _resolve_dqn_model_path(dqn_model_arg: str | None) -> Path:
     latest_train_experiment = CheckpointManager.find_latest_experiment(
         experiment_name=DQNConfig.EXPERIMENT_NAME,
         mode="train",
-        log_root_dir=CompareDQNConfig.LOG_ROOT_DIR,
+        log_root_dir=ControlCompareConfig.LOG_ROOT_DIR,
     )
     if latest_train_experiment is None:
         raise FileNotFoundError(
             "未提供 --dqn_model，且未找到任何 DQN 训练实验目录。"
-            f"请检查目录: {CompareDQNConfig.LOG_ROOT_DIR / DQNConfig.EXPERIMENT_NAME / CompareDQNConfig.TRAIN_SUBDIR}"
+            f"请检查目录: {ControlCompareConfig.LOG_ROOT_DIR / DQNConfig.EXPERIMENT_NAME / ControlCompareConfig.TRAIN_SUBDIR}"
         )
 
     best_model_path = (
         latest_train_experiment
-        / CompareDQNConfig.CHECKPOINT_DIR_NAME
-        / CompareDQNConfig.BEST_MODEL_FILENAME
+        / ControlCompareConfig.CHECKPOINT_DIR_NAME
+        / ControlCompareConfig.BEST_MODEL_FILENAME
     )
     if not best_model_path.exists():
         raise FileNotFoundError(
@@ -138,7 +138,7 @@ def main() -> None:
     parser.add_argument(
         "--gate_state_path",
         type=str,
-        default=str(CompareDQNConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
+        default=str(ControlCompareConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
         help="门控状态文件路径",
     )
     parser.add_argument(
@@ -151,7 +151,7 @@ def main() -> None:
     if args.gate_config_path:
         gate_config_path = Path(args.gate_config_path)
         gate_overrides = _load_overrides(gate_config_path)
-        _apply_overrides_to_compare_config(CompareDQNConfig, gate_overrides, source_name="GATE")
+        _apply_overrides_to_compare_config(ControlCompareConfig, gate_overrides, source_name="GATE")
 
     resolved_dqn_model_path = _resolve_dqn_model_path(args.dqn_model)
 

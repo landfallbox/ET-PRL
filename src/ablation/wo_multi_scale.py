@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from config.compare_dqn_config import CompareDQNConfig
+from config.control_compare_config import ControlCompareConfig
 from src.ablation.common import run_ablation_experiment
 
 
-class AblationWoMultiScaleConfig(CompareDQNConfig):
+class AblationWoMultiScaleConfig(ControlCompareConfig):
     """w/o Multi-scale: 单尺度异常分数（仅 long）"""
 
     EXPERIMENT_NAME = "ablation_wo_multi_scale"

@@ -10,7 +10,7 @@ import pandas as pd
 from ml_toolkit.rl import SequenceEnv
 from ml_toolkit.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
-from config.compare_dqn_config import CompareDQNConfig
+from config.control_compare_config import ControlCompareConfig
 from config.online_anomaly_detection_config import OnlineAnomalyDetectionConfig
 from src.control_evaluation.common import (
     build_test_components,
@@ -22,7 +22,7 @@ from src.control_evaluation.strategies.fixed_interval import test_fixed_interval
 
 
 def _load_prewarm_features(
-    config: type[CompareDQNConfig],
+    config: type[ControlCompareConfig],
     val_df_override: pd.DataFrame | None = None,
 ) -> np.ndarray:
     feature_columns = list(config.FEATURE_COLUMNS)
@@ -43,7 +43,7 @@ def _load_prewarm_features(
 
 def _get_dynamic_param_range(
     param_name: str,
-    config: type[CompareDQNConfig],
+    config: type[ControlCompareConfig],
     phase: str,
     previous_best_value: float | None,
     shrink_ratio: float = 0.2,
@@ -197,7 +197,7 @@ def _load_previous_phase_best(
 
 
 def _create_search_space(
-    config: type[CompareDQNConfig],
+    config: type[ControlCompareConfig],
     phase: str = "phase1",
     previous_best_params: dict | None = None,
     shrink_ratio: float = 0.2,
@@ -262,7 +262,7 @@ def _create_search_space(
     return space
 
 
-def _build_trial_config(base_cls: type[CompareDQNConfig], params: dict) -> type[CompareDQNConfig]:
+def _build_trial_config(base_cls: type[ControlCompareConfig], params: dict) -> type[ControlCompareConfig]:
     class TrialConfig(base_cls):
         pass
 
@@ -373,7 +373,7 @@ def optimize_gate_hyperparameters(
     n_jobs: int | None = None,
     previous_phase_result_dir: Path | None = None,
 ) -> dict:
-    base_config = CompareDQNConfig
+    base_config = ControlCompareConfig
     
     # 多阶段优化配置
     current_phase = getattr(base_config, "GATE_OPTIMIZATION_PHASE", "phase1")
