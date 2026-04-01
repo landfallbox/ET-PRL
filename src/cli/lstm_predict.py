@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from config.lstm_config import LSTMConfig
-from src.cl_predict.predict_cl_next import predict_cl_next
+from src.cl_predict.cl_next_predict import predict_cl_next
 
 
 def main() -> None:

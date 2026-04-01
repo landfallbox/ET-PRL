@@ -22,7 +22,7 @@ from ml_toolkit.utils import (
 )
 
 
-def eval_lstm(train_experiment_dir: Path = None):
+def test_lstm(train_experiment_dir: Path = None):
     """
     LSTM 模型评估主函数
 

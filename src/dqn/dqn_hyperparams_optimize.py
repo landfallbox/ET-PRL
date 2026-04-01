@@ -184,7 +184,9 @@ def _create_objective(
 
         except Exception as exc:
             elapsed_sec = time.perf_counter() - trial_start
-            logger.error(f"Trial {trial.number} 失败: {exc}")
+            logger.exception(
+                f"Trial {trial.number} 失败: {exc}"
+            )
             logger.info(f"Trial {trial.number} 结束(失败) | worker={worker_name} | elapsed={elapsed_sec:.1f}s")
             return 1e9
 

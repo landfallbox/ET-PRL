@@ -1,8 +1,8 @@
 # Event-DQN
 
 事件驱动 DQN 控制项目，包含以下主流程：
-- LSTM 负荷预测（训练/评估/超参优化）
-- DQN 控制策略训练与评估
+- LSTM 负荷预测（训练/验证/测试/超参优化）
+- DQN 控制策略训练与测试
 - 固定间隔 vs 事件驱动控制策略对比
 
 ## 快速开始
@@ -12,19 +12,16 @@
 - 所有命令统一使用 `uv run`
 
 ### 2) 统一入口（Applications）
-- DQN 数据预处理：`uv run event-dqn-preprocess-dqn`
 - DQN 训练：`uv run event-dqn-train-dqn`
-- DQN 评估：`uv run event-dqn-eval-dqn --fixed_interval 4`
+- DQN 测试：`uv run event-dqn-test-dqn --fixed_interval 4`
 - DQN 超参优化：`uv run event-dqn-optimize-dqn --n_trials 30 --max_episodes 30`
-- LSTM 数据预处理：`uv run event-dqn-preprocess-lstm`
 - LSTM 训练：`uv run event-dqn-train-lstm`
-- LSTM 评估：`uv run event-dqn-eval-lstm`
+- LSTM 测试：`uv run event-dqn-test-lstm`
 - LSTM 超参优化：`uv run event-dqn-optimize-lstm`
 - LSTM 预测 CL_next：`uv run event-dqn-predict-lstm`
 - 控制策略对比：`uv run event-dqn-compare-control --fixed_interval 4`
-- 事件驱动评估：`uv run event-dqn-eval-event-driven`
+- 事件驱动测试：`uv run event-dqn-test-event-driven`
 - 在线门控预热：`uv run event-dqn-prewarm-gate`
-- 无监督标签生成：`uv run event-dqn-generate-labels`
 
 ## 目录约定
 

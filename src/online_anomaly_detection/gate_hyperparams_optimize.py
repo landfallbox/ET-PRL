@@ -188,7 +188,11 @@ def _load_previous_phase_best(
                 f"             参数: {list(params.keys())}"
             )
         return params
-    except Exception:
+    except Exception as exc:
+        if logger:
+            logger.error(
+                f"[{current_phase.upper()}] 加载前阶段最优参数失败: {prev_best_path} | 异常: {exc}"
+            )
         return None
 
 
@@ -251,15 +255,9 @@ def _create_search_space(
         )
         
         if param_type == "float":
-            if idx == 0:
-                space.add_float(param_name, min_val, max_val)
-            else:
-                space.add_float(param_name, min_val, max_val)
+            space.add_float(param_name, min_val, max_val)
         else:  # int
-            if idx == 0:
-                space.add_int(param_name, int(min_val), int(max_val))
-            else:
-                space.add_int(param_name, int(min_val), int(max_val))
+            space.add_int(param_name, int(min_val), int(max_val))
     
     return space
 
@@ -599,9 +597,9 @@ def optimize_gate_hyperparameters(
 
             return objective_score
 
-        except Exception as exc:
+        except Exception:
             elapsed = time.perf_counter() - start_time
-            logger.error(f"Trial {trial.number} 失败: {exc}")
+            logger.exception(f"Trial {trial.number} 失败")
             logger.info(f"Trial {trial.number} 结束(失败) | worker={worker_name} | elapsed={elapsed:.1f}s")
             return 1e9
 
@@ -650,8 +648,10 @@ def optimize_gate_hyperparameters(
     
     # 保存本阶段best_params为JSON，供下一阶段加载
     best_params_json_path = output_dir / "best_params.json"
-    with open(best_params_json_path, "w") as f:
-        # 只保存本阶段的best_params，避免与default混淆
+            min_val = getattr(base_config, min_attr, None)
+            max_val = getattr(base_config, max_attr, None)
+            if min_val is not None and max_val is not None:
+                default_val = (min_val + max_val) / 2
         json.dump(best_params, f, indent=2)
     logger.info(f"已保存 {current_phase} 最优参数到: {best_params_json_path}")
     
