@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 from ml_toolkit.rl import SequenceEnv
 from ml_toolkit.utils import create_experiment_context
 
@@ -12,7 +13,11 @@ from src.control_evaluation.common import (
     create_streaming_gate,
     resolve_train_experiment_dir,
 )
-from src.control_evaluation.strategies import test_event_driven, test_fixed_interval
+from src.control_evaluation.strategies.event_driven import test_event_driven
+from src.control_evaluation.strategies.fixed_interval import test_fixed_interval
+from src.control_evaluation.strategies.mbc import test_mbc
+from src.control_evaluation.strategies.pid import test_pid
+from src.control_evaluation.strategies.static_threshold_etc import test_static_threshold_etc
 
 
 def _get_paper_symbol_field_mapping() -> dict[str, str]:
@@ -93,10 +98,45 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
     }
 
 
+def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | None:
+    if dqn_model_path is None:
+        return None
+
+    resolved_model_path = Path(dqn_model_path)
+    if not resolved_model_path.exists():
+        raise FileNotFoundError(f"指定的 DQN 模型文件不存在: {resolved_model_path}")
+
+    checkpoint_dir = resolved_model_path.parent
+    if checkpoint_dir.name != CompareDQNConfig.CHECKPOINT_DIR_NAME:
+        raise ValueError(
+            "dqn_model_path 的父目录应为 checkpoints 目录。"
+            f"当前路径: {resolved_model_path}"
+        )
+
+    return checkpoint_dir.parent
+
+
+def _resolve_static_thresholds(config: type[CompareDQNConfig], test_data) -> tuple[float, float, float]:
+    def _attr_or_std(column: str, attr_name: str, fallback: float) -> float:
+        config_value = getattr(config, attr_name, None)
+        if config_value is not None:
+            return max(float(config_value), 1e-6)
+        if column in test_data.columns:
+            return max(float(test_data[column].std(ddof=0)), 1e-6)
+        return float(fallback)
+
+    cl_threshold = _attr_or_std("CL", "STATIC_CL_THRESHOLD", 50.0)
+    twb_threshold = _attr_or_std("Twb", "STATIC_TWB_THRESHOLD", 1.0)
+    cl_predict_threshold = _attr_or_std("CL_predict", "STATIC_CL_PREDICT_THRESHOLD", 50.0)
+    return cl_threshold, twb_threshold, cl_predict_threshold
+
+
 def compare_control_strategies(
     train_experiment_dir: Path | None = None,
-    fixed_interval: int = 4,
+    fixed_interval: int | None = None,
+    fixed_intervals: list[int] | None = None,
     gate_state_path: Path | None = None,
+    dqn_model_path: Path | None = None,
 ) -> None:
     config = CompareDQNConfig
     test_experiment_dir = config.get_eval_experiment_dir()
@@ -112,10 +152,22 @@ def compare_control_strategies(
     logger = context.logger
     metrics_recorder = context.metrics_recorder
 
-    if fixed_interval <= 0:
-        raise ValueError(f"fixed_interval 必须大于 0，当前: {fixed_interval}")
+    if fixed_intervals is not None:
+        resolved_fixed_intervals = [int(i) for i in fixed_intervals]
+    elif fixed_interval is not None:
+        resolved_fixed_intervals = [int(fixed_interval)]
+    else:
+        resolved_fixed_intervals = [1]
 
-    resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
+    if not resolved_fixed_intervals:
+        raise ValueError("fixed_intervals 不能为空")
+
+    for interval in resolved_fixed_intervals:
+        if interval <= 0:
+            raise ValueError(f"fixed_interval 必须大于 0，当前: {interval}")
+
+    model_train_dir = _resolve_train_dir_from_model_path(dqn_model_path)
+    resolved_train_dir = resolve_train_experiment_dir(model_train_dir or train_experiment_dir)
     logger.info(f"使用训练实验目录: {resolved_train_dir}")
 
     copy_train_config(
@@ -135,20 +187,32 @@ def compare_control_strategies(
         "best_epoch_from_train": int(checkpoint.get("epoch", -1)) + 1,
         "best_metrics_from_train": checkpoint.get("metrics", {}),
         "mode": "compare",
-        "fixed_interval": int(fixed_interval),
+        "fixed_intervals": [int(i) for i in resolved_fixed_intervals],
+        "dqn_model_path": str(dqn_model_path) if dqn_model_path is not None else None,
         "gate_state_path": str(gate_state_path) if gate_state_path is not None else None,
     }
 
-    fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    fixed_summary, fixed_step_results = test_fixed_interval(
-        agent=agent,
-        env=fixed_env,
-        action_space=action_space,
-        fixed_interval=fixed_interval,
-        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
-        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
-    )
+    summaries: dict[str, dict] = {}
+    comparisons: dict[str, dict] = {}
+
+    for interval in resolved_fixed_intervals:
+        fixed_key = f"fixed_interval_{interval}"
+        fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+        fixed_summary, fixed_step_results = test_fixed_interval(
+            agent=agent,
+            env=fixed_env,
+            action_space=action_space,
+            fixed_interval=interval,
+            supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+            comfort_lower_bound=config.COMFORT_LOWER_BOUND,
+            comfort_upper_bound=config.COMFORT_UPPER_BOUND,
+        )
+        summaries[fixed_key] = fixed_summary
+        fixed_step_results.to_csv(test_experiment_dir / f"{fixed_key}_step_results.csv", index=False)
+
+    baseline_interval = resolved_fixed_intervals[0]
+    baseline_key = f"fixed_interval_{baseline_interval}"
+    baseline_summary = summaries[baseline_key]
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
@@ -163,38 +227,92 @@ def compare_control_strategies(
         comfort_lower_bound=config.COMFORT_LOWER_BOUND,
         comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
+    summaries["event_driven"] = event_summary
+    event_step_results.to_csv(test_experiment_dir / "event_driven_step_results.csv", index=False)
 
-    comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)
+    mbc_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    mbc_summary, mbc_step_results = test_mbc(
+        env=mbc_env,
+        action_space=action_space,
+        reward_calc=reward_calc,
+    )
+    summaries["mbc"] = mbc_summary
+    mbc_step_results.to_csv(test_experiment_dir / "mbc_step_results.csv", index=False)
+
+    pid_kp = float(getattr(config, "PID_KP", 0.6))
+    pid_ki = float(getattr(config, "PID_KI", 0.05))
+    pid_kd = float(getattr(config, "PID_KD", 0.1))
+    pid_integral_limit = float(
+        getattr(config, "PID_INTEGRAL_LIMIT", max(float(np.max(action_space) - np.min(action_space)) * 4.0, 1.0))
+    )
+    pid_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    pid_summary, pid_step_results = test_pid(
+        env=pid_env,
+        action_space=action_space,
+        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        kp=pid_kp,
+        ki=pid_ki,
+        kd=pid_kd,
+        integral_limit=pid_integral_limit,
+    )
+    summaries["pid"] = pid_summary
+    pid_step_results.to_csv(test_experiment_dir / "pid_step_results.csv", index=False)
+
+    cl_threshold, twb_threshold, cl_predict_threshold = _resolve_static_thresholds(config, test_data)
+    static_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    static_summary, static_step_results = test_static_threshold_etc(
+        agent=agent,
+        env=static_env,
+        data=test_data,
+        action_space=action_space,
+        feature_columns=config.FEATURE_COLUMNS,
+        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        cl_threshold=cl_threshold,
+        twb_threshold=twb_threshold,
+        cl_predict_threshold=cl_predict_threshold,
+    )
+    summaries["static_threshold_etc"] = static_summary
+    static_step_results.to_csv(test_experiment_dir / "static_threshold_etc_step_results.csv", index=False)
+
+    for strategy_name, strategy_summary in summaries.items():
+        if strategy_name == baseline_key:
+            continue
+        comparisons[strategy_name] = _build_comparison(
+            fixed_summary=baseline_summary,
+            event_summary=strategy_summary,
+        )
+
     metrics_recorder.save_metrics(
         {
             **base_payload,
+            "baseline_strategy": baseline_key,
             "paper_symbol_mapping": _get_paper_symbol_field_mapping(),
-            "fixed_interval_summary": fixed_summary,
-            "event_driven_summary": event_summary,
-            "comparison": comparison,
+            "summaries": summaries,
+            "comparisons_vs_baseline": comparisons,
+            "pid_params": {
+                "kp": pid_kp,
+                "ki": pid_ki,
+                "kd": pid_kd,
+                "integral_limit": pid_integral_limit,
+            },
+            "static_threshold_params": {
+                "CL": cl_threshold,
+                "Twb": twb_threshold,
+                "CL_predict": cl_predict_threshold,
+            },
         }
     )
 
-    fixed_step_results_path = test_experiment_dir / "fixed_interval_step_results.csv"
-    event_step_results_path = test_experiment_dir / "event_driven_step_results.csv"
-    fixed_step_results.to_csv(fixed_step_results_path, index=False)
-    event_step_results.to_csv(event_step_results_path, index=False)
-
-    logger.info("评估完成: fixed_interval vs event_driven")
+    logger.info("评估完成: baseline + event_driven + mbc + pid + static_threshold_etc")
     logger.info(
-        "固定间隔: "
-        f"total_reward={fixed_summary['total_reward']:.4f}, "
-        f"action_count={fixed_summary['action_count']}"
+        f"基线策略: {baseline_key}, "
+        f"reward={baseline_summary['total_reward']:.4f}, "
+        f"action_count={baseline_summary['action_count']}"
     )
-    logger.info(
-        "事件驱动: "
-        f"total_reward={event_summary['total_reward']:.4f}, "
-        f"action_count={event_summary['action_count']}, "
-        f"event_trigger_rate={event_summary['event_trigger_rate']:.4f}"
-    )
-    logger.info(
-        "对比指标: "
-        f"PPR={comparison['PPR']:.4f}, "
-        f"ACR={comparison['ACR']:.4f}, "
-        f"action_reduction_pct={comparison['action_reduction_pct']:.2f}%"
-    )
+    for strategy_name, metrics in comparisons.items():
+        logger.info(
+            f"对比 {strategy_name}: "
+            f"PPR={metrics['PPR']:.4f}, "
+            f"ACR={metrics['ACR']:.4f}, "
+            f"action_reduction_pct={metrics['action_reduction_pct']:.2f}%"
+        )

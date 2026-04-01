@@ -49,7 +49,7 @@ def main() -> None:
         type=int,
         nargs="+",
         default=[1],
-        help="固定间隔基线策略的动作更新间隔，支持多个值进行对比（如 1 2 4）",
+        help="固定间隔基线策略的动作更新间隔，支持多个值进行对比",
     )
     parser.add_argument(
         "--gate_config_path",
