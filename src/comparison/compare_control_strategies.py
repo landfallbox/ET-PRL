@@ -230,6 +230,7 @@ def compare_control_strategies(
         env=mbc_env,
         action_space=action_space,
         reward_calc=reward_calc,
+        data=test_data,
     )
     summaries["mbc"] = mbc_summary
     mbc_step_results.to_csv(test_experiment_dir / "mbc_step_results.csv", index=False)
@@ -240,6 +241,10 @@ def compare_control_strategies(
     pid_integral_limit = float(
         getattr(config, "PID_INTEGRAL_LIMIT", max(float(np.max(action_space) - np.min(action_space)) * 4.0, 1.0))
     )
+    pid_error_deadband = float(getattr(config, "PID_ERROR_DEADBAND", 0.1))
+    pid_derivative_filter_alpha = float(getattr(config, "PID_DERIVATIVE_FILTER_ALPHA", 0.7))
+    pid_max_action_step = float(getattr(config, "PID_MAX_ACTION_STEP", 2.0))
+    pid_target_power_ratio = float(getattr(config, "PID_TARGET_POWER_RATIO", 0.85))
     pid_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     pid_summary, pid_step_results = test_pid(
         env=pid_env,
@@ -249,6 +254,10 @@ def compare_control_strategies(
         ki=pid_ki,
         kd=pid_kd,
         integral_limit=pid_integral_limit,
+        error_deadband=pid_error_deadband,
+        derivative_filter_alpha=pid_derivative_filter_alpha,
+        max_action_step=pid_max_action_step,
+        target_power_ratio=pid_target_power_ratio,
     )
     summaries["pid"] = pid_summary
     pid_step_results.to_csv(test_experiment_dir / "pid_step_results.csv", index=False)
@@ -279,6 +288,10 @@ def compare_control_strategies(
                 "ki": pid_ki,
                 "kd": pid_kd,
                 "integral_limit": pid_integral_limit,
+                "error_deadband": pid_error_deadband,
+                "derivative_filter_alpha": pid_derivative_filter_alpha,
+                "max_action_step": pid_max_action_step,
+                "target_power_ratio": pid_target_power_ratio,
             },
             "static_threshold_params": {
                 "CL": cl_threshold,
@@ -290,11 +303,12 @@ def compare_control_strategies(
 
     logger.info("控制策略性能指标对比")
     for strategy_name, metrics in summaries.items():
-        total_reward = metrics.get("total_reward", 0)
+        total_objective = metrics.get("total_objective", metrics.get("total_reward", 0))
         action_count = metrics.get("action_count", 0)
         energy_total = metrics.get("E_total_kwh", 0)
-        comfort_avg = metrics.get("avg_comfort_score", 0)
+        comfort_avg = metrics.get("avg_comfort_score")
+        comfort_text = f"{float(comfort_avg):.4f}" if comfort_avg is not None else "N/A"
         logger.info(
-            f"策略: {strategy_name:25s} | reward={total_reward:8.4f} | "
-            f"actions={action_count:5d} | energy={energy_total:8.2f}kWh | comfort={comfort_avg:.4f}"
+            f"策略: {strategy_name:25s} | objective={total_objective:8.4f} | "
+            f"actions={action_count:5d} | energy={energy_total:8.2f}kWh | comfort={comfort_text}"
         )
