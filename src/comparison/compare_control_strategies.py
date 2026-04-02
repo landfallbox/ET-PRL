@@ -193,7 +193,6 @@ def compare_control_strategies(
     }
 
     summaries: dict[str, dict] = {}
-    comparisons: dict[str, dict] = {}
 
     for interval in resolved_fixed_intervals:
         fixed_key = f"fixed_interval_{interval}"
@@ -209,10 +208,6 @@ def compare_control_strategies(
         )
         summaries[fixed_key] = fixed_summary
         fixed_step_results.to_csv(test_experiment_dir / f"{fixed_key}_step_results.csv", index=False)
-
-    baseline_interval = resolved_fixed_intervals[0]
-    baseline_key = f"fixed_interval_{baseline_interval}"
-    baseline_summary = summaries[baseline_key]
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
@@ -274,21 +269,11 @@ def compare_control_strategies(
     summaries["static_threshold_etc"] = static_summary
     static_step_results.to_csv(test_experiment_dir / "static_threshold_etc_step_results.csv", index=False)
 
-    for strategy_name, strategy_summary in summaries.items():
-        if strategy_name == baseline_key:
-            continue
-        comparisons[strategy_name] = _build_comparison(
-            fixed_summary=baseline_summary,
-            event_summary=strategy_summary,
-        )
-
     metrics_recorder.save_metrics(
         {
             **base_payload,
-            "baseline_strategy": baseline_key,
             "paper_symbol_mapping": _get_paper_symbol_field_mapping(),
-            "summaries": summaries,
-            "comparisons_vs_baseline": comparisons,
+            "strategies_performance": summaries,
             "pid_params": {
                 "kp": pid_kp,
                 "ki": pid_ki,
@@ -303,16 +288,13 @@ def compare_control_strategies(
         }
     )
 
-    logger.info("评估完成: baseline + event_driven + mbc + pid + static_threshold_etc")
-    logger.info(
-        f"基线策略: {baseline_key}, "
-        f"reward={baseline_summary['total_reward']:.4f}, "
-        f"action_count={baseline_summary['action_count']}"
-    )
-    for strategy_name, metrics in comparisons.items():
+    logger.info("控制策略性能指标对比")
+    for strategy_name, metrics in summaries.items():
+        total_reward = metrics.get("total_reward", 0)
+        action_count = metrics.get("action_count", 0)
+        energy_total = metrics.get("E_total_kwh", 0)
+        comfort_avg = metrics.get("avg_comfort_score", 0)
         logger.info(
-            f"对比 {strategy_name}: "
-            f"PPR={metrics['PPR']:.4f}, "
-            f"ACR={metrics['ACR']:.4f}, "
-            f"action_reduction_pct={metrics['action_reduction_pct']:.2f}%"
+            f"策略: {strategy_name:25s} | reward={total_reward:8.4f} | "
+            f"actions={action_count:5d} | energy={energy_total:8.2f}kWh | comfort={comfort_avg:.4f}"
         )

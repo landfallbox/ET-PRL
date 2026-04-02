@@ -37,7 +37,7 @@ def _resolve_dqn_model_path(dqn_model_arg: str | None) -> Path:
             f"期望路径: {best_model_path}"
         )
 
-    print(f"[DQN] 未提供 --dqn_model，自动使用最新实验 best model: {best_model_path}")
+    print(f"使用最新实验 best model: {best_model_path}")
     return best_model_path
 
 
