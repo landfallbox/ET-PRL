@@ -15,9 +15,8 @@ from src.control_evaluation.common import (
 )
 from src.control_evaluation.strategies.event_driven import test_event_driven
 from src.control_evaluation.strategies.fixed_interval import test_fixed_interval
-from src.control_evaluation.strategies.mbc import test_mbc
+from src.control_evaluation.strategies.event_triggered_etc import test_event_triggered_etc
 from src.control_evaluation.strategies.pid import test_pid
-from src.control_evaluation.strategies.static_threshold_etc import test_static_threshold_etc
 
 
 def _get_paper_symbol_field_mapping() -> dict[str, str]:
@@ -116,7 +115,7 @@ def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | No
     return checkpoint_dir.parent
 
 
-def _resolve_static_thresholds(config: type[ControlCompareConfig], test_data) -> tuple[float, float, float]:
+def _resolve_event_thresholds(config: type[ControlCompareConfig], test_data) -> tuple[float, float, float]:
     def _attr_or_std(column: str, attr_name: str, fallback: float) -> float:
         config_value = getattr(config, attr_name, None)
         if config_value is not None:
@@ -125,9 +124,9 @@ def _resolve_static_thresholds(config: type[ControlCompareConfig], test_data) ->
             return max(float(test_data[column].std(ddof=0)), 1e-6)
         return float(fallback)
 
-    cl_threshold = _attr_or_std("CL", "STATIC_CL_THRESHOLD", 50.0)
-    twb_threshold = _attr_or_std("Twb", "STATIC_TWB_THRESHOLD", 1.0)
-    cl_predict_threshold = _attr_or_std("CL_predict", "STATIC_CL_PREDICT_THRESHOLD", 50.0)
+    cl_threshold = _attr_or_std("CL", "EVENT_CL_THRESHOLD", 50.0)
+    twb_threshold = _attr_or_std("Twb", "EVENT_TWB_THRESHOLD", 1.0)
+    cl_predict_threshold = _attr_or_std("CL_predict", "EVENT_CL_PREDICT_THRESHOLD", 50.0)
     return cl_threshold, twb_threshold, cl_predict_threshold
 
 
@@ -225,16 +224,6 @@ def compare_control_strategies(
     summaries["event_driven"] = event_summary
     event_step_results.to_csv(test_experiment_dir / "event_driven_step_results.csv", index=False)
 
-    mbc_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    mbc_summary, mbc_step_results = test_mbc(
-        env=mbc_env,
-        action_space=action_space,
-        reward_calc=reward_calc,
-        data=test_data,
-    )
-    summaries["mbc"] = mbc_summary
-    mbc_step_results.to_csv(test_experiment_dir / "mbc_step_results.csv", index=False)
-
     pid_kp = float(getattr(config, "PID_KP", 0.6))
     pid_ki = float(getattr(config, "PID_KI", 0.05))
     pid_kd = float(getattr(config, "PID_KD", 0.1))
@@ -262,21 +251,26 @@ def compare_control_strategies(
     summaries["pid"] = pid_summary
     pid_step_results.to_csv(test_experiment_dir / "pid_step_results.csv", index=False)
 
-    cl_threshold, twb_threshold, cl_predict_threshold = _resolve_static_thresholds(config, test_data)
-    static_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    static_summary, static_step_results = test_static_threshold_etc(
+    cl_threshold, twb_threshold, cl_predict_threshold = _resolve_event_thresholds(config, test_data)
+    event_trigger_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    event_trigger_summary, event_trigger_step_results = test_event_triggered_etc(
         agent=agent,
-        env=static_env,
+        env=event_trigger_env,
         data=test_data,
         action_space=action_space,
         feature_columns=config.FEATURE_COLUMNS,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        cl_threshold=cl_threshold,
-        twb_threshold=twb_threshold,
-        cl_predict_threshold=cl_predict_threshold,
+        min_delta_thresholds={
+            "CL": cl_threshold,
+            "Twb": twb_threshold,
+            "CL_predict": cl_predict_threshold,
+        },
+        threshold_window_size=min(int(getattr(config, "GATE_LOCAL_WINDOW_SIZE", 20)), 20),
+        threshold_min_samples=min(int(getattr(config, "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION", 3)), 3),
+        trigger_score_threshold=float(getattr(config, "EVENT_TRIGGER_SCORE_THRESHOLD", 0.6)),
     )
-    summaries["static_threshold_etc"] = static_summary
-    static_step_results.to_csv(test_experiment_dir / "static_threshold_etc_step_results.csv", index=False)
+    summaries["event_triggered_etc"] = event_trigger_summary
+    event_trigger_step_results.to_csv(test_experiment_dir / "event_triggered_etc_step_results.csv", index=False)
 
     metrics_recorder.save_metrics(
         {
@@ -293,7 +287,7 @@ def compare_control_strategies(
                 "max_action_step": pid_max_action_step,
                 "target_power_ratio": pid_target_power_ratio,
             },
-            "static_threshold_params": {
+            "event_threshold_params": {
                 "CL": cl_threshold,
                 "Twb": twb_threshold,
                 "CL_predict": cl_predict_threshold,
@@ -303,12 +297,17 @@ def compare_control_strategies(
 
     logger.info("控制策略性能指标对比")
     for strategy_name, metrics in summaries.items():
-        total_objective = metrics.get("total_objective", metrics.get("total_reward", 0))
         action_count = metrics.get("action_count", 0)
         energy_total = metrics.get("E_total_kwh", 0)
         comfort_avg = metrics.get("avg_comfort_score")
         comfort_text = f"{float(comfort_avg):.4f}" if comfort_avg is not None else "N/A"
+        if strategy_name == "pid":
+            primary_label = "energy_kwh"
+            primary_value = float(energy_total)
+        else:
+            primary_label = "reward"
+            primary_value = float(metrics.get("total_reward", 0))
         logger.info(
-            f"策略: {strategy_name:25s} | objective={total_objective:8.4f} | "
+            f"策略: {strategy_name:25s} | {primary_label}={primary_value:8.4f} | "
             f"actions={action_count:5d} | energy={energy_total:8.2f}kWh | comfort={comfort_text}"
         )

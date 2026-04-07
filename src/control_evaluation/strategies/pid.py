@@ -29,7 +29,6 @@ def test_pid(
         max_action_step: 单步最大动作变化幅度，抑制激进调节
     """
     state, _ = env.reset()
-    total_reward = 0.0
     steps = 0
     power_values: list[float] = []
     records: list[dict] = []
@@ -47,7 +46,6 @@ def test_pid(
     integral = 0.0
     prev_error = 0.0
     filtered_derivative = 0.0
-    total_objective = 0.0
 
     while True:
         raw_error = float(target_power - measured_power)
@@ -75,10 +73,9 @@ def test_pid(
         
         action_update_count += 1
 
-        next_state, reward, terminated, _, info = env.step(current_action_value)
+        next_state, _, terminated, _, info = env.step(current_action_value)
 
         steps += 1
-        objective_value = float(reward)
         energy_score = float(info.get("energy_score", 0.0))
         comfort_score = float(info.get("comfort_score", 0.0))
         power_chiller = float(info.get("power_chiller", 0.0))
@@ -87,12 +84,6 @@ def test_pid(
         measured_power = power_chiller
         prev_error = error
 
-        action_range = float(max(action_space_max - action_space_min, 1e-6))
-        action_step_penalty = 0.003 * abs(current_action_value - float(action_values[-1])) / action_range if action_values else 0.0
-        objective_value = float(energy_score - action_step_penalty)
-
-        total_reward += objective_value
-        total_objective += objective_value
         power_values.append(power_chiller)
         action_values.append(current_action_value)
 
@@ -104,8 +95,6 @@ def test_pid(
                 "selected_action_idx": int(selected_action_idx),
                 "action_updated": 1,
                 "action_reason": "pid_discrete",
-                "objective": objective_value,
-                "reward": float(reward),
                 "pid_error": float(error),
                 "pid_integral": float(integral),
                 "pid_derivative": float(filtered_derivative),
@@ -124,7 +113,6 @@ def test_pid(
         if terminated:
             break
 
-    avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
     extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
@@ -135,12 +123,6 @@ def test_pid(
     summary = {
         "strategy": "pid",
         "steps": steps,
-        "total_objective": float(total_objective),
-        "avg_objective_per_action": float(avg_reward_per_action),
-        "avg_objective_per_step": float(avg_reward_per_action),
-        "total_reward": float(total_reward),
-        "avg_reward_per_action": float(avg_reward_per_action),
-        "avg_reward_per_step": float(avg_reward_per_action),
         "avg_power_chiller": float(np.mean(power_values)) if power_values else 0.0,
         "avg_energy_score": float(np.mean([r["energy_score"] for r in records])) if records else 0.0,
         "action_count": int(action_update_count),

@@ -161,6 +161,10 @@ def create_streaming_gate(
     if missing_columns:
         raise ValueError(f"测试数据缺少异常门控特征列: {missing_columns}")
 
+    score_long_weight = getattr(config, "GATE_SCORE_LONG_WEIGHT", None)
+    if score_long_weight is None:
+        score_long_weight = max(0.01, 1.0 - float(config.GATE_SCORE_SHORT_WEIGHT) - float(config.GATE_SCORE_MEDIUM_WEIGHT))
+
     gate = StreamingAnomalyGate(
         feature_dim=len(feature_columns),
         local_window_size=config.GATE_LOCAL_WINDOW_SIZE,
@@ -176,7 +180,7 @@ def create_streaming_gate(
         threshold_min_samples_for_optimization=config.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
         score_short_weight=config.GATE_SCORE_SHORT_WEIGHT,
         score_medium_weight=config.GATE_SCORE_MEDIUM_WEIGHT,
-        score_long_weight=0.0,  # 在gate内部动态计算: max(0.01, 1.0 - short - medium)
+        score_long_weight=score_long_weight,
         trigger_hysteresis_margin=config.GATE_TRIGGER_HYSTERESIS_MARGIN,
     )
 
