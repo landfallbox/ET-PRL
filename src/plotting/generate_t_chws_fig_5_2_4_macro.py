@@ -1,7 +1,8 @@
 """Generate Figure 5-2-4: macro windowed distribution of T_chws states.
 
 Panel content:
-- TTC-RL-1 / ST-ETC / ET-PRL windowed stacked distributions
+- (a) TTC-RL-1/ST-ETC merged windowed stacked distribution
+- (b) ET-PRL windowed stacked distribution
 
 Usage:
     uv run python src/plotting/generate_t_chws_fig_5_2_4_macro.py
@@ -195,15 +196,15 @@ def _plot_windowed_distribution_panel(
         ax.grid(False)
         ax.axhline(0.0, color='#B8B8B8', linestyle='--', linewidth=0.55, alpha=0.45, zorder=0)
         ax.axhline(1.0, color='#B8B8B8', linestyle='--', linewidth=0.55, alpha=0.45, zorder=0)
+        # Place subfigure title on the top-left border of each panel.
         ax.text(
-            -0.04,
-            0.50,
+            0.0,
+            1.01,
             row_name,
             transform=ax.transAxes,
-            rotation=90,
-            ha='center',
-            va='center',
-            fontsize=11,
+            ha='left',
+            va='bottom',
+            fontsize=12,
             clip_on=False,
         )
         for spine in ax.spines.values():
@@ -247,17 +248,21 @@ def generate_macro_figure(
     time_ttc1 = ttc1_steps * sampling_interval_min / 60.0
     time_st = st_steps * sampling_interval_min / 60.0
 
+    merged_time = np.concatenate([time_ttc1, time_st])
+    merged_values = np.concatenate([ttc1_values, st_values])
+    merge_order = np.argsort(merged_time, kind='mergesort')
+    merged_time = merged_time[merge_order]
+    merged_values = merged_values[merge_order]
+
     series_map: dict[str, tuple[np.ndarray, np.ndarray]] = {
-        'ET-PRL': (time_et, et_values),
-        'TTC-RL-1': (time_ttc1, ttc1_values),
-        'ST-ETC': (time_st, st_values),
+        '(a)TTC-RL-1/ST-ETC': (merged_time, merged_values),
+        '(b)ET-PRL': (time_et, et_values),
     }
     all_values = [vals for _, vals in series_map.values()]
     temp_levels = np.unique(np.concatenate(all_values))
     temp_color_map = _build_temperature_color_map(temp_levels)
 
-    # Keep method order aligned with Table 5-3 (excluding TTC-RL-2 in this figure).
-    preferred_order = ['TTC-RL-1', 'ST-ETC', 'ET-PRL']
+    preferred_order = ['(a)TTC-RL-1/ST-ETC', '(b)ET-PRL']
     panel_rows = [
         (name, series_map[name][0], series_map[name][1])
         for name in preferred_order
@@ -278,7 +283,7 @@ def generate_macro_figure(
         window_hours=window_hours,
     )
 
-    fig.supylabel('Action Proportion', fontsize=12)
+    fig.supylabel(r'Proportion of $T_{\mathrm{chws}}$ Setpoints', fontsize=12, x=0.045)
 
     temp_handles = [
         Patch(
