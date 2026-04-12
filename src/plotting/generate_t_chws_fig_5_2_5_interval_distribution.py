@@ -21,11 +21,11 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.patches import ConnectionPatch, Rectangle
 from matplotlib.ticker import LogLocator, MultipleLocator
 
 
@@ -35,6 +35,8 @@ plt.rcParams.update(
         'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
         'mathtext.fontset': 'dejavusans',
         'axes.unicode_minus': True,
+        'xtick.direction': 'in',
+        'ytick.direction': 'in',
     }
 )
 
@@ -120,8 +122,18 @@ def _compute_binned_share(intervals: np.ndarray, bins: list[tuple[int, int]]) ->
     return shares
 
 
-def _style_axes(ax: plt.Axes) -> None:
-    ax.tick_params(axis='both', labelsize=9)
+def _style_axes(ax: plt.Axes, labelsize: int = 9, tick_length: float = 4.0) -> None:
+    ax.tick_params(
+        axis='both',
+        labelsize=labelsize,
+        direction='in',
+        top=True,
+        right=True,
+        labeltop=False,
+        labelright=False,
+        length=tick_length,
+        width=0.8,
+    )
     for spine in ax.spines.values():
         spine.set_linewidth(0.9)
 
@@ -157,15 +169,20 @@ def _draw_grouped_bars(
     ax.set_xticklabels(labels, fontsize=9)
 
 
-def _add_tail_inset(ax: plt.Axes, labels: list[str], shares_by_strategy: dict[str, np.ndarray], width: float) -> None:
+def _add_tail_inset(
+    ax: plt.Axes,
+    labels: list[str],
+    shares_by_strategy: dict[str, np.ndarray],
+    width: float,
+) -> plt.Axes | None:
     if len(labels) <= 4:
-        return
+        return None
 
     tail_start_idx = 3
     tail_x = np.arange(len(labels) - tail_start_idx, dtype=float)
     tail_labels = labels[tail_start_idx:]
 
-    inset = ax.inset_axes([0.56, 0.52, 0.41, 0.40])
+    inset = ax.inset_axes([0.53, 0.43, 0.44, 0.49])
     for idx, strategy in enumerate(STRATEGY_ORDER):
         values = shares_by_strategy[strategy][tail_start_idx:]
         offset = (idx - 1) * width
@@ -193,12 +210,69 @@ def _add_tail_inset(ax: plt.Axes, labels: list[str], shares_by_strategy: dict[st
     inset.set_xticklabels(tail_labels, fontsize=8)
     inset.set_ylim(0.0, max_tail * 1.40)
     inset.yaxis.set_major_locator(MultipleLocator(0.5 if max_tail <= 2.0 else 1.0))
+    inset.set_ylabel('Share (%)', fontsize=9, labelpad=2)
     inset.minorticks_off()
     inset.grid(axis='y', color='#EFEFEF', linewidth=0.5, zorder=0)
-    inset.tick_params(axis='both', labelsize=8)
+    _style_axes(inset, labelsize=8, tick_length=3.0)
 
     for spine in inset.spines.values():
         spine.set_linewidth(0.8)
+
+    return inset
+
+
+def _add_inset_guidance_box(
+    ax: plt.Axes,
+    inset: plt.Axes,
+    x: np.ndarray,
+    shares_by_strategy: dict[str, np.ndarray],
+    tail_start_idx: int,
+) -> None:
+    if x.size <= tail_start_idx:
+        return
+
+    tail_max = 0.0
+    for strategy in STRATEGY_ORDER:
+        values = shares_by_strategy[strategy][tail_start_idx:]
+        if values.size > 0:
+            tail_max = max(tail_max, float(np.max(values)))
+
+    box_ymax = max(4.0, tail_max * 1.6)
+    box_xmin = float(x[tail_start_idx] - 0.55)
+    box_xmax = float(x[-1] + 0.55)
+
+    rect = Rectangle(
+        (box_xmin, 0.0),
+        box_xmax - box_xmin,
+        box_ymax,
+        fill=False,
+        linestyle='--',
+        linewidth=0.9,
+        edgecolor='#9CA3AF',
+        zorder=4,
+    )
+    ax.add_patch(rect)
+
+    upper_conn = ConnectionPatch(
+        xyA=(box_xmin, box_ymax),
+        coordsA=ax.transData,
+        xyB=(0.02, 0.98),
+        coordsB=inset.transAxes,
+        linestyle='--',
+        linewidth=0.8,
+        color='#9CA3AF',
+    )
+    lower_conn = ConnectionPatch(
+        xyA=(box_xmin, 0.0),
+        coordsA=ax.transData,
+        xyB=(0.02, 0.02),
+        coordsB=inset.transAxes,
+        linestyle='--',
+        linewidth=0.8,
+        color='#9CA3AF',
+    )
+    ax.add_artist(upper_conn)
+    ax.add_artist(lower_conn)
 
 
 def generate_interval_distribution_figure(
@@ -237,7 +311,15 @@ def generate_interval_distribution_figure(
         ax.set_ylim(0.0, 103.0)
         ax.yaxis.set_major_locator(MultipleLocator(20.0))
         ax.minorticks_off()
-        _add_tail_inset(ax=ax, labels=labels, shares_by_strategy=shares_by_strategy, width=width)
+        inset = _add_tail_inset(ax=ax, labels=labels, shares_by_strategy=shares_by_strategy, width=width)
+        if inset is not None:
+            _add_inset_guidance_box(
+                ax=ax,
+                inset=inset,
+                x=x,
+                shares_by_strategy=shares_by_strategy,
+                tail_start_idx=3,
+            )
     else:
         positive_values = []
         for strategy in STRATEGY_ORDER:
@@ -258,13 +340,13 @@ def generate_interval_distribution_figure(
     ax.set_ylabel('Share (%)', fontsize=10)
     ax.grid(axis='y', which='major', color='#EAEAEA', linewidth=0.8, zorder=0)
     ax.legend(
-        loc='upper center',
-        bbox_to_anchor=(0.5, 0.99),
-        ncol=3,
+        loc='upper left',
+        bbox_to_anchor=(0.01, 0.995),
+        ncol=1,
         fontsize=9,
         frameon=False,
         handlelength=1.8,
-        columnspacing=1.4,
+        borderaxespad=0.0,
     )
     _style_axes(ax)
 
