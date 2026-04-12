@@ -309,7 +309,7 @@ def generate_macro_figure(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, format='svg', dpi=100, bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved Figure 5-2-4 to {output_path}')
+    print(f'Saved Figure 5-2-3 to {output_path}')
 
 
 def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) -> None:
@@ -321,12 +321,12 @@ def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')
     results = load_control_results(results_dir)
-    output_path = output_dir / 'fig_5_2_4_t_chws_macro_distribution.svg'
+    output_path = output_dir / 'fig_5_2_3_t_chws_macro_distribution.svg'
     generate_macro_figure(results, output_path)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate Figure 5-2-4 macro T_chws distribution.')
+    parser = argparse.ArgumentParser(description='Generate Figure 5-2-3 macro T_chws distribution.')
     parser.add_argument('--results-dir', type=Path, default=None)
     parser.add_argument('--output-dir', type=Path, default=None)
     args = parser.parse_args()

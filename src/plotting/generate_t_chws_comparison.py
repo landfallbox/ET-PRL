@@ -1,8 +1,8 @@
 """Compatibility entrypoint for split T_chws figure generation.
 
 This script now delegates to two dedicated scripts:
-- Figure 5-2-4 macro distribution
-- Figure 5-2-5 delta analysis
+- Figure 5-2-3 macro distribution
+- Figure 5-2-4 delta analysis
 
 Usage:
     uv run python src/plotting/generate_t_chws_comparison.py
@@ -35,15 +35,15 @@ def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) 
     macro_results = load_macro_results(results_dir)
     delta_results = load_delta_results(results_dir)
 
-    output_a = output_dir / 'fig_5_2_4_t_chws_macro_distribution.svg'
-    output_bc = output_dir / 'fig_5_2_5_t_chws_delta_analysis.svg'
+    output_a = output_dir / 'fig_5_2_3_t_chws_macro_distribution.svg'
+    output_bc = output_dir / 'fig_5_2_4_t_chws_delta_analysis.svg'
 
     generate_macro_figure(macro_results, output_a)
     generate_delta_figure(delta_results, output_bc)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate split T_chws figures (Figure 5-2-4 and 5-2-5).')
+    parser = argparse.ArgumentParser(description='Generate split T_chws figures (Figure 5-2-3 and 5-2-4).')
     parser.add_argument('--results-dir', type=Path, default=None)
     parser.add_argument('--output-dir', type=Path, default=None)
     args = parser.parse_args()

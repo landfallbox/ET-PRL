@@ -1,4 +1,4 @@
-"""Generate Figure 5-2-5: redesigned delta-action analysis.
+"""Generate Figure 5-2-4: redesigned delta-action analysis.
 
 Panel content:
 - (a) Local disturbance + absolute T_chws step response in a typical window
@@ -525,7 +525,7 @@ def generate_delta_figure(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, format='svg', dpi=100, bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved Figure 5-2-5 to {output_path}')
+    print(f'Saved Figure 5-2-4 to {output_path}')
 
 
 def main(
@@ -545,7 +545,7 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')
     results = load_control_results(results_dir)
-    output_path = output_dir / 'fig_5_2_5_t_chws_delta_analysis.svg'
+    output_path = output_dir / 'fig_5_2_4_t_chws_delta_analysis.svg'
     generate_delta_figure(
         results,
         output_path,
@@ -556,7 +556,7 @@ def main(
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate Figure 5-2-5 T_chws delta analysis.')
+    parser = argparse.ArgumentParser(description='Generate Figure 5-2-4 T_chws delta analysis.')
     parser.add_argument('--results-dir', type=Path, default=None)
     parser.add_argument('--output-dir', type=Path, default=None)
     parser.add_argument('--env-data-path', type=Path, default=None)
