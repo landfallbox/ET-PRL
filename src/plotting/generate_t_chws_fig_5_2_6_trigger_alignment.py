@@ -16,6 +16,8 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
+from matplotlib.ticker import MultipleLocator
 
 
 plt.rcParams.update(
@@ -28,11 +30,15 @@ plt.rcParams.update(
 )
 
 
-COLOR_LOAD = '#2F3A4A'
-COLOR_HIGH = '#E69F00'
-COLOR_ET = '#E64B35'
-COLOR_ST = '#1F4E79'
-COLOR_TTC = '#6B7280'
+COLOR_LOAD = '#0072B2'
+COLOR_ET = '#C43C2B'
+COLOR_ST = '#1F5AA6'
+COLOR_TTC = '#9AA0A6'
+COLOR_SHADE = '#BCC5D1'
+COLOR_SHADE_EDGE = '#9DA9B8'
+SHADE_ALPHA = 0.38
+LOAD_LINEWIDTH = 1.2
+LOAD_ALPHA = 0.90
 
 
 def _load_results(results_dir: Path) -> dict[str, pd.DataFrame]:
@@ -70,10 +76,151 @@ def _select_typical_day_by_range(load_series: np.ndarray, steps_per_day: int) ->
     return int(selected_day)
 
 
-def _style_axes(ax: plt.Axes) -> None:
-    ax.tick_params(axis='both', labelsize=9)
+def _style_axes(ax: plt.Axes, tick_size: float = 10.5) -> None:
+    ax.tick_params(axis='both', which='both', labelsize=tick_size, top=False, right=False)
+    ax.tick_params(axis='y', which='both', labelright=False, right=False)
+    ax.yaxis.set_ticks_position('left')
     for spine in ax.spines.values():
-        spine.set_linewidth(0.9)
+        spine.set_linewidth(0.95)
+
+
+def _expand_window_hysteresis(
+    local_delta_abs: np.ndarray,
+    seed_start: int,
+    seed_end: int,
+    low_threshold: float,
+    hysteresis_steps: int,
+) -> tuple[int, int]:
+    n = len(local_delta_abs)
+    if n == 0:
+        return 0, 0
+
+    stop_steps = max(1, int(hysteresis_steps))
+
+    left = seed_start
+    low_streak = 0
+    idx = seed_start
+    while idx > 0:
+        idx -= 1
+        if local_delta_abs[idx] < low_threshold:
+            low_streak += 1
+        else:
+            low_streak = 0
+
+        if low_streak >= stop_steps:
+            left = min(n - 1, idx + stop_steps)
+            break
+        left = idx
+    else:
+        left = 0
+
+    right = seed_end
+    low_streak = 0
+    idx = seed_end
+    while idx < n - 1:
+        idx += 1
+        if local_delta_abs[idx] < low_threshold:
+            low_streak += 1
+        else:
+            low_streak = 0
+
+        if low_streak >= stop_steps:
+            right = max(0, idx - stop_steps)
+            break
+        right = idx
+    else:
+        right = n - 1
+
+    if right < left:
+        right = left
+    return left, right
+
+
+def _extract_shaded_windows(
+    local_delta_abs: np.ndarray,
+    local_t: np.ndarray,
+    sampling_interval_min: float,
+    quantile_high: float = 0.85,
+    quantile_low: float = 0.60,
+    hysteresis_steps: int = 3,
+    max_windows: int = 4,
+    min_center_gap_hours: float = 2.5,
+) -> list[tuple[float, float]]:
+    if len(local_t) == 0 or len(local_delta_abs) == 0:
+        return []
+
+    q_high = float(np.clip(quantile_high, 0.0, 1.0))
+    q_low = float(np.clip(quantile_low, 0.0, 1.0))
+    if q_low > q_high:
+        q_low = q_high
+
+    high_thr = float(np.quantile(local_delta_abs, q_high))
+    low_thr = float(np.quantile(local_delta_abs, q_low))
+    mask = local_delta_abs >= high_thr
+
+    segments: list[tuple[int, int]] = []
+    start_idx: Optional[int] = None
+    for idx, is_high in enumerate(mask):
+        if is_high and start_idx is None:
+            start_idx = idx
+        elif not is_high and start_idx is not None:
+            segments.append((start_idx, idx - 1))
+            start_idx = None
+    if start_idx is not None:
+        segments.append((start_idx, len(mask) - 1))
+
+    if not segments:
+        return []
+
+    scored: list[tuple[float, float, int, int]] = []
+    for seg_start, seg_end in segments:
+        ext_start, ext_end = _expand_window_hysteresis(
+            local_delta_abs=local_delta_abs,
+            seed_start=seg_start,
+            seed_end=seg_end,
+            low_threshold=low_thr,
+            hysteresis_steps=hysteresis_steps,
+        )
+        peak_delta = float(np.max(local_delta_abs[seg_start : seg_end + 1]))
+        sum_delta = float(np.sum(local_delta_abs[seg_start : seg_end + 1]))
+        score = peak_delta + 0.35 * sum_delta
+
+        center_h = float((local_t[seg_start] + local_t[seg_end]) / 2.0)
+        scored.append((score, center_h, ext_start, ext_end))
+
+    ranked = sorted(scored, key=lambda x: x[0], reverse=True)
+
+    selected: list[tuple[float, float, int, int]] = []
+    for candidate in ranked:
+        center_h = candidate[1]
+        if all(abs(center_h - existing[1]) >= min_center_gap_hours for existing in selected):
+            selected.append(candidate)
+        if len(selected) >= max_windows:
+            break
+
+    if not selected and ranked:
+        selected.append(ranked[0])
+
+    selected.sort(key=lambda x: x[3])
+
+    merged_idx: list[tuple[int, int]] = []
+    for _, _, cur_start, cur_end in selected:
+        if not merged_idx:
+            merged_idx.append((cur_start, cur_end))
+            continue
+        prev_start, prev_end = merged_idx[-1]
+        if cur_start <= prev_end + 1:
+            merged_idx[-1] = (prev_start, max(prev_end, cur_end))
+        else:
+            merged_idx.append((cur_start, cur_end))
+
+    dt_h = sampling_interval_min / 60.0
+    windows: list[tuple[float, float]] = []
+    for idx_start, idx_end in merged_idx:
+        t_start = float(local_t[idx_start])
+        t_end = float(min(24.0, local_t[idx_end] + dt_h))
+        windows.append((t_start, t_end))
+    return windows
 
 
 def generate_trigger_alignment_figure(
@@ -83,6 +230,8 @@ def generate_trigger_alignment_figure(
     sampling_interval_min: float = 5.0,
     selected_day: Optional[int] = None,
     high_change_quantile: float = 0.85,
+    low_change_quantile: float = 0.60,
+    hysteresis_steps: int = 3,
 ) -> None:
     results = _load_results(results_dir)
     if not env_data_path.exists():
@@ -101,7 +250,6 @@ def generate_trigger_alignment_figure(
     load_series = env_df['CL'].to_numpy(dtype=float)[:n]
     load_delta_abs = np.abs(np.diff(load_series, prepend=load_series[0]))
     high_thr = float(np.quantile(load_delta_abs, high_change_quantile))
-    high_mask_full = load_delta_abs >= high_thr
 
     if selected_day is None:
         selected_day = _select_typical_day_by_range(load_series, steps_per_day)
@@ -114,35 +262,42 @@ def generate_trigger_alignment_figure(
     local_idx = np.arange(start, end, dtype=int)
     local_t = (local_idx - start) * sampling_interval_min / 60.0
     local_load = load_series[start:end]
-    local_high = high_mask_full[start:end]
 
-    fig = plt.figure(figsize=(13.5, 6.6), constrained_layout=True)
-    gs = fig.add_gridspec(2, 1, height_ratios=[1.9, 1.1], hspace=0.10)
+    fig = plt.figure(figsize=(7.2, 4.8))
+    gs = fig.add_gridspec(2, 1, height_ratios=[3.4, 1.15], hspace=0.05)
     ax_top = fig.add_subplot(gs[0])
     ax_bottom = fig.add_subplot(gs[1], sharex=ax_top)
+    fig.subplots_adjust(left=0.20, right=0.985, top=0.84, bottom=0.16, hspace=0.05)
 
-    ax_top.plot(local_t, local_load, color=COLOR_LOAD, linewidth=1.8, label='Cooling load (kW)', zorder=2)
-    ax_top.scatter(
-        local_t[local_high],
-        local_load[local_high],
-        s=14,
-        color=COLOR_HIGH,
-        alpha=0.85,
-        label=r'High $|\Delta Q_{load}|$ (global q85)',
-        zorder=3,
+    ax_top.set_axisbelow(True)
+    ax_bottom.set_axisbelow(True)
+
+    ax_top.plot(local_t, local_load, color=COLOR_LOAD, linewidth=LOAD_LINEWIDTH, alpha=LOAD_ALPHA, zorder=2)
+
+    ax_top.set_ylabel('Cooling load (kW)', fontsize=11.5, labelpad=8.5)
+    ax_top.grid(axis='y', color='#D6DCE5', linewidth=0.7, linestyle='--', alpha=0.30)
+
+    top_legend_handles = [
+        Line2D([0], [0], color=COLOR_LOAD, lw=LOAD_LINEWIDTH, alpha=LOAD_ALPHA, label='Cooling load'),
+    ]
+    ax_top.legend(
+        handles=top_legend_handles,
+        loc='upper center',
+        bbox_to_anchor=(0.5, 1.18),
+        ncol=1,
+        frameon=False,
+        fontsize=9.8,
+        columnspacing=1.2,
+        handletextpad=0.5,
     )
 
-    ax_top.set_ylabel('Cooling load (kW)', fontsize=10)
-    ax_top.grid(axis='y', color='#ECECEC', linewidth=0.6)
-    ax_top.legend(loc='upper right', fontsize=8, frameon=False)
-    ax_top.text(0.01, 0.98, '(a)', transform=ax_top.transAxes, va='top', ha='left', fontsize=10, fontweight='bold')
-    _style_axes(ax_top)
-    ax_top.tick_params(axis='x', labelbottom=False)
+    _style_axes(ax_top, tick_size=10.5)
+    ax_top.tick_params(axis='x', bottom=False, labelbottom=False)
 
     strategy_rows = [
-        ('TTC-RL-1', 1.0, COLOR_TTC),
-        ('ST-ETC', 2.0, COLOR_ST),
-        ('ET-PRL', 3.0, COLOR_ET),
+        ('TTC-RL-1', 0.70, COLOR_TTC),
+        ('ST-ETC', 1.35, COLOR_ST),
+        ('ET-PRL', 2.00, COLOR_ET),
     ]
 
     for name, y_level, color in strategy_rows:
@@ -151,35 +306,39 @@ def generate_trigger_alignment_figure(
         local_updated = updated[start:end]
         trigger_t = local_t[local_updated]
         if len(trigger_t) > 0:
-            ax_bottom.scatter(
+            ax_bottom.vlines(
                 trigger_t,
-                np.full_like(trigger_t, y_level, dtype=float),
-                marker='|',
-                s=190,
-                linewidths=1.2,
+                y_level - 0.24,
+                y_level + 0.24,
                 color=color,
-                alpha=0.95,
+                alpha=0.70,
+                linewidth=0.75,
+                zorder=2,
             )
 
-    ax_bottom.set_yticks([1.0, 2.0, 3.0])
-    ax_bottom.set_yticklabels(['TTC-RL-1', 'ST-ETC', 'ET-PRL'], fontsize=9)
-    ax_bottom.set_ylim(0.5, 3.5)
-    ax_bottom.set_xlim(float(local_t[0]), float(local_t[-1]) if len(local_t) > 1 else float(local_t[0] + 1.0))
-    ax_bottom.set_xlabel('Time of day (h)', fontsize=10)
-    ax_bottom.set_ylabel('Trigger pulses', fontsize=10)
-    ax_bottom.grid(axis='x', color='#ECECEC', linewidth=0.6)
-    ax_bottom.grid(axis='y', color='#F3F3F3', linewidth=0.5)
-    ax_bottom.text(0.01, 0.98, '(b)', transform=ax_bottom.transAxes, va='top', ha='left', fontsize=10, fontweight='bold')
-    _style_axes(ax_bottom)
+    ax_bottom.set_yticks([0.70, 1.35, 2.00])
+    ax_bottom.set_yticklabels(['TTC-RL-1', 'ST-ETC', 'ET-PRL'], fontsize=9.5)
+    ax_bottom.set_ylim(0.30, 2.35)
+    ax_bottom.set_xlim(0.0, 24.0)
+    ax_bottom.set_ylabel('Trigger policies', fontsize=11.0, labelpad=10.0)
+    ax_bottom.grid(axis='x', color='#D6DCE5', linewidth=0.7, linestyle='--', alpha=0.30)
+    ax_bottom.grid(axis='y', color='#DCE2EA', linewidth=0.6, linestyle='--', alpha=0.30)
+    _style_axes(ax_bottom, tick_size=10.5)
 
-    for hour in range(0, 25, 2):
-        ax_bottom.axvline(hour, color='#F1F1F1', linewidth=0.5, zorder=0)
+    major_xticks = [0, 6, 12, 18, 24]
+    major_xticklabels = ['00:00', '06:00', '12:00', '18:00', '24:00']
+    ax_top.set_xticks(major_xticks)
+    ax_bottom.set_xticks(major_xticks)
+    ax_top.xaxis.set_minor_locator(MultipleLocator(3))
+    ax_bottom.xaxis.set_minor_locator(MultipleLocator(3))
+    ax_top.yaxis.set_major_locator(MultipleLocator(1000))
+    ax_top.yaxis.set_minor_locator(MultipleLocator(500))
+    ax_top.tick_params(axis='y', which='minor', length=2.5)
+    ax_bottom.tick_params(axis='x', which='minor', length=2.5)
+    ax_bottom.set_xticklabels(major_xticklabels, fontsize=10.5)
+    fig.supxlabel('Time of day (h)', fontsize=11.5, y=0.065)
+    fig.align_ylabels([ax_top, ax_bottom])
 
-    fig.suptitle(
-        f'Typical-day load-trigger alignment (Day {selected_day}, {sampling_interval_min:.0f}-min sampling)',
-        fontsize=11,
-        y=0.98,
-    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, format='svg', dpi=120, bbox_inches='tight')
     plt.close(fig)
@@ -197,6 +356,8 @@ def main() -> None:
     parser.add_argument('--sampling-interval-min', type=float, default=5.0)
     parser.add_argument('--selected-day', type=int, default=None)
     parser.add_argument('--high-change-quantile', type=float, default=0.85)
+    parser.add_argument('--low-change-quantile', type=float, default=0.60)
+    parser.add_argument('--hysteresis-steps', type=int, default=3)
     args = parser.parse_args()
 
     root = Path(__file__).parent.parent.parent
@@ -211,6 +372,8 @@ def main() -> None:
         sampling_interval_min=args.sampling_interval_min,
         selected_day=args.selected_day,
         high_change_quantile=args.high_change_quantile,
+        low_change_quantile=args.low_change_quantile,
+        hysteresis_steps=args.hysteresis_steps,
     )
 
 
