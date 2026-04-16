@@ -233,12 +233,12 @@ def compare_control_strategies(
     pid_error_deadband = float(getattr(config, "PID_ERROR_DEADBAND", 0.1))
     pid_derivative_filter_alpha = float(getattr(config, "PID_DERIVATIVE_FILTER_ALPHA", 0.7))
     pid_max_action_step = float(getattr(config, "PID_MAX_ACTION_STEP", 2.0))
-    pid_target_power_ratio = float(getattr(config, "PID_TARGET_POWER_RATIO", 0.85))
+    pid_supply_temp_ref = float(getattr(config, "PID_SUPPLY_TEMP_REF", config.CHILLER_SUPPLY_TEMP_REF))
     pid_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     pid_summary, pid_step_results = test_pid(
         env=pid_env,
         action_space=action_space,
-        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        supply_temp_ref=pid_supply_temp_ref,
         kp=pid_kp,
         ki=pid_ki,
         kd=pid_kd,
@@ -246,7 +246,6 @@ def compare_control_strategies(
         error_deadband=pid_error_deadband,
         derivative_filter_alpha=pid_derivative_filter_alpha,
         max_action_step=pid_max_action_step,
-        target_power_ratio=pid_target_power_ratio,
     )
     summaries["pid"] = pid_summary
     pid_step_results.to_csv(test_experiment_dir / "pid_step_results.csv", index=False)
@@ -285,7 +284,7 @@ def compare_control_strategies(
                 "error_deadband": pid_error_deadband,
                 "derivative_filter_alpha": pid_derivative_filter_alpha,
                 "max_action_step": pid_max_action_step,
-                "target_power_ratio": pid_target_power_ratio,
+                "supply_temp_ref": pid_supply_temp_ref,
             },
             "event_threshold_params": {
                 "CL": cl_threshold,

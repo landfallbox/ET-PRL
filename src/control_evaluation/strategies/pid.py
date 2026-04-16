@@ -15,16 +15,16 @@ def test_pid(
     ki: float,
     kd: float,
     integral_limit: float,
-    error_deadband: float = 5.0,
+    error_deadband: float = 0.1,
     derivative_filter_alpha: float = 0.7,
     max_action_step: float = 2.0,
-    target_power_ratio: float = 0.85,
 ) -> tuple[dict, pd.DataFrame]:
     """
-    Evaluate traditional discrete PID baseline using supply temperature as feedback signal.
+    Evaluate traditional discrete PID baseline using supply temperature closed-loop feedback.
 
     参数：
-        error_deadband: 误差死区，降低稳态抖动
+        supply_temp_ref: 供水温度设定值（℃）
+        error_deadband: 温度误差死区，降低稳态抖动
         derivative_filter_alpha: 微分低通滤波系数
         max_action_step: 单步最大动作变化幅度，抑制激进调节
     """
@@ -39,20 +39,20 @@ def test_pid(
     action_space_min = float(np.min(action_space))
     action_space_max = float(np.max(action_space))
     current_action_value = float((action_space_min + action_space_max) / 2.0)
-    ref_power = float(getattr(getattr(env, "reward_calculator", None), "chiller_ref_power", 314.0))
-    target_power = ref_power * float(np.clip(target_power_ratio, 0.2, 1.2))
-    measured_power = ref_power
+    target_supply_temp = float(supply_temp_ref)
+    measured_supply_temp = target_supply_temp
 
     integral = 0.0
     prev_error = 0.0
     filtered_derivative = 0.0
 
     while True:
-        raw_error = float(target_power - measured_power)
+        # 温度闭环：误差 = 目标供水温度 - 实测供水温度
+        raw_error = float(target_supply_temp - measured_supply_temp)
         error = 0.0 if abs(raw_error) <= abs(error_deadband) else raw_error
 
         # 条件积分：仅在误差不过大时积分，减轻风up
-        if abs(error) <= 2.0:
+        if abs(error) <= 1.0:
             integral = float(np.clip(integral + error, -abs(integral_limit), abs(integral_limit)))
         derivative_raw = float(error - prev_error) if steps > 0 else 0.0
         filtered_derivative = float(
@@ -81,7 +81,7 @@ def test_pid(
         power_chiller = float(info.get("power_chiller", 0.0))
         chiller_supply_temp = float(info.get("chiller_supply_temp", 0.0))
 
-        measured_power = power_chiller
+        measured_supply_temp = chiller_supply_temp
         prev_error = error
 
         power_values.append(power_chiller)
@@ -98,6 +98,7 @@ def test_pid(
                 "pid_error": float(error),
                 "pid_integral": float(integral),
                 "pid_derivative": float(filtered_derivative),
+                "pid_target_supply_temp": target_supply_temp,
                 "energy_score": energy_score,
                 "comfort_score": comfort_score,
                 "power_chiller": power_chiller,
