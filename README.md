@@ -23,6 +23,11 @@
 - 事件驱动测试：`uv run event-dqn-test-event-driven`
 - 在线门控预热：`uv run event-dqn-prewarm-gate`
 
+### 3) 论文导出（Markdown -> Word）
+- 前置：已安装 Pandoc（可用 `pandoc --version` 检查）
+- 在 `docs/papers/` 目录下执行：`pandoc 小论文.md -o 小论文.docx`
+- 若在项目根目录执行：`pandoc docs/papers/小论文.md -o docs/papers/小论文.docx`
+
 ## 目录约定
 
 - `src/cli/`：统一命令入口（CLI）
