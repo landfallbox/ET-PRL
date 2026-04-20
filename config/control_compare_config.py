@@ -7,3 +7,6 @@ class ControlCompareConfig(DQNConfig, OnlineAnomalyDetectionConfig):
 
     EXPERIMENT_NAME = "control_compare"
     EVAL_SUBDIR = ""
+
+    # ==================== RBC 规则基线配置（固定设定值） ====================
+    RBC_FIXED_SETPOINT = DQNConfig.TARGET_SUPPLY_TEMP

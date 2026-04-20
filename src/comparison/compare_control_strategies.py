@@ -17,6 +17,7 @@ from src.control_evaluation.strategies.event_driven import test_event_driven
 from src.control_evaluation.strategies.fixed_interval import test_fixed_interval
 from src.control_evaluation.strategies.event_triggered_etc import test_event_triggered_etc
 from src.control_evaluation.strategies.pid import test_pid
+from src.control_evaluation.strategies.rbc import test_rule_based_control
 
 
 def _get_paper_symbol_field_mapping() -> dict[str, str]:
@@ -250,6 +251,16 @@ def compare_control_strategies(
     summaries["pid"] = pid_summary
     pid_step_results.to_csv(test_experiment_dir / "pid_step_results.csv", index=False)
 
+    rbc_fixed_setpoint = float(config.RBC_FIXED_SETPOINT)
+    rbc_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+    rbc_summary, rbc_step_results = test_rule_based_control(
+        env=rbc_env,
+        action_space=action_space,
+        fixed_setpoint=rbc_fixed_setpoint,
+    )
+    summaries["rbc"] = rbc_summary
+    rbc_step_results.to_csv(test_experiment_dir / "rbc_step_results.csv", index=False)
+
     cl_threshold, twb_threshold, cl_predict_threshold = _resolve_event_thresholds(config, test_data)
     event_trigger_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_trigger_summary, event_trigger_step_results = test_event_triggered_etc(
@@ -286,6 +297,9 @@ def compare_control_strategies(
                 "max_action_step": pid_max_action_step,
                 "supply_temp_ref": pid_supply_temp_ref,
             },
+            "rbc_params": {
+                "fixed_setpoint": rbc_fixed_setpoint,
+            },
             "event_threshold_params": {
                 "CL": cl_threshold,
                 "Twb": twb_threshold,
@@ -300,7 +314,7 @@ def compare_control_strategies(
         energy_total = metrics.get("E_total_kwh", 0)
         comfort_avg = metrics.get("avg_comfort_score")
         comfort_text = f"{float(comfort_avg):.4f}" if comfort_avg is not None else "N/A"
-        if strategy_name == "pid":
+        if strategy_name in {"pid", "rbc"}:
             primary_label = "energy_kwh"
             primary_value = float(energy_total)
         else:
