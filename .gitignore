@@ -21,3 +21,6 @@ env/
 # temp ignore
 uv.lock
 Event-DQN.code-workspace
+
+# 参考文献
+/docs/papers/ref
