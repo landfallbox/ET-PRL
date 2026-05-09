@@ -5,7 +5,7 @@ This script now delegates to two dedicated scripts:
 - Figure 5-2-4 delta analysis
 
 Usage:
-    uv run python src/plotting/generate_t_chws_comparison.py
+    uv run python src/plotting/plot_t_chws_comparison.py
 """
 
 from __future__ import annotations
@@ -14,11 +14,11 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
-from src.plotting.generate_t_chws_fig_5_2_4_macro import (
+from src.plotting.plot_t_chws_macro_distribution import (
     generate_macro_figure,
     load_control_results as load_macro_results,
 )
-from src.plotting.generate_t_chws_fig_5_2_5_delta import (
+from src.plotting.plot_t_chws_delta_analysis import (
     generate_delta_figure,
     load_control_results as load_delta_results,
 )
@@ -35,8 +35,8 @@ def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) 
     macro_results = load_macro_results(results_dir)
     delta_results = load_delta_results(results_dir)
 
-    output_a = output_dir / 'fig_5_2_3_t_chws_macro_distribution.svg'
-    output_bc = output_dir / 'fig_5_2_4_t_chws_delta_analysis.svg'
+    output_a = output_dir / 'fig7_t_chws_macro_distribution.svg'
+    output_bc = output_dir / 'fig8_t_chws_delta_analysis.svg'
 
     generate_macro_figure(macro_results, output_a)
     generate_delta_figure(delta_results, output_bc)

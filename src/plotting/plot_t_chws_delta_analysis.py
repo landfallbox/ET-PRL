@@ -7,7 +7,7 @@ Panel content:
     (discrete x-axis from -3 to 3 with tail merge)
 
 Usage:
-    uv run python src/plotting/generate_t_chws_fig_5_2_5_delta.py
+    uv run python src/plotting/plot_t_chws_delta_analysis.py
 """
 
 from __future__ import annotations
@@ -545,7 +545,7 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')
     results = load_control_results(results_dir)
-    output_path = output_dir / 'fig_5_2_4_t_chws_delta_analysis.svg'
+    output_path = output_dir / 'fig8_t_chws_delta_analysis.svg'
     generate_delta_figure(
         results,
         output_path,

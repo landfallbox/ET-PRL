@@ -5,7 +5,7 @@ Panel content:
 - (b) ET-PRL windowed stacked distribution
 
 Usage:
-    uv run python src/plotting/generate_t_chws_fig_5_2_4_macro.py
+    uv run python src/plotting/plot_t_chws_macro_distribution.py
 """
 
 from __future__ import annotations
@@ -321,7 +321,7 @@ def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')
     results = load_control_results(results_dir)
-    output_path = output_dir / 'fig_5_2_3_t_chws_macro_distribution.svg'
+    output_path = output_dir / 'fig7_t_chws_macro_distribution.svg'
     generate_macro_figure(results, output_path)
 
 

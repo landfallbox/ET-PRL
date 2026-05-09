@@ -46,7 +46,7 @@ def _build_output_filename(exp_dir: Path, suffix: str = "") -> str:
     例如: dqn_training_curves_20260226_101748.png
     """
     stamp = exp_dir.name  # e.g. "20260226_101748"
-    parts = ["fig4_1_4", "dqn_training_curves", stamp]
+    parts = ["fig6", "dqn_training_curves", stamp]
     if suffix:
         parts.append(suffix)
     return "_".join(parts) + ".png"
@@ -55,7 +55,7 @@ def _build_output_filename(exp_dir: Path, suffix: str = "") -> str:
 def _build_val_output_filename(exp_dir: Path, suffix: str = "") -> str:
     """构造验证奖励曲线文件名。"""
     stamp = exp_dir.name
-    parts = ["fig4_1_5", "dqn_validation_reward", stamp]
+    parts = ["fig6", "dqn_validation_reward", stamp]
     if suffix:
         parts.append(suffix)
     return "_".join(parts) + ".png"

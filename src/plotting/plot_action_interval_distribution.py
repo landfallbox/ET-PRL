@@ -13,8 +13,8 @@ Default bins (steps):
 - 31-74
 
 Usage:
-    uv run python src/plotting/generate_t_chws_fig_5_2_5_interval_distribution.py
-    uv run python src/plotting/generate_t_chws_fig_5_2_5_interval_distribution.py --y-scale log
+    uv run python src/plotting/plot_action_interval_distribution.py
+    uv run python src/plotting/plot_action_interval_distribution.py --y-scale log
 """
 
 from __future__ import annotations
@@ -382,7 +382,7 @@ def main() -> None:
 
     root = Path(__file__).parent.parent.parent
     results_dir = args.results_dir or (root / 'logs' / 'control_compare' / '20260402_222140')
-    output_path = args.output_path or (root / 'docs' / 'pics' / 'fig_5_2_5_action_update_interval_distribution.svg')
+    output_path = args.output_path or (root / 'docs' / 'pics' / 'fig9_action_update_interval_distribution.svg')
 
     generate_interval_distribution_figure(
         results_dir=results_dir,

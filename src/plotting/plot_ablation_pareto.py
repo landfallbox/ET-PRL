@@ -1,7 +1,7 @@
 """Generate Figure 5-2-7: ablation Pareto scatter.
 
 Usage:
-    uv run python src/plotting/generate_fig_5_2_7_ablation_pareto.py
+    uv run python src/plotting/plot_ablation_pareto.py
 """
 
 from __future__ import annotations
@@ -199,7 +199,7 @@ def main() -> None:
     args = parser.parse_args()
 
     root = Path(__file__).parent.parent.parent
-    output_path = args.output_path or (root / "docs" / "pics" / "fig_5_2_7_ablation_pareto_scatter.svg")
+    output_path = args.output_path or (root / "docs" / "pics" / "fig11_ablation_pareto_scatter.svg")
     generate_figure(output_path=output_path)
 
 

@@ -1,7 +1,7 @@
 """Generate Figure 5-2-8: gate key parameter sensitivity and near-optimal region.
 
 Usage:
-    uv run python src/plotting/generate_fig_5_2_8_gate_key_parameter_sensitivity.py
+    uv run python src/plotting/plot_gate_parameter_sensitivity.py
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ plt.rcParams.update(
 )
 
 
-FIGURE_FILENAME = "fig_5_2_8_gate_key_parameter_sensitivity_and_near_optimal_region.svg"
+FIGURE_FILENAME = "fig12_gate_key_parameter_sensitivity.svg"
 DEFAULT_NEAR_OPTIMAL_TOLERANCE = 0.10
 SYMLOG_LINTHRESH = 1.0
 SYMLOG_CANDIDATE_TICKS = [0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0, 150.0]
