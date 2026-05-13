@@ -109,36 +109,6 @@ where $w_{\mathrm{s}}, w_{\mathrm{m}}, w_{\mathrm{l}} \ge 0$ and $w_{\mathrm{s}}
 
 Multi-scale fusion is used because building HVAC systems are typically influenced at the same time by short-term disturbances, intraday periodic changes, and long-term slow drift. If only short-term scores are used, the gating mechanism can respond quickly to local changes such as crowd gathering and equipment start-stop events, but it is also more sensitive to high-frequency sensor noise and normal transient fluctuations, which may increase trigger frequency. If only long-term scores are used, the historical reference baseline becomes more robust, but the response to sudden thermal disturbances may be insufficient. If only short-term and medium-term scores are combined, slow processes caused by seasonal transition, equipment aging, or drift in structural thermal resistance are still difficult to capture. Therefore, the weighted fusion of short, medium, and long time scales jointly supports disturbance detection, periodic pattern representation, and long-term baseline tracking, which improves the adaptability and robustness of the gating mechanism in non-stationary scenarios.
 
-(3) Streaming Two-Level Adaptive Threshold Optimization
-
-To convert continuous anomaly scores into robust control triggering decisions, a two-level adaptive dynamic threshold mechanism with local and global thresholds is constructed. If the gating system relies only on a fixed threshold or on an adaptive threshold with a single update rate, it easily faces a trade-off between sensitivity and stability. If the threshold updates too fast, it can be heavily disturbed by recent abnormal data, oscillate sharply, and mask subsequent true anomalies. If it updates too slowly, it may remain exceeded for a long period when the operating regime shifts as a whole, leading to frequent false triggers and unnecessary use of computational resources. To overcome these limitations, a coupled adaptive monitoring structure with a fast local threshold and a slow global threshold is introduced.
-
-Let the sliding historical window of the most recent $W$ anomaly scores be denoted by $\mathcal{A}_t=\{A(s_{t-W+1}),\ldots,A(s_t)\}$. The main goal of threshold estimation is to continually extract a stable and transferable decision baseline from noisy and non-stationary streaming data. Compared with the conventional mean and standard deviation, which are sensitive to anomalous outliers, this module gives priority to a robust quantile threshold and a robust statistical threshold that reflect nonparametric distribution characteristics.
-
-$$\tau_{q}^{(t)}=Q_q(\mathcal{A}_t), \quad\tau_{\mathrm{mad}}^{(t)}=\operatorname{med}(\mathcal{A}_t)+\kappa \cdot c \cdot \operatorname{MAD}(\mathcal{A}_t)$$
-
-$$\operatorname{MAD}(\mathcal{A}_t)=\operatorname{med}\left(\left|a-\operatorname{med}(\mathcal{A}_t)\right|\right),\quad a\in\mathcal{A}_t$$
-
-where $Q_q(\cdot)$ denotes the high quantile of the set, and $\operatorname{med}(\cdot)$ is the median function. The median absolute deviation, $\operatorname{MAD}$, reduces the bias introduced by potential persistent anomalies in the estimate of dispersion and helps preserve a reliable robust baseline. $\kappa$ is the sensitivity coefficient, and $c \approx 1.4826$ is the consistency constant used to ensure asymptotically unbiased estimation. The rationale is that the quantile estimate provides a robust anchor for threshold location, while $\operatorname{MAD}$ provides a robust correction for scale. Their combination constrains threshold distortion caused by both location shift and scale inflation. Based on this, the local candidate threshold is obtained by a weighted fusion of the two terms.
-
-$$\tau_{\mathrm{cand}}^{(t)}=\omega_q\tau_q^{(t)}+(1-\omega_q)\tau_{\mathrm{mad}}^{(t)}$$
-
-where $\omega_q \in [0,1]$ is the weighting coefficient. This coefficient controls the trade-off between quantile-dominant and scale-correction-dominant estimation. A larger $\omega_q$ places more emphasis on robust location, whereas a smaller $\omega_q$ makes the threshold more sensitive to changes in dispersion. Because a one-step regime shift may introduce high-frequency transient fluctuations, the system does not directly use a single candidate value. Instead, a first-order discrete low-pass filter is introduced for local smoothing.
-
-$$\tau_{\mathrm{local}}^{(t)}=(1-\lambda_{\mathrm{local}})\tau_{\mathrm{local}}^{(t-1)}+\lambda_{\mathrm{local}}\tau_{\mathrm{cand}}^{(t)}$$
-
-where $\lambda_{\mathrm{local}} \in (0,1]$ is the local smoothing update rate. It suppresses short-term noise oscillations while allowing the fast-varying threshold to track regime switching quickly. A larger $\lambda_{\mathrm{local}}$ gives more weight to new samples and helps reduce threshold tracking lag, whereas a smaller $\lambda_{\mathrm{local}}$ strengthens suppression of short-term impulse noise. In this way, the local threshold is responsible for fast adaptation to the current operating condition. Based on the local threshold, the global threshold acts as a historical steady-state reference and is updated by exponential smoothing with stronger hysteresis.
-
-$$\tau_{\mathrm{global}}^{(t)}=(1-\lambda_{\mathrm{g}})\tau_{\mathrm{global}}^{(t-1)}+\lambda_{\mathrm{g}}\tau_{\mathrm{local}}^{(t)}$$
-
-where $\lambda_{\mathrm{g}} \ll \lambda_{\mathrm{local}}$, so the global threshold has a much stronger lagged smoothing property. This cascaded dual-time-constant design acts as a buffer when local features change sharply, enabling stable tracking of deeper system evolution caused by long-term equipment aging and seasonal migration, while reducing the risk that the threshold is dragged by short anomaly segments.
-
-Finally, the basic adaptive gating threshold is constructed by coupling the two threshold signals as follows:
-
-$$\tilde{\tau}_t=\alpha_{\mathrm{local}}\tau_{\mathrm{local}}^{(t)}+(1-\alpha_{\mathrm{local}})\tau_{\mathrm{global}}^{(t)}+b_{\mathrm{bias}}$$
-
-where $\alpha_{\mathrm{local}}\in[0,1]$ controls the fusion ratio between the local and global thresholds. A larger $\alpha_{\mathrm{local}}$ emphasizes fast response to local operating changes, whereas a smaller $\alpha_{\mathrm{local}}$ emphasizes consistency with the long-term baseline and trigger stability. $b_{\mathrm{bias}}$ is a bias term. During highly stable periods, such as low-load night hours, the system variance and $\operatorname{MAD}$ may converge to very small values, causing the threshold to shrink excessively. The bias term sets an absolute lower bound for triggering and thus prevents frequent false triggers caused by an overly small threshold.
-
 # References
 
 [1] Arghand, Taha, et al. "Individually controlled localized chilled beam combined with chilled ceiling: Thermal environment." Building and Environment 282 (2025): 113322.
