@@ -319,11 +319,12 @@ def run_gate_parameter_sensitivity_analysis(
     resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
     resolved_parameters = _resolve_parameters(parameters)
 
-    analysis_root = Path(output_dir or base_config.get_optimization_dir()) / base_config.TIMESTAMP / "sensitivity"
+    default_output_root = base_config.LOG_ROOT_DIR / "online_anomaly_detection" / "sensitivity"
+    analysis_root = Path(output_dir or default_output_root) / base_config.TIMESTAMP
     analysis_root.mkdir(parents=True, exist_ok=True)
 
     context = create_experiment_context(
-        experiment_dir=analysis_root / "analysis",
+        experiment_dir=analysis_root,
         config=base_config,
         save_config=False,
         log_filename=base_config.EVALUATION_LOG_FILENAME,

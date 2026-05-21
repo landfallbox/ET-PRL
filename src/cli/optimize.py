@@ -27,7 +27,12 @@ def main_lstm() -> None:
 
 def main_gate() -> None:
     parser = argparse.ArgumentParser(description="Gate 召回超参贝叶斯优化")
-    parser.add_argument("--experiment_dir", type=str, default=None)
+    parser.add_argument(
+        "--dqn_model_dir",
+        type=str,
+        default=None,
+        help="DQN model run directory used to load checkpoints/best_model.pth; defaults to latest logs/dqn/train/<timestamp>",
+    )
     parser.add_argument("--n_trials", type=int, default=None)
     parser.add_argument("--n_jobs", type=int, default=None)
     parser.add_argument(
@@ -40,7 +45,7 @@ def main_gate() -> None:
     args = parser.parse_args()
 
     optimize_gate_hyperparameters(
-        train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
+        train_experiment_dir=Path(args.dqn_model_dir) if args.dqn_model_dir else None,
         n_trials=args.n_trials,
         n_jobs=args.n_jobs,
         previous_phase_result_dir=Path(args.previous_phase_result_dir) if args.previous_phase_result_dir else None,
@@ -49,7 +54,12 @@ def main_gate() -> None:
 
 def main_gate_sensitivity() -> None:
     parser = argparse.ArgumentParser(description="Gate 超参敏感性分析")
-    parser.add_argument("--experiment_dir", type=str, default=None)
+    parser.add_argument(
+        "--dqn_model_dir",
+        type=str,
+        default=None,
+        help="DQN model run directory used to load checkpoints/best_model.pth; defaults to latest logs/dqn/train/<timestamp>",
+    )
     parser.add_argument("--output_dir", type=str, default=None)
     parser.add_argument(
         "--data_split",
@@ -68,7 +78,7 @@ def main_gate_sensitivity() -> None:
     args = parser.parse_args()
 
     run_gate_parameter_sensitivity_analysis(
-        train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
+        train_experiment_dir=Path(args.dqn_model_dir) if args.dqn_model_dir else None,
         output_dir=Path(args.output_dir) if args.output_dir else None,
         data_split=str(args.data_split),
         parameters=[str(param) for param in args.parameters] if args.parameters else None,
