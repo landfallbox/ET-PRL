@@ -312,7 +312,7 @@ def _evaluate_once(
 def run_gate_parameter_sensitivity_analysis(
     train_experiment_dir: Path | None = None,
     output_dir: Path | None = None,
-    data_split: str = "val",
+    data_split: str = "test",
     parameters: list[str] | None = None,
 ) -> dict[str, Any]:
     base_config = ControlCompareConfig

@@ -64,9 +64,9 @@ def main_gate_sensitivity() -> None:
     parser.add_argument(
         "--data_split",
         type=str,
-        default="val",
+        default="test",
         choices=["train", "val", "test"],
-        help="用于分析的数据划分，默认 val",
+        help="用于分析的数据划分，默认 test",
     )
     parser.add_argument(
         "--parameters",
