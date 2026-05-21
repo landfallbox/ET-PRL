@@ -3,6 +3,7 @@ from pathlib import Path
 
 from src.cl_predict.lstm_hyperparams_optimize import optimize_lstm_hyperparameters
 from src.dqn.dqn_hyperparams_optimize import optimize_dqn_hyperparameters
+from src.online_anomaly_detection.gate_sensitivity_analysis import run_gate_parameter_sensitivity_analysis
 from src.online_anomaly_detection.gate_hyperparams_optimize import optimize_gate_hyperparameters
 
 
@@ -43,4 +44,32 @@ def main_gate() -> None:
         n_trials=args.n_trials,
         n_jobs=args.n_jobs,
         previous_phase_result_dir=Path(args.previous_phase_result_dir) if args.previous_phase_result_dir else None,
+    )
+
+
+def main_gate_sensitivity() -> None:
+    parser = argparse.ArgumentParser(description="Gate 超参敏感性分析")
+    parser.add_argument("--experiment_dir", type=str, default=None)
+    parser.add_argument("--output_dir", type=str, default=None)
+    parser.add_argument(
+        "--data_split",
+        type=str,
+        default="val",
+        choices=["train", "val", "test"],
+        help="用于分析的数据划分，默认 val",
+    )
+    parser.add_argument(
+        "--parameters",
+        type=str,
+        nargs="+",
+        default=None,
+        help="要分析的参数名列表；默认分析论文中的关键门控参数",
+    )
+    args = parser.parse_args()
+
+    run_gate_parameter_sensitivity_analysis(
+        train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
+        output_dir=Path(args.output_dir) if args.output_dir else None,
+        data_split=str(args.data_split),
+        parameters=[str(param) for param in args.parameters] if args.parameters else None,
     )

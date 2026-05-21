@@ -22,6 +22,7 @@
 - 控制策略对比：`uv run event-dqn-compare-control --fixed_interval 4`
 - 事件驱动测试：`uv run event-dqn-test-event-driven`
 - 在线门控预热：`uv run event-dqn-prewarm-gate`
+- 门控超参敏感性分析：`uv run event-dqn-analyze-gate-sensitivity`
 
 ### 3) 论文导出（Markdown -> Word）
 - 前置：已安装 Pandoc（可用 `pandoc --version` 检查）和 rsvg-convert（用于 SVG 转 PNG，Pandoc 处理 Markdown 中的 SVG 图像时需要）
