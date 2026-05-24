@@ -24,3 +24,6 @@ Event-DQN.code-workspace
 
 # 参考文献
 /docs/papers/ref
+
+# Documentation build artifacts
+/docs/papers/_docx_build/generated/
