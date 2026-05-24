@@ -75,6 +75,24 @@ def main_gate_sensitivity() -> None:
         default=None,
         help="要分析的参数名列表；默认分析论文中的关键门控参数",
     )
+    parser.add_argument(
+        "--bootstrap_samples",
+        type=int,
+        default=None,
+        help="配对块 bootstrap 重采样次数；默认使用配置值",
+    )
+    parser.add_argument(
+        "--bootstrap_block_size",
+        type=int,
+        default=None,
+        help="配对块 bootstrap 的块长度；默认使用配置值",
+    )
+    parser.add_argument(
+        "--bootstrap_seed",
+        type=int,
+        default=None,
+        help="配对块 bootstrap 随机种子；默认使用配置值",
+    )
     args = parser.parse_args()
 
     run_gate_parameter_sensitivity_analysis(
@@ -82,4 +100,7 @@ def main_gate_sensitivity() -> None:
         output_dir=Path(args.output_dir) if args.output_dir else None,
         data_split=str(args.data_split),
         parameters=[str(param) for param in args.parameters] if args.parameters else None,
+        bootstrap_samples=args.bootstrap_samples,
+        bootstrap_block_size=args.bootstrap_block_size,
+        bootstrap_seed=args.bootstrap_seed,
     )
