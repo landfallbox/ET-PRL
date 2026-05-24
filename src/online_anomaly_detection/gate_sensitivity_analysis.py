@@ -56,13 +56,6 @@ DEFAULT_SPECS: tuple[SensitivitySpec, ...] = (
         group="threshold",
     ),
     SensitivitySpec(
-        name="contamination",
-        config_attr="GATE_CONTAMINATION",
-        label="Contamination",
-        values=(0.05, 0.10, 0.20, 0.3104487614924219, 0.31, 0.35),
-        group="threshold",
-    ),
-    SensitivitySpec(
         name="trigger_hysteresis_margin",
         config_attr="GATE_TRIGGER_HYSTERESIS_MARGIN",
         label="Hysteresis Margin",
@@ -129,7 +122,6 @@ DEFAULT_PARAM_ORDER: tuple[str, ...] = (
     "threshold_mad_scale",
     "threshold_local_update_rate",
     "threshold_quantile_weight",
-    "contamination",
     "trigger_hysteresis_margin",
     "local_window_size",
     "global_ema_decay",

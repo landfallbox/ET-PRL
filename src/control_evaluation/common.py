@@ -170,7 +170,6 @@ def create_streaming_gate(
         local_window_size=config.GATE_LOCAL_WINDOW_SIZE,
         global_ema_decay=config.GATE_GLOBAL_EMA_DECAY,
         reference_samples=config.GATE_REFERENCE_SAMPLES,
-        contamination=config.GATE_CONTAMINATION,
         alpha_local_weight=config.GATE_ALPHA_LOCAL_WEIGHT,
         threshold_bias=config.GATE_THRESHOLD_BIAS,
         threshold_quantile=config.THRESHOLD_QUANTILE,

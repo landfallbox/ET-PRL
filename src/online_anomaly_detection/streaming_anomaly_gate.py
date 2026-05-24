@@ -46,7 +46,6 @@ class StreamingAnomalyGate:
         local_window_size: Optional[int] = None,
         global_ema_decay: Optional[float] = None,
         reference_samples: Optional[int] = None,
-        contamination: Optional[float] = None,
         alpha_local_weight: Optional[float] = None,
         threshold_bias: Optional[float] = None,
         threshold_quantile: Optional[float] = None,
@@ -68,7 +67,6 @@ class StreamingAnomalyGate:
             local_window_size: 本地阈值窗口大小
             global_ema_decay: 全局阈值EMA衰减率（越小越稳定）
             reference_samples: 流式IF参考集大小
-            contamination: 异常比例先验
             alpha_local_weight: 本地阈值权重（0-1，越大越快反应漂移）
             threshold_bias: 阈值偏置项（对自适应阈值做整体平移）
             threshold_quantile: 分位数阈值（高分位越高，触发越保守）
@@ -91,8 +89,6 @@ class StreamingAnomalyGate:
             global_ema_decay = OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY
         if reference_samples is None:
             reference_samples = OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES
-        if contamination is None:
-            contamination = OnlineAnomalyDetectionConfig.GATE_CONTAMINATION
         if alpha_local_weight is None:
             alpha_local_weight = OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT
         if threshold_bias is None:
@@ -142,7 +138,6 @@ class StreamingAnomalyGate:
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
             update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
-            contamination=contamination,
         )
 
         # 3. 双层阈值优化器
