@@ -20,8 +20,13 @@ class GateDecision:
 
     gate_signal: int  # 0=正常, 1=异常(触发DQN)
     anomaly_score: float  # 0-1的异常分数
-    adaptive_threshold: float  # 当前自适应阈值
+    adaptive_threshold: float  # 当前触发阈值
     timestamp: Optional[float] = None  # 样本时间戳
+    base_threshold: float = 0.0  # 未加滞回边际的基础阈值
+    trigger_threshold: float = 0.0  # 进入触发状态的上阈值
+    reset_threshold: float = 0.0  # 退出触发状态的下阈值
+    trigger_state: int = 0  # 滞回锁存状态（1=已触发未复位）
+    min_interval_satisfied: int = 1  # 是否满足最小触发间隔
 
 
 class StreamingAnomalyGate:
@@ -41,7 +46,6 @@ class StreamingAnomalyGate:
         local_window_size: Optional[int] = None,
         global_ema_decay: Optional[float] = None,
         reference_samples: Optional[int] = None,
-        contamination: Optional[float] = None,
         alpha_local_weight: Optional[float] = None,
         threshold_bias: Optional[float] = None,
         threshold_quantile: Optional[float] = None,
@@ -53,6 +57,7 @@ class StreamingAnomalyGate:
         score_medium_weight: Optional[float] = None,
         score_long_weight: Optional[float] = None,
         trigger_hysteresis_margin: Optional[float] = None,
+        min_trigger_interval: Optional[int] = None,
     ):
         """
         初始化在线异常检测门控
@@ -62,7 +67,6 @@ class StreamingAnomalyGate:
             local_window_size: 本地阈值窗口大小
             global_ema_decay: 全局阈值EMA衰减率（越小越稳定）
             reference_samples: 流式IF参考集大小
-            contamination: 异常比例先验
             alpha_local_weight: 本地阈值权重（0-1，越大越快反应漂移）
             threshold_bias: 阈值偏置项（对自适应阈值做整体平移）
             threshold_quantile: 分位数阈值（高分位越高，触发越保守）
@@ -74,6 +78,7 @@ class StreamingAnomalyGate:
             score_medium_weight: 中时异常分数权重
             score_long_weight: 长时异常分数权重
             trigger_hysteresis_margin: 触发滞回边际（抑制阈值附近抖动）
+            min_trigger_interval: 最小触发间隔（步）
         """
         self.feature_dim = feature_dim
         self.sample_count = 0
@@ -84,8 +89,6 @@ class StreamingAnomalyGate:
             global_ema_decay = OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY
         if reference_samples is None:
             reference_samples = OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES
-        if contamination is None:
-            contamination = OnlineAnomalyDetectionConfig.GATE_CONTAMINATION
         if alpha_local_weight is None:
             alpha_local_weight = OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT
         if threshold_bias is None:
@@ -110,6 +113,8 @@ class StreamingAnomalyGate:
             score_long_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_LONG_WEIGHT
         if trigger_hysteresis_margin is None:
             trigger_hysteresis_margin = OnlineAnomalyDetectionConfig.GATE_TRIGGER_HYSTERESIS_MARGIN
+        if min_trigger_interval is None:
+            min_trigger_interval = getattr(OnlineAnomalyDetectionConfig, "GATE_MIN_TRIGGER_INTERVAL", 1)
 
         score_weight_sum = float(score_short_weight + score_medium_weight + score_long_weight)
         if score_weight_sum <= 0.0:
@@ -120,6 +125,7 @@ class StreamingAnomalyGate:
         self.score_long_weight = float(score_long_weight / score_weight_sum)
         self.threshold_bias = float(threshold_bias)
         self.trigger_hysteresis_margin = float(max(0.0, trigger_hysteresis_margin))
+        self.min_trigger_interval = max(0, int(min_trigger_interval))
 
         # 1. 流式特征统计维护器
         self.feature_stats = StreamingStats(
@@ -132,7 +138,6 @@ class StreamingAnomalyGate:
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
             update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
-            contamination=contamination,
         )
 
         # 3. 双层阈值优化器
@@ -153,6 +158,7 @@ class StreamingAnomalyGate:
         # 初始化状态
         self._initialized = False
         self._last_trigger_step = -10**9
+        self._trigger_latched = False
 
     def initialize_with_data(self, initial_data: np.ndarray) -> None:
         """
@@ -227,11 +233,19 @@ class StreamingAnomalyGate:
         adaptive_threshold = self.threshold_optimizer.get_adaptive_threshold() + self.threshold_bias
         adaptive_threshold = float(np.clip(adaptive_threshold, 0.0, 1.0))
 
-        # 5. 做二值决策（含防抖约束）
-        trigger_threshold = float(np.clip(adaptive_threshold + self.trigger_hysteresis_margin, 0.0, 1.0))
-        is_above_trigger_threshold = fused_anomaly_score > trigger_threshold
-        gate_signal = 1 if is_above_trigger_threshold else 0
-        if gate_signal == 1:
+        # 5. 做二值决策（双阈值滞回 + 最小触发间隔）：
+        #    非锁存状态下需要越过较高的 enter 阈值且满足最小间隔才触发；
+        #    触发后进入锁存态，只有跌破较低的 exit 阈值才复位，抑制阈值附近抖振。
+        enter_threshold = float(np.clip(adaptive_threshold + self.trigger_hysteresis_margin, 0.0, 1.0))
+        exit_threshold = float(np.clip(adaptive_threshold - self.trigger_hysteresis_margin, 0.0, 1.0))
+        if self._trigger_latched and fused_anomaly_score <= exit_threshold:
+            self._trigger_latched = False
+
+        min_interval_satisfied = self.sample_count - self._last_trigger_step > self.min_trigger_interval
+        gate_signal = 0
+        if (not self._trigger_latched) and min_interval_satisfied and fused_anomaly_score > enter_threshold:
+            gate_signal = 1
+            self._trigger_latched = True
             self._last_trigger_step = self.sample_count
 
         # 6. 更新模块（关键步骤：在线学习）
@@ -246,8 +260,13 @@ class StreamingAnomalyGate:
         return GateDecision(
             gate_signal=gate_signal,
             anomaly_score=fused_anomaly_score,
-            adaptive_threshold=trigger_threshold,
+            adaptive_threshold=enter_threshold,
             timestamp=timestamp,
+            base_threshold=adaptive_threshold,
+            trigger_threshold=enter_threshold,
+            reset_threshold=exit_threshold,
+            trigger_state=int(self._trigger_latched),
+            min_interval_satisfied=int(min_interval_satisfied),
         )
 
     def _update_on_new_sample(
@@ -323,6 +342,9 @@ class StreamingAnomalyGate:
             },
             "threshold_bias": self.threshold_bias,
             "trigger_hysteresis_margin": self.trigger_hysteresis_margin,
+            "min_trigger_interval": self.min_trigger_interval,
+            "trigger_active": self._trigger_latched,
+            "trigger_latched": self._trigger_latched,
             "last_trigger_step": self._last_trigger_step,
             "feature_stats": self.feature_stats.get_statistics(),
             "anomaly_detector": self.anomaly_detector.get_statistics(),
@@ -366,6 +388,9 @@ class StreamingAnomalyGate:
             "sample_count": self.sample_count,
             "initialized": self._initialized,
             "trigger_hysteresis_margin": self.trigger_hysteresis_margin,
+            "min_trigger_interval": self.min_trigger_interval,
+            "trigger_active": self._trigger_latched,
+            "trigger_latched": self._trigger_latched,
             "last_trigger_step": self._last_trigger_step,
             "feature_stats": self.feature_stats,
             "anomaly_detector": self.anomaly_detector,
@@ -406,6 +431,8 @@ class StreamingAnomalyGate:
         self.trigger_hysteresis_margin = float(
             payload.get("trigger_hysteresis_margin", self.trigger_hysteresis_margin)
         )
+        self.min_trigger_interval = int(payload.get("min_trigger_interval", self.min_trigger_interval))
+        self._trigger_latched = bool(payload.get("trigger_latched", payload.get("trigger_active", False)))
         self._last_trigger_step = int(payload.get("last_trigger_step", -10**9))
         self.feature_stats = payload["feature_stats"]
         self.anomaly_detector = payload["anomaly_detector"]

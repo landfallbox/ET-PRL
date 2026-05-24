@@ -46,7 +46,6 @@ def prewarm_gate(output_path: Path) -> Path:
         local_window_size=OnlineAnomalyDetectionConfig.GATE_LOCAL_WINDOW_SIZE,
         global_ema_decay=OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY,
         reference_samples=OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES,
-        contamination=OnlineAnomalyDetectionConfig.GATE_CONTAMINATION,
         alpha_local_weight=OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT,
     )
 

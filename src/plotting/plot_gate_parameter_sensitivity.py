@@ -42,7 +42,7 @@ PANEL_LABELS = ["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"]
 PHASE1_PARAMS: list[tuple[str, str]] = [
     ("threshold_bias", r"Threshold Bias ($b_{\mathrm{bias}}$)"),
     ("threshold_quantile", r"Threshold Quantile ($q_{\mathrm{thr}}$)"),
-    ("contamination", r"Contamination ($\rho_{\mathrm{contam}}$)"),
+    ("threshold_mad_scale", r"MAD Scale ($\kappa_{\mathrm{mad}}$)"),
 ]
 
 PHASE2_PARAMS: list[tuple[str, str]] = [

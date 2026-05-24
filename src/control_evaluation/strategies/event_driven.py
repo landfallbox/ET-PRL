@@ -44,6 +44,11 @@ def test_event_driven(
         gate_signal = int(gate_decision.gate_signal)
         anomaly_score = float(gate_decision.anomaly_score)
         adaptive_threshold = float(gate_decision.adaptive_threshold)
+        gate_base_threshold = float(getattr(gate_decision, "base_threshold", np.nan))
+        gate_trigger_threshold = float(getattr(gate_decision, "trigger_threshold", adaptive_threshold))
+        gate_reset_threshold = float(getattr(gate_decision, "reset_threshold", np.nan))
+        gate_trigger_state = int(getattr(gate_decision, "trigger_state", gate_signal))
+        gate_min_interval_satisfied = int(getattr(gate_decision, "min_interval_satisfied", 1))
         decision_confidence = float(getattr(gate_decision, "confidence", np.nan))
 
         should_update_action = gate_signal == 1
@@ -88,6 +93,12 @@ def test_event_driven(
                 "gate_signal": gate_signal,
                 "anomaly_score": anomaly_score,
                 "adaptive_threshold": adaptive_threshold,
+                "gate_base_threshold": gate_base_threshold,
+                "gate_trigger_threshold": gate_trigger_threshold,
+                "gate_reset_threshold": gate_reset_threshold,
+                "gate_decision_margin": anomaly_score - adaptive_threshold,
+                "gate_trigger_state": gate_trigger_state,
+                "gate_min_interval_satisfied": gate_min_interval_satisfied,
                 "gate_confidence": decision_confidence,
             }
         )

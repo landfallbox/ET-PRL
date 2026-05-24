@@ -170,7 +170,6 @@ def create_streaming_gate(
         local_window_size=config.GATE_LOCAL_WINDOW_SIZE,
         global_ema_decay=config.GATE_GLOBAL_EMA_DECAY,
         reference_samples=config.GATE_REFERENCE_SAMPLES,
-        contamination=config.GATE_CONTAMINATION,
         alpha_local_weight=config.GATE_ALPHA_LOCAL_WEIGHT,
         threshold_bias=config.GATE_THRESHOLD_BIAS,
         threshold_quantile=config.THRESHOLD_QUANTILE,
@@ -182,6 +181,7 @@ def create_streaming_gate(
         score_medium_weight=config.GATE_SCORE_MEDIUM_WEIGHT,
         score_long_weight=score_long_weight,
         trigger_hysteresis_margin=config.GATE_TRIGGER_HYSTERESIS_MARGIN,
+        min_trigger_interval=getattr(config, "GATE_MIN_TRIGGER_INTERVAL", 1),
     )
 
     if gate_state_path is not None:

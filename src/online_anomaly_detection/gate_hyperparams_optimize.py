@@ -82,13 +82,12 @@ def _get_phase_params(phase: str) -> dict:
     """获取每个阶段应该优化的参数列表"""
     params_config = {
         "phase1": {
-            "description": "Layer A: 核心决策参数（6个）",
+            "description": "Layer A: 核心决策参数（5个）",
             "params": [
                 "threshold_bias",
                 "trigger_hysteresis_margin",
                 "threshold_quantile",
                 "threshold_mad_scale",
-                "contamination",
                 "threshold_local_update_rate",
             ],
             "trials": 60,
@@ -222,7 +221,6 @@ def _create_search_space(
         "alpha_local_weight": ("float", config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MIN, config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MAX),
         "local_window_size": ("int", config.GATE_OPT_LOCAL_WINDOW_SIZE_MIN, config.GATE_OPT_LOCAL_WINDOW_SIZE_MAX),
         "reference_samples": ("int", config.GATE_OPT_REFERENCE_SAMPLES_MIN, config.GATE_OPT_REFERENCE_SAMPLES_MAX),
-        "contamination": ("float", config.GATE_OPT_CONTAMINATION_MIN, config.GATE_OPT_CONTAMINATION_MAX),
         "threshold_bias": ("float", config.GATE_OPT_THRESHOLD_BIAS_MIN, config.GATE_OPT_THRESHOLD_BIAS_MAX),
         "threshold_quantile": ("float", config.GATE_OPT_THRESHOLD_QUANTILE_MIN, config.GATE_OPT_THRESHOLD_QUANTILE_MAX),
         "threshold_mad_scale": ("float", config.GATE_OPT_THRESHOLD_MAD_SCALE_MIN, config.GATE_OPT_THRESHOLD_MAD_SCALE_MAX),
@@ -272,7 +270,6 @@ def _build_trial_config(base_cls: type[ControlCompareConfig], params: dict) -> t
         "alpha_local_weight": ("GATE_ALPHA_LOCAL_WEIGHT", float),
         "local_window_size": ("GATE_LOCAL_WINDOW_SIZE", int),
         "reference_samples": ("GATE_REFERENCE_SAMPLES", int),
-        "contamination": ("GATE_CONTAMINATION", float),
         "threshold_bias": ("GATE_THRESHOLD_BIAS", float),
         "threshold_quantile": ("THRESHOLD_QUANTILE", float),
         "threshold_mad_scale": ("THRESHOLD_MAD_SCALE", float),
@@ -507,8 +504,6 @@ def optimize_gate_hyperparameters(
             log_params.append(f"qw={params['threshold_quantile_weight']:.3f}")
         if "threshold_bias" in params:
             log_params.append(f"bias={params['threshold_bias']:.3f}")
-        if "contamination" in params:
-            log_params.append(f"cont={params['contamination']:.3f}")
         if "reference_samples" in params:
             log_params.append(f"ref={params['reference_samples']}")
         if "threshold_mad_scale" in params:
@@ -627,7 +622,7 @@ def optimize_gate_hyperparameters(
     merged_best_params = {}
     all_params = [
         "global_ema_decay", "alpha_local_weight", "local_window_size", "reference_samples",
-        "contamination", "threshold_bias", "threshold_quantile", "threshold_mad_scale",
+        "threshold_bias", "threshold_quantile", "threshold_mad_scale",
         "threshold_local_update_rate", "threshold_quantile_weight", "threshold_min_samples_for_optimization",
         "score_short_weight", "score_medium_weight", "trigger_hysteresis_margin",
     ]
@@ -659,7 +654,6 @@ def optimize_gate_hyperparameters(
         "GATE_ALPHA_LOCAL_WEIGHT": float(merged_best_params["alpha_local_weight"]),
         "GATE_LOCAL_WINDOW_SIZE": int(merged_best_params["local_window_size"]),
         "GATE_REFERENCE_SAMPLES": int(merged_best_params["reference_samples"]),
-        "GATE_CONTAMINATION": float(merged_best_params["contamination"]),
         "GATE_THRESHOLD_BIAS": float(merged_best_params["threshold_bias"]),
         "THRESHOLD_QUANTILE": float(merged_best_params["threshold_quantile"]),
         "THRESHOLD_MAD_SCALE": float(merged_best_params["threshold_mad_scale"]),
