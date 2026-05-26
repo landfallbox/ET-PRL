@@ -1,7 +1,6 @@
 /data/
 /logs/
 /.idea/
-/.github/
 
 # Python cache / bytecode
 __pycache__/
@@ -19,11 +18,7 @@ env/
 .ruff_cache/
 
 # temp ignore
-uv.lock
 Event-DQN.code-workspace
-
-# 参考文献
-/docs/papers/ref
 
 # Documentation build artifacts
 /docs/papers/_docx_build/generated/
