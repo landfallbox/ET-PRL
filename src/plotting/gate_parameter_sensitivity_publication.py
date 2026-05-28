@@ -51,32 +51,32 @@ class MetricSpec:
 
 
 SELECTED_PANELS: tuple[ParameterPanel, ...] = (
-    ParameterPanel("threshold_bias", "Threshold bias", "(a)"),
-    ParameterPanel("trigger_hysteresis_margin", "Hysteresis margin", "(b)"),
-    ParameterPanel("local_window_size", "Local window size", "(c)"),
-    ParameterPanel("threshold_quantile", "Threshold quantile", "(d)"),
-    ParameterPanel("threshold_mad_scale", "MAD scale", "(e)"),
-    ParameterPanel("score_short_weight", "Short scale weight", "(f)"),
+    ParameterPanel("threshold_bias", r"$b_{\mathrm{bias}}$", "(a)"),
+    ParameterPanel("trigger_hysteresis_margin", r"$m_{\mathrm{hys}}$", "(b)"),
+    ParameterPanel("local_window_size", r"$W$", "(c)"),
+    ParameterPanel("threshold_quantile", r"$q$", "(d)"),
+    ParameterPanel("threshold_mad_scale", r"$\kappa$", "(e)"),
+    ParameterPanel("score_short_weight", r"$w_{\mathrm{s}}$", "(f)"),
 )
 
 
 METRICS: tuple[MetricSpec, ...] = (
     MetricSpec(
         name="total_reward",
-        label="Total reward",
-        summary_label="Total\nreward",
+        label=r"$R_{\text{test}}$",
+        summary_label=r"$R_{\text{test}}$",
         color="#1D4ED8",
     ),
     MetricSpec(
         name="action_frequency",
-        label="Trigger frequency",
-        summary_label="Trigger\nfrequency",
+        label=r"$N_{\text{daily}}$",
+        summary_label=r"$N_{\text{daily}}$",
         color="#D97706",
     ),
     MetricSpec(
         name="E_daily_kwh_per_day",
-        label="Daily energy",
-        summary_label="Daily\nenergy",
+        label=r"$E_{\text{daily}}$",
+        summary_label=r"$E_{\text{daily}}$",
         color="#047857",
     ),
 )
@@ -261,23 +261,9 @@ def _plot_summary_heatmap(ax: plt.Axes, summary: pd.DataFrame) -> None:
     ax.set_yticks(np.arange(len(summary)))
     ax.set_yticklabels(summary["label"].tolist(), fontsize=9.2)
     ax.tick_params(axis="both", which="both", length=0)
-    ax.set_xlabel("Metric", fontsize=9.7)
-    ax.set_ylabel("Parameter", fontsize=9.7)
-    ax.set_title("Sensitivity span summary", loc="left", fontsize=11.0, fontweight="bold", pad=10.0)
-    ax.text(
-        0.995,
-        -0.16,
-        "Rows sorted by total reward span",
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=8.2,
-        color="#6B7280",
-    )
 
-    ax.set_xticks(np.arange(-0.5, len(METRICS), 1.0), minor=True)
-    ax.set_yticks(np.arange(-0.5, len(summary), 1.0), minor=True)
-    ax.grid(which="minor", color="white", linestyle="-", linewidth=1.0)
+    ax.set_xticks([], minor=True)
+    ax.set_yticks([], minor=True)
     ax.tick_params(which="minor", bottom=False, left=False)
 
     for row_index in range(len(summary)):
@@ -378,7 +364,7 @@ def _render_summary_figure(summary: pd.DataFrame, output_path: Path) -> None:
     fig = plt.figure(figsize=(12.0, 4.8), dpi=160, constrained_layout=False)
     ax = fig.add_subplot(1, 1, 1)
     _plot_summary_heatmap(ax, summary)
-    fig.subplots_adjust(left=0.08, right=0.965, top=0.90, bottom=0.18)
+    fig.subplots_adjust(left=0.08, right=0.965, top=0.90, bottom=0.12)
     _save_figure(fig, output_path)
 
 
