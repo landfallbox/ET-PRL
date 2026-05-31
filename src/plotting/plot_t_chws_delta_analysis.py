@@ -545,7 +545,7 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')
     results = load_control_results(results_dir)
-    output_path = output_dir / 'fig8_t_chws_delta_analysis.svg'
+    output_path = output_dir / 'fig7_t_chws_delta_analysis.svg'
     generate_delta_figure(
         results,
         output_path,

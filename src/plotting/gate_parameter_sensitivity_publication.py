@@ -1,8 +1,8 @@
 """Generate the publication-quality gate parameter sensitivity figures.
 
 The figures are split into a sensitivity-span heatmap for the overall ranking
-and six normalized response panels for the detailed one-factor response of
-each selected gate hyperparameter.
+and a normalized response grid for the detailed one-factor response of all
+gate hyperparameters.
 """
 
 from __future__ import annotations
@@ -28,9 +28,9 @@ plt.rcParams.update(
 
 
 DEFAULT_RESULTS_ROOT = Path("logs/online_anomaly_detection/sensitivity")
-DEFAULT_SUMMARY_OUTPUT_RELATIVE_PATH = Path("docs/pics/fig12_gate_key_parameter_sensitivity.svg")
+DEFAULT_SUMMARY_OUTPUT_RELATIVE_PATH = Path("docs/pics/fig11_gate_key_parameter_sensitivity.svg")
 DEFAULT_RESPONSE_OUTPUT_RELATIVE_PATH = Path(
-    "docs/pics/fig13_gate_key_parameter_sensitivity_response_curves.svg"
+    "docs/pics/fig12_gate_key_parameter_sensitivity_response_curves.svg"
 )
 RESULTS_FILENAME = "gate_parameter_sensitivity_results.csv"
 
@@ -50,14 +50,22 @@ class MetricSpec:
     color: str
 
 
-SELECTED_PANELS: tuple[ParameterPanel, ...] = (
-    ParameterPanel("threshold_bias", r"$b_{\mathrm{bias}}$", "(a)"),
-    ParameterPanel("trigger_hysteresis_margin", r"$m_{\mathrm{hys}}$", "(b)"),
-    ParameterPanel("local_window_size", r"$W$", "(c)"),
-    ParameterPanel("threshold_quantile", r"$q$", "(d)"),
-    ParameterPanel("threshold_mad_scale", r"$\kappa$", "(e)"),
-    ParameterPanel("score_short_weight", r"$w_{\mathrm{s}}$", "(f)"),
-)
+PARAMETER_LABELS: dict[str, str] = {
+    "threshold_bias": r"$b_{\mathrm{bias}}$",
+    "trigger_hysteresis_margin": r"$m_{\mathrm{hys}}$",
+    "local_window_size": r"$W$",
+    "score_short_weight": r"$w_{\mathrm{s}}$",
+    "threshold_quantile": r"$q$",
+    "threshold_mad_scale": r"$\kappa$",
+    "threshold_local_update_rate": r"$\lambda_{\mathrm{local}}$",
+    "alpha_local_weight": r"$\alpha_{\mathrm{local}}$",
+    "global_ema_decay": r"$\lambda_{\mathrm{global}}$",
+    "score_medium_weight": r"$w_{\mathrm{m}}$",
+    "threshold_quantile_weight": r"$\omega_q$",
+}
+
+
+RESPONSE_GRID_COLUMNS = 3
 
 
 METRICS: tuple[MetricSpec, ...] = (
@@ -192,6 +200,32 @@ def _safe_minmax(values: np.ndarray) -> np.ndarray:
     return scaled
 
 
+def _safe_log_minmax(values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=float)
+    finite_mask = np.isfinite(values)
+    log_values = np.full_like(values, np.nan, dtype=float)
+    log_values[finite_mask] = np.log1p(np.clip(values[finite_mask], a_min=0.0, a_max=None))
+    return _safe_minmax(log_values)
+
+
+def _format_span_label(value: float) -> str:
+    if not np.isfinite(value):
+        return ""
+
+    magnitude = abs(value)
+    if magnitude >= 100:
+        return f"{value:.0f}"
+    if magnitude >= 10:
+        return f"{value:.1f}"
+    if magnitude >= 1:
+        return f"{value:.2f}"
+    if magnitude >= 0.01:
+        return f"{value:.3f}".rstrip("0").rstrip(".")
+    if magnitude > 0:
+        return "<0.01"
+    return "0"
+
+
 def _format_candidate_tick(value: float) -> str:
     if not np.isfinite(value):
         return ""
@@ -207,22 +241,38 @@ def _format_candidate_tick(value: float) -> str:
     return f"{value:.3f}".rstrip("0").rstrip(".")
 
 
+def _build_trend_curve(x_values: np.ndarray, y_values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    if x_values.size <= 2:
+        return x_values, y_values
+
+    dense_points = max(240, int(x_values.size * 48))
+    x_dense = np.linspace(float(x_values[0]), float(x_values[-1]), dense_points)
+    y_dense = np.interp(x_dense, x_values, y_values)
+
+    if x_values.size < 4:
+        return x_dense, y_dense
+
+    kernel = np.array([1.0, 4.0, 6.0, 4.0, 1.0], dtype=float)
+    kernel /= kernel.sum()
+    y_padded = np.pad(y_dense, (kernel.size // 2,), mode="edge")
+    y_smoothed = np.convolve(y_padded, kernel, mode="valid")
+    return x_dense, y_smoothed
+
+
 def _panel_summary_frame(results: pd.DataFrame) -> pd.DataFrame:
-    required_names = {panel.name for panel in SELECTED_PANELS}
-    present_names = set(results["parameter"].astype(str))
-    missing_names = required_names.difference(present_names)
-    if missing_names:
-        raise ValueError(f"Missing sensitivity rows for parameters: {sorted(missing_names)}")
+    parameter_names = list(dict.fromkeys(results["parameter"].astype(str).tolist()))
+    if not parameter_names:
+        raise ValueError("No sensitivity parameters found in results")
 
     rows: list[dict[str, object]] = []
-    for panel in SELECTED_PANELS:
-        frame = results[results["parameter"] == panel.name].copy()
+    for parameter_name in parameter_names:
+        frame = results[results["parameter"] == parameter_name].copy()
         if frame.empty:
-            raise ValueError(f"No sensitivity rows found for parameter: {panel.name}")
+            raise ValueError(f"No sensitivity rows found for parameter: {parameter_name}")
 
         row: dict[str, object] = {
-            "parameter": panel.name,
-            "label": panel.label,
+            "parameter": parameter_name,
+            "label": PARAMETER_LABELS.get(parameter_name, parameter_name),
         }
         for metric in METRICS:
             span = float(frame[metric.name].max() - frame[metric.name].min())
@@ -233,14 +283,32 @@ def _panel_summary_frame(results: pd.DataFrame) -> pd.DataFrame:
     summary = summary.sort_values("total_reward_span", ascending=False, kind="mergesort").reset_index(drop=True)
 
     for metric in METRICS:
-        summary[f"{metric.name}_span_norm"] = _safe_minmax(summary[f"{metric.name}_span"].to_numpy(dtype=float))
+        summary[f"{metric.name}_span_display"] = _safe_log_minmax(
+            summary[f"{metric.name}_span"].to_numpy(dtype=float)
+        )
 
     return summary
 
 
+def _build_response_panels(summary: pd.DataFrame) -> list[ParameterPanel]:
+    panels: list[ParameterPanel] = []
+    for index, row in enumerate(summary.itertuples(index=False), start=0):
+        panel_label = f"({chr(ord('a') + index)})"
+        panels.append(
+            ParameterPanel(
+                name=str(row.parameter),
+                label=str(row.label),
+                panel_label=panel_label,
+            )
+        )
+    return panels
+
+
 def _plot_summary_heatmap(ax: plt.Axes, summary: pd.DataFrame) -> None:
-    value_columns = [f"{metric.name}_span_norm" for metric in METRICS]
+    value_columns = [f"{metric.name}_span_display" for metric in METRICS]
+    raw_value_columns = [f"{metric.name}_span" for metric in METRICS]
     matrix = summary[value_columns].to_numpy(dtype=float)
+    raw_matrix = summary[raw_value_columns].to_numpy(dtype=float)
 
     image = ax.imshow(
         matrix,
@@ -269,20 +337,21 @@ def _plot_summary_heatmap(ax: plt.Axes, summary: pd.DataFrame) -> None:
     for row_index in range(len(summary)):
         for col_index in range(len(METRICS)):
             value = float(matrix[row_index, col_index])
+            raw_value = float(raw_matrix[row_index, col_index])
             text_color = "white" if value >= 0.55 else "#111827"
             ax.text(
                 col_index,
                 row_index,
-                f"{value:.2f}",
+                _format_span_label(raw_value),
                 ha="center",
                 va="center",
-                fontsize=8.2,
+                fontsize=7.9,
                 color=text_color,
                 fontweight="semibold",
             )
 
     colorbar = ax.figure.colorbar(image, ax=ax, fraction=0.024, pad=0.02)
-    colorbar.set_label("Normalized span", fontsize=9.4)
+    colorbar.set_label("Log-scaled span", fontsize=9.4)
     colorbar.ax.tick_params(labelsize=8.6)
 
 
@@ -318,16 +387,14 @@ def _plot_response_panel(
 
     for metric in METRICS:
         y_values = _safe_minmax(data[metric.name].to_numpy(dtype=float))
+        x_trend, y_trend = _build_trend_curve(x_values, y_values)
         ax.plot(
-            x_values,
-            y_values,
+            x_trend,
+            y_trend,
             color=metric.color,
             linewidth=1.65,
-            marker="o",
-            markersize=4.5,
-            markerfacecolor=metric.color,
-            markeredgecolor="white",
-            markeredgewidth=0.6,
+            solid_capstyle="round",
+            solid_joinstyle="round",
             zorder=3,
         )
 
@@ -361,21 +428,27 @@ def _save_figure(fig: plt.Figure, output_path: Path) -> None:
 
 
 def _render_summary_figure(summary: pd.DataFrame, output_path: Path) -> None:
-    fig = plt.figure(figsize=(12.0, 4.8), dpi=160, constrained_layout=False)
+    fig_height = max(4.8, 0.45 * len(summary) + 1.6)
+    fig = plt.figure(figsize=(12.0, fig_height), dpi=160, constrained_layout=False)
     ax = fig.add_subplot(1, 1, 1)
     _plot_summary_heatmap(ax, summary)
     fig.subplots_adjust(left=0.08, right=0.965, top=0.90, bottom=0.12)
     _save_figure(fig, output_path)
 
 
-def _render_response_figure(results: pd.DataFrame, output_path: Path) -> None:
-    fig = plt.figure(figsize=(13.8, 7.7), dpi=160, constrained_layout=False)
-    grid = fig.add_gridspec(2, 3, height_ratios=[1.0, 1.0], hspace=0.48, wspace=0.28)
+def _render_response_figure(summary: pd.DataFrame, results: pd.DataFrame, output_path: Path) -> None:
+    panels = _build_response_panels(summary)
+    n_panels = len(panels)
+    ncols = min(RESPONSE_GRID_COLUMNS, n_panels)
+    nrows = (n_panels + ncols - 1) // ncols
+    fig_height = max(7.7, 2.1 * nrows + 1.1)
+    fig = plt.figure(figsize=(13.8, fig_height), dpi=160, constrained_layout=False)
+    grid = fig.add_gridspec(nrows, ncols, height_ratios=[1.0] * nrows, hspace=0.48, wspace=0.28)
 
     response_axes: list[plt.Axes] = []
-    for index, panel in enumerate(SELECTED_PANELS):
-        row = index // 3
-        col = index % 3
+    for index, panel in enumerate(panels):
+        row = index // ncols
+        col = index % ncols
         sharey_ax = response_axes[0] if response_axes else None
         ax = fig.add_subplot(grid[row, col], sharey=sharey_ax)
         _plot_response_panel(
@@ -383,21 +456,22 @@ def _render_response_figure(results: pd.DataFrame, output_path: Path) -> None:
             results,
             panel,
             show_ylabel=(col == 0),
-            show_xlabel=(row == 1),
+            show_xlabel=(row == nrows - 1),
         )
         response_axes.append(ax)
+
+    for index in range(n_panels, nrows * ncols):
+        row = index // ncols
+        col = index % ncols
+        ax = fig.add_subplot(grid[row, col])
+        ax.axis("off")
 
     legend_handles = [
         Line2D(
             [0],
             [0],
             color=metric.color,
-            marker="o",
-            markersize=5.6,
             linewidth=1.65,
-            markerfacecolor=metric.color,
-            markeredgecolor="white",
-            markeredgewidth=0.6,
             label=metric.label,
         )
         for metric in METRICS
@@ -423,7 +497,7 @@ def _render_response_figure(results: pd.DataFrame, output_path: Path) -> None:
         columnspacing=1.6,
     )
 
-    fig.subplots_adjust(left=0.055, right=0.965, top=0.91, bottom=0.08)
+    fig.subplots_adjust(left=0.055, right=0.965, top=0.91, bottom=0.06)
     _save_figure(fig, output_path)
 
 
@@ -436,7 +510,7 @@ def generate_figures(results_path: Path | None, output_path: Path | None) -> Non
     summary = _panel_summary_frame(results)
 
     _render_summary_figure(summary, resolved_summary_output_path)
-    _render_response_figure(results, resolved_response_output_path)
+    _render_response_figure(summary, results, resolved_response_output_path)
 
     print(f"Saved sensitivity summary figure: {resolved_summary_output_path}")
     print(f"Saved sensitivity response figure: {resolved_response_output_path}")

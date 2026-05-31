@@ -35,8 +35,8 @@ def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) 
     macro_results = load_macro_results(results_dir)
     delta_results = load_delta_results(results_dir)
 
-    output_a = output_dir / 'fig7_t_chws_macro_distribution.svg'
-    output_bc = output_dir / 'fig8_t_chws_delta_analysis.svg'
+    output_a = output_dir / 'fig6_t_chws_macro_distribution.svg'
+    output_bc = output_dir / 'fig7_t_chws_delta_analysis.svg'
 
     generate_macro_figure(macro_results, output_a)
     generate_delta_figure(delta_results, output_bc)

@@ -321,7 +321,7 @@ def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')
     results = load_control_results(results_dir)
-    output_path = output_dir / 'fig7_t_chws_macro_distribution.svg'
+    output_path = output_dir / 'fig6_t_chws_macro_distribution.svg'
     generate_macro_figure(results, output_path)
 
 

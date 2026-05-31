@@ -363,7 +363,7 @@ def main() -> None:
     root = Path(__file__).parent.parent.parent
     results_dir = args.results_dir or (root / 'logs' / 'control_compare' / '20260402_222140')
     env_data_path = args.env_data_path or (root / 'data' / 'dqn' / 'test_data.csv')
-    output_path = args.output_path or (root / 'docs' / 'pics' / 'fig10_trigger_load_alignment.svg')
+    output_path = args.output_path or (root / 'docs' / 'pics' / 'fig9_trigger_load_alignment.svg')
 
     generate_trigger_alignment_figure(
         results_dir=results_dir,

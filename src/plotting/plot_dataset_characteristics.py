@@ -168,8 +168,8 @@ def main() -> None:
 
     df = _load_data(data_path)
 
-    out1 = output_dir / "fig4_dataset_temporal_characteristics.svg"
-    out2 = output_dir / "fig5_dataset_distribution_and_correlation.svg"
+    out1 = output_dir / "fig3_dataset_temporal_characteristics.svg"
+    out2 = output_dir / "fig4_dataset_distribution_and_correlation.svg"
 
     plot_dataset_overview(df, out1)
     plot_distribution_and_joint_pattern(df, out2)
