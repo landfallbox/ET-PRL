@@ -51,6 +51,30 @@ DEFAULT_TIMING_X: tuple[int, ...] = (30, 60, 90, 135, 180, 240)
 DEFAULT_TIMING_Y: tuple[float, ...] = (0.35, 0.45, 0.55, 0.65, 0.75)
 
 
+def _build_pairwise_candidate_overrides(base_config: type[Any], spec: Any, candidate_value: Any) -> dict[str, Any]:
+    if spec.name != "score_short_weight":
+        return _build_candidate_overrides(base_config, spec, candidate_value)
+
+    short_weight = float(candidate_value)
+    if not 0.0 < short_weight < 1.0:
+        raise ValueError(f"score_short_weight must be in (0, 1), got {short_weight}")
+
+    base_medium_weight = float(getattr(base_config, "GATE_SCORE_MEDIUM_WEIGHT"))
+    base_long_weight = float(getattr(base_config, "GATE_SCORE_LONG_WEIGHT"))
+    base_remaining_weight = base_medium_weight + base_long_weight
+    if base_remaining_weight <= 0.0:
+        raise ValueError("GATE_SCORE_MEDIUM_WEIGHT + GATE_SCORE_LONG_WEIGHT must be positive")
+
+    remaining_weight = 1.0 - short_weight
+    medium_weight = remaining_weight * base_medium_weight / base_remaining_weight
+    long_weight = remaining_weight * base_long_weight / base_remaining_weight
+    return {
+        "GATE_SCORE_SHORT_WEIGHT": short_weight,
+        "GATE_SCORE_MEDIUM_WEIGHT": float(medium_weight),
+        "GATE_SCORE_LONG_WEIGHT": float(long_weight),
+    }
+
+
 def run_gate_pairwise_sensitivity(
     train_experiment_dir: Path | None = None,
     output_dir: Path | None = None,
@@ -143,8 +167,8 @@ def run_gate_pairwise_sensitivity(
     for x_val in x_values:
         for y_val in y_values:
             combo_index += 1
-            x_overrides = _build_candidate_overrides(base_config, x_spec, x_val)
-            y_overrides = _build_candidate_overrides(base_config, y_spec, y_val)
+            x_overrides = _build_pairwise_candidate_overrides(base_config, x_spec, x_val)
+            y_overrides = _build_pairwise_candidate_overrides(base_config, y_spec, y_val)
             merged_overrides = {**x_overrides, **y_overrides}
             candidate_config = _build_analysis_config(base_config, merged_overrides)
 
