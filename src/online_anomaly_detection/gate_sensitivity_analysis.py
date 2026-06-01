@@ -251,11 +251,15 @@ def _metric_summary(
         "avg_comfort_score": float(summary.get("avg_comfort_score", 0.0)),
         "action_count": int(summary.get("action_count", 0)),
         "action_frequency": float(summary.get("action_frequency", 0.0)),
+        "N_daily_count_per_day": float(summary.get("N_daily_count_per_day", 0.0)),
         "event_trigger_count": int(summary.get("event_trigger_count", 0)),
         "event_trigger_rate": float(summary.get("event_trigger_rate", event_trigger_rate)),
         "E_daily_kwh_per_day": energy_daily,
         "delta_total_reward_vs_default_gate": float(total_reward - default_reward),
         "delta_action_frequency_vs_default_gate": float(float(summary.get("action_frequency", 0.0)) - default_action_frequency),
+        "delta_N_daily_count_per_day_vs_default_gate": float(
+            float(summary.get("N_daily_count_per_day", 0.0)) - float(default_baseline_summary.get("N_daily_count_per_day", 0.0))
+        ),
         "delta_event_trigger_rate_vs_default_gate": float(float(summary.get("event_trigger_rate", event_trigger_rate)) - default_event_trigger_rate),
         "delta_E_daily_kwh_per_day_vs_default_gate": float(energy_daily - default_energy_daily),
         "signed_reward_gap_ratio_vs_fixed_baseline": float(signed_reward_gap_ratio),
