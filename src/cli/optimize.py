@@ -3,8 +3,7 @@ from pathlib import Path
 
 from src.cl_predict.lstm_hyperparams_optimize import optimize_lstm_hyperparameters
 from src.dqn.dqn_hyperparams_optimize import optimize_dqn_hyperparameters
-from src.online_anomaly_detection.gate_sensitivity_analysis import run_gate_parameter_sensitivity_analysis
-from src.online_anomaly_detection.gate_pairwise_sensitivity import run_gate_pairwise_sensitivity
+from src.online_anomaly_detection.gate_sensitivity_analysis import run_gate_mixed_sensitivity_analysis
 from src.online_anomaly_detection.gate_hyperparams_optimize import optimize_gate_hyperparameters
 
 
@@ -54,7 +53,7 @@ def main_gate() -> None:
 
 
 def main_gate_sensitivity() -> None:
-    parser = argparse.ArgumentParser(description="Gate 超参敏感性分析")
+    parser = argparse.ArgumentParser(description="Gate 轻量级混合敏感性分析")
     parser.add_argument(
         "--dqn_model_dir",
         type=str,
@@ -68,13 +67,6 @@ def main_gate_sensitivity() -> None:
         default="test",
         choices=["train", "val", "test"],
         help="用于分析的数据划分，默认 test",
-    )
-    parser.add_argument(
-        "--parameters",
-        type=str,
-        nargs="+",
-        default=None,
-        help="要分析的参数名列表；默认分析论文中的关键门控参数",
     )
     parser.add_argument(
         "--bootstrap_samples",
@@ -96,49 +88,10 @@ def main_gate_sensitivity() -> None:
     )
     args = parser.parse_args()
 
-    run_gate_parameter_sensitivity_analysis(
+    run_gate_mixed_sensitivity_analysis(
         train_experiment_dir=Path(args.dqn_model_dir) if args.dqn_model_dir else None,
         output_dir=Path(args.output_dir) if args.output_dir else None,
         data_split=str(args.data_split),
-        parameters=[str(param) for param in args.parameters] if args.parameters else None,
-        bootstrap_samples=args.bootstrap_samples,
-        bootstrap_block_size=args.bootstrap_block_size,
-        bootstrap_seed=args.bootstrap_seed,
-    )
-
-
-def main_gate_pairwise_sensitivity() -> None:
-    parser = argparse.ArgumentParser(description="门控二维参数敏感性分析")
-    parser.add_argument(
-        "--dqn_model_dir",
-        type=str,
-        default=None,
-        help="DQN model run directory; defaults to latest",
-    )
-    parser.add_argument("--output_dir", type=str, default=None)
-    parser.add_argument(
-        "--data_split",
-        type=str,
-        default="test",
-        choices=["train", "val", "test"],
-    )
-    parser.add_argument(
-        "--group",
-        type=str,
-        required=True,
-        choices=["ratio", "timescale"],
-        help="分析分组：ratio=b_bias×m_hys，timescale=W×w_s",
-    )
-    parser.add_argument("--bootstrap_samples", type=int, default=None)
-    parser.add_argument("--bootstrap_block_size", type=int, default=None)
-    parser.add_argument("--bootstrap_seed", type=int, default=None)
-    args = parser.parse_args()
-
-    run_gate_pairwise_sensitivity(
-        train_experiment_dir=Path(args.dqn_model_dir) if args.dqn_model_dir else None,
-        output_dir=Path(args.output_dir) if args.output_dir else None,
-        data_split=str(args.data_split),
-        group=str(args.group),
         bootstrap_samples=args.bootstrap_samples,
         bootstrap_block_size=args.bootstrap_block_size,
         bootstrap_seed=args.bootstrap_seed,
