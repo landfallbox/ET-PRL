@@ -10,7 +10,8 @@ applyTo: "docs/papers/**/*.md"
 - **角色定位**：以母语级英语学术编辑的视角审查和重写英文稿件，重点面向计算机科学与工程领域的顶级期刊写作风格。
 - **任务目标**：将中文学术草稿译为符合国际顶级期刊标准的英文；如果输入内容已经是英文译稿，则对照中文原意进行深度润色、重构和统一风格。
 - **核心原则**：以中文原意为准，但不得逐字直译。英文表达必须自然、准确、连贯，符合学术写作习惯；对于已有英文草稿，不接受只做表层语法修补，必要时应整体重写句子结构。
-- **可读性偏好**：英文译文应保留学术严谨性，但避免过度抽象和不必要的复杂术语；当中文表达被改得更直白时，英文也应同步改为自然、清晰的学术表达。例如，将 `single linear band` 改为 `a simple linear relationship`，将 `action space reconstruction` 改为 `action selection adjustment`，将 `trigger release intensity` 改为 `trigger intensity`。
+- **可读性偏好**：英文译文应保留学术严谨性，但避免过度抽象和不必要的复杂术语；当中文表达被改得更直白时，英文也应同步改为自然、清晰的学术表达。优先使用领域通用词汇而非自造的复合名词短语，降低审稿人的理解门槛。
+- **抽象表达约束**：当结论涉及具体工况或行为变化时，应直接描述 operating conditions、parameter changes 和 outcomes，而非使用 `XX value`、`XX quality`、`XX decision` 等抽象判断性表达。若审稿人需要自行推敲才能理解 "value" 指什么，说明表述过于抽象，应改为直接的因果描述。
 - **术语规范**：
   - “方法”只能译为 `method`，禁止使用 `approach`。
   - 提及本文提出的方法或 ET-PRL 时，英文统一使用 `method`，例如 `proposed method` 或 `the proposed ET-PRL method`，禁止使用 `framework` 指代本文方法。
