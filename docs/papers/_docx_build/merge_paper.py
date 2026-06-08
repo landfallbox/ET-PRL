@@ -5,10 +5,11 @@
 流程:
     1. 运行 build_algorithm_docx.py → generated/algorithm1_for_merge.docx
   2. pandoc 将 小论文.md → 临时 docx
-  3. 在临时 docx 中找到算法标题段落 ("Algorithm 1. Event-Triggered...")
-    4. 删除算法标题至其后第一个 fenced code block 结束之间的旧文本
-    5. 将其替换为算法 docx 中的完整表格
-    6. 保存到 小论文.docx
+    3. 为 pandoc 生成的普通论文表格补全所有框线
+    4. 在临时 docx 中找到算法标题段落 ("Algorithm 1. Event-Triggered...")
+    5. 删除算法标题至其后第一个 fenced code block 结束之间的旧文本
+    6. 将其替换为算法 docx 中的完整表格
+    7. 保存到 小论文.docx
 """
 
 from __future__ import annotations
@@ -20,6 +21,8 @@ import tempfile
 from pathlib import Path
 
 from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 
 BUILD_DIR = Path(__file__).resolve().parent
@@ -33,6 +36,8 @@ PAPER_MD = PAPER_DIR / "小论文.md"
 OUTPUT_DOCX = PAPER_DIR / "小论文.docx"
 
 ALGO_TITLE_MARKER = "Algorithm 1. Event-Triggered Predictive Reinforcement Learning"
+NORMAL_TABLE_BORDER_COLOR = "000000"
+NORMAL_TABLE_BORDER_SIZE = "4"
 
 CODE_BLOCK_STYLE_KEYWORDS = (
     "source code",
@@ -70,10 +75,51 @@ def _find_pandoc() -> str:
     return pandoc
 
 
+def _get_or_add_child(parent, tag: str):
+    child = parent.find(qn(tag))
+    if child is None:
+        child = OxmlElement(tag)
+        parent.append(child)
+    return child
+
+
+def _set_single_border(border_node, *, color: str, size: str) -> None:
+    border_node.set(qn("w:val"), "single")
+    border_node.set(qn("w:sz"), size)
+    border_node.set(qn("w:space"), "0")
+    border_node.set(qn("w:color"), color)
+
+
+def _set_full_grid_borders(table, *, color: str = NORMAL_TABLE_BORDER_COLOR, size: str = NORMAL_TABLE_BORDER_SIZE) -> None:
+    tbl_pr = table._tbl.tblPr
+    if tbl_pr is None:
+        tbl_pr = OxmlElement("w:tblPr")
+        table._tbl.insert(0, tbl_pr)
+
+    table_borders = _get_or_add_child(tbl_pr, "w:tblBorders")
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        border_node = _get_or_add_child(table_borders, f"w:{edge}")
+        _set_single_border(border_node, color=color, size=size)
+
+    for table_row in table.rows:
+        for table_cell in table_row.cells:
+            cell_properties = table_cell._tc.get_or_add_tcPr()
+            cell_borders = _get_or_add_child(cell_properties, "w:tcBorders")
+            for edge in ("top", "left", "bottom", "right"):
+                border_node = _get_or_add_child(cell_borders, f"w:{edge}")
+                _set_single_border(border_node, color=color, size=size)
+
+
+def _set_regular_table_borders(doc: Document) -> int:
+    for table in doc.tables:
+        _set_full_grid_borders(table)
+    return len(doc.tables)
+
+
 def main() -> int:
     # --- Step 1: 构建算法 docx ---
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"[1/3] Building algorithm docx...")
+    print(f"[1/4] Building algorithm docx...")
     subprocess.run(
         [sys.executable, str(ALGO_BUILD_SCRIPT), "--output", str(MERGE_ALGO_DOCX)],
         check=True,
@@ -85,7 +131,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmpdir:
         temp_docx = Path(tmpdir) / "paper_temp.docx"
 
-        print(f"[2/3] Converting {PAPER_MD.name} to docx via pandoc...")
+        print(f"[2/4] Converting {PAPER_MD.name} to docx via pandoc...")
         subprocess.run(
             [
                 pandoc,
@@ -101,9 +147,14 @@ def main() -> int:
             cwd=str(PAPER_DIR),
         )
 
-        # --- Step 3: 注入算法表格 ---
-        print(f"[3/3] Injecting algorithm table...")
+        # --- Step 3: 普通表格补全框线 ---
+        print(f"[3/4] Applying full borders to regular tables...")
         doc = Document(temp_docx)
+        bordered_table_count = _set_regular_table_borders(doc)
+        print(f"Regular tables updated: {bordered_table_count}")
+
+        # --- Step 4: 注入算法表格 ---
+        print(f"[4/4] Injecting algorithm table...")
         algo_doc = Document(MERGE_ALGO_DOCX)
 
         if not algo_doc.tables:
