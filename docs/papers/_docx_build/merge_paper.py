@@ -5,7 +5,7 @@
 流程:
     1. 运行 build_algorithm_docx.py → generated/algorithm1_for_merge.docx
   2. pandoc 将 小论文.md → 临时 docx
-    3. 为 pandoc 生成的普通论文表格补全所有框线
+    3. 为 pandoc 生成的普通论文表格补全所有框线，并合并敏感性表的分组表头
     4. 在临时 docx 中找到算法标题段落 ("Algorithm 1. Event-Triggered...")
     5. 删除算法标题至其后第一个 fenced code block 结束之间的旧文本
     6. 将其替换为算法 docx 中的完整表格
@@ -38,6 +38,8 @@ OUTPUT_DOCX = PAPER_DIR / "小论文.docx"
 ALGO_TITLE_MARKER = "Algorithm 1. Event-Triggered Predictive Reinforcement Learning"
 NORMAL_TABLE_BORDER_COLOR = "000000"
 NORMAL_TABLE_BORDER_SIZE = "4"
+SENSITIVITY_PARAMETER_HEADER = "参数值 / Parameter Value"
+SENSITIVITY_METRIC_HEADER = "性能指标 / Performance Metrics"
 
 CODE_BLOCK_STYLE_KEYWORDS = (
     "source code",
@@ -116,6 +118,43 @@ def _set_regular_table_borders(doc: Document) -> int:
     return len(doc.tables)
 
 
+def _cell_text(cell) -> str:
+    return " ".join(cell.text.split())
+
+
+def _clear_cell(cell) -> None:
+    for paragraph in cell.paragraphs:
+        for run in paragraph.runs:
+            run.text = ""
+
+
+def _merge_sensitivity_table_group_headers(doc: Document) -> int:
+    merged_count = 0
+    for table in doc.tables:
+        if len(table.rows) < 2 or len(table.columns) < 4:
+            continue
+
+        header_cells = table.rows[0].cells
+        header_texts = [_cell_text(cell) for cell in header_cells[:4]]
+        if header_texts != [
+            SENSITIVITY_PARAMETER_HEADER,
+            SENSITIVITY_METRIC_HEADER,
+            SENSITIVITY_METRIC_HEADER,
+            SENSITIVITY_METRIC_HEADER,
+        ]:
+            continue
+
+        merged_cell = header_cells[1].merge(header_cells[3])
+        _clear_cell(merged_cell)
+        paragraph = merged_cell.paragraphs[0]
+        run = paragraph.add_run(SENSITIVITY_METRIC_HEADER)
+        run.bold = True
+        header_cells[0].paragraphs[0].runs[0].bold = True
+        merged_count += 1
+
+    return merged_count
+
+
 def main() -> int:
     # --- Step 1: 构建算法 docx ---
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
@@ -147,11 +186,13 @@ def main() -> int:
             cwd=str(PAPER_DIR),
         )
 
-        # --- Step 3: 普通表格补全框线 ---
-        print(f"[3/4] Applying full borders to regular tables...")
+        # --- Step 3: 普通表格补全框线，并合并敏感性表分组表头 ---
+        print(f"[3/4] Applying full borders and table header merges...")
         doc = Document(temp_docx)
         bordered_table_count = _set_regular_table_borders(doc)
         print(f"Regular tables updated: {bordered_table_count}")
+        merged_header_count = _merge_sensitivity_table_group_headers(doc)
+        print(f"Sensitivity table group headers merged: {merged_header_count}")
 
         # --- Step 4: 注入算法表格 ---
         print(f"[4/4] Injecting algorithm table...")
