@@ -83,7 +83,7 @@ ROWS: list[dict[str, object]] = [
             ("math", FORMULAS[0]),
             ("text", "; gate parameters "),
             ("math", FORMULAS[1]),
-            ("text", " defined in Eqs. (7) to (16); minimum trigger interval "),
+            ("text", " defined in Eqs. (7)-(16); minimum trigger interval "),
             ("math", FORMULAS[2]),
             ("text", "; total control horizon "),
             ("math", FORMULAS[3]),
@@ -150,7 +150,7 @@ ROWS: list[dict[str, object]] = [
     {
         "kind": "code",
         "indent": 1,
-        "segments": [("text", "Compute the candidate threshold, local threshold, and global threshold according to Eqs. (11) to (14)")],
+        "segments": [("text", "Compute the candidate threshold, local threshold, and global threshold according to Eqs. (11)-(14)")],
     },
     {
         "kind": "code",

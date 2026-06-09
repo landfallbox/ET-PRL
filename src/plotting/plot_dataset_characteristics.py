@@ -75,7 +75,7 @@ def plot_dataset_overview(df: pd.DataFrame, output_path: Path) -> None:
 
     ax0_t = ax0.twinx()
     ax0_t.plot(rep_df["time"], twb_smooth, color="#b23a48", linewidth=1.1, alpha=0.85, label="Wet-bulb Temp (Twb)")
-    ax0_t.set_ylabel("Twb (degC)")
+    ax0_t.set_ylabel(r"Twb ($^\circ$C)")
 
     lines, labels = ax0.get_legend_handles_labels()
     lines_t, labels_t = ax0_t.get_legend_handles_labels()
@@ -111,7 +111,7 @@ def plot_dataset_overview(df: pd.DataFrame, output_path: Path) -> None:
     ax1_t = ax1.twinx()
     twb_mean = profile[("Twb", "mean")].to_numpy()
     ax1_t.plot(hour, twb_mean, color="#b23a48", linewidth=1.8, label="Twb mean")
-    ax1_t.set_ylabel("Twb (degC)")
+    ax1_t.set_ylabel(r"Twb ($^\circ$C)")
 
     lines, labels = ax1.get_legend_handles_labels()
     lines_t, labels_t = ax1_t.get_legend_handles_labels()
@@ -144,14 +144,14 @@ def plot_distribution_and_joint_pattern(df: pd.DataFrame, output_path: Path) -> 
     # (b) Twb distribution
     ax_b.hist(df["Twb"], bins=35, color="#b23a48", alpha=0.82, edgecolor="white")
     ax_b.set_title("(b) Distribution of wet-bulb temperature (Twb)", loc="left", fontsize=11)
-    ax_b.set_xlabel("Twb (degC)")
+    ax_b.set_xlabel(r"Twb ($^\circ$C)")
     ax_b.set_ylabel("Frequency")
     ax_b.grid(alpha=0.2, linestyle="--")
 
     # (c) CL-Twb dependence
     hb = ax_c.hexbin(df["Twb"], df["CL"], gridsize=40, cmap="YlGnBu", mincnt=1)
     ax_c.set_title("(c) Joint pattern: Twb vs CL", loc="left", fontsize=11)
-    ax_c.set_xlabel("Twb (degC)")
+    ax_c.set_xlabel(r"Twb ($^\circ$C)")
     ax_c.set_ylabel("CL (kW)")
     cb = fig.colorbar(hb, ax=ax_c)
     cb.set_label("Count")

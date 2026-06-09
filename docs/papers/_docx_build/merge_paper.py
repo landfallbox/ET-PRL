@@ -15,12 +15,14 @@
 from __future__ import annotations
 
 import copy
+import argparse
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
@@ -122,10 +124,85 @@ def _cell_text(cell) -> str:
     return " ".join(cell.text.split())
 
 
-def _clear_cell(cell) -> None:
+def _set_cell_alignment(cell, alignment) -> None:
     for paragraph in cell.paragraphs:
-        for run in paragraph.runs:
-            run.text = ""
+        paragraph.alignment = alignment
+
+
+def _table_column_alignments(table) -> list | None:
+    if not table.rows:
+        return None
+
+    header_texts = [_cell_text(cell) for cell in table.rows[0].cells]
+    if not header_texts:
+        return None
+
+    first_header = header_texts[0]
+    column_count = len(table.columns)
+
+    if first_header in {"策略", "Strategy", "方法", "Method"}:
+        return [WD_ALIGN_PARAGRAPH.LEFT] + [WD_ALIGN_PARAGRAPH.CENTER] * (column_count - 1)
+
+    if first_header == SENSITIVITY_PARAMETER_HEADER:
+        return [WD_ALIGN_PARAGRAPH.CENTER] * column_count
+
+    if first_header in {"设备名称", "Equipment"} and column_count >= 6:
+        return [
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.LEFT,
+        ]
+
+    if first_header in {"模块", "Module"} and column_count >= 4:
+        return [
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.CENTER,
+        ]
+
+    if first_header == "类别 (Category)" and column_count >= 5:
+        return [
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.LEFT,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.CENTER,
+            WD_ALIGN_PARAGRAPH.CENTER,
+        ]
+
+    return None
+
+
+def _apply_regular_table_alignment(doc: Document) -> int:
+    aligned_count = 0
+    for table in doc.tables:
+        alignments = _table_column_alignments(table)
+        if alignments is None:
+            continue
+
+        for row in table.rows:
+            for column_index, cell in enumerate(row.cells):
+                if column_index < len(alignments):
+                    _set_cell_alignment(cell, alignments[column_index])
+        aligned_count += 1
+
+    return aligned_count
+
+
+def _replace_cell_text(cell, text: str, *, bold: bool = False) -> None:
+    cell_properties = cell._tc.tcPr
+    for child in list(cell._tc):
+        if child is cell_properties:
+            continue
+        cell._tc.remove(child)
+
+    cell._tc.append(OxmlElement("w:p"))
+    paragraph = cell.paragraphs[0]
+    run = paragraph.add_run(text)
+    run.bold = bold
 
 
 def _merge_sensitivity_table_group_headers(doc: Document) -> int:
@@ -145,17 +222,30 @@ def _merge_sensitivity_table_group_headers(doc: Document) -> int:
             continue
 
         merged_cell = header_cells[1].merge(header_cells[3])
-        _clear_cell(merged_cell)
-        paragraph = merged_cell.paragraphs[0]
-        run = paragraph.add_run(SENSITIVITY_METRIC_HEADER)
-        run.bold = True
+        _replace_cell_text(merged_cell, SENSITIVITY_METRIC_HEADER, bold=True)
         header_cells[0].paragraphs[0].runs[0].bold = True
         merged_count += 1
 
     return merged_count
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Build paper docx from 小论文.md and inject the formatted algorithm table."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=OUTPUT_DOCX,
+        help="Output docx path. Defaults to docs/papers/小论文.docx.",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = _parse_args()
+    output_docx = args.output if args.output.is_absolute() else (Path.cwd() / args.output)
+
     # --- Step 1: 构建算法 docx ---
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
     print(f"[1/4] Building algorithm docx...")
@@ -193,6 +283,8 @@ def main() -> int:
         print(f"Regular tables updated: {bordered_table_count}")
         merged_header_count = _merge_sensitivity_table_group_headers(doc)
         print(f"Sensitivity table group headers merged: {merged_header_count}")
+        aligned_table_count = _apply_regular_table_alignment(doc)
+        print(f"Regular tables aligned: {aligned_table_count}")
 
         # --- Step 4: 注入算法表格 ---
         print(f"[4/4] Injecting algorithm table...")
@@ -277,9 +369,9 @@ def main() -> int:
             elem.getparent().remove(elem)
 
         # 保存最终文档
-        doc.save(OUTPUT_DOCX)
+        doc.save(output_docx)
 
-    print(f"Done! Created {OUTPUT_DOCX}")
+    print(f"Done! Created {output_docx}")
     return 0
 
 
