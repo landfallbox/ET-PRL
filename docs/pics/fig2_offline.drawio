@@ -23,7 +23,7 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="H2qp9QTR853Oxf_mhx2g-2" value="" style="shape=orEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;backgroundOutline=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="285" width="60" height="60" as="geometry"/>
+                    <mxGeometry x="725" y="290" width="50" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="H2qp9QTR853Oxf_mhx2g-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="41NrAnwyYw3E1iHJegx3-1" target="41NrAnwyYw3E1iHJegx3-10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
