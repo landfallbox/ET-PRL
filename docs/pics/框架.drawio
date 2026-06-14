@@ -1,0 +1,31 @@
+<mxfile host="Electron">
+  <diagram name="第 1 页" id="nKLNyVw5YLTnMkdmajJ2">
+    <mxGraphModel dx="589" dy="358" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="1" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="41NrAnwyYw3E1iHJegx3-8" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="150" width="210" x="140" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="41NrAnwyYw3E1iHJegx3-1" parent="41NrAnwyYw3E1iHJegx3-8" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="150" width="210" as="geometry" />
+        </mxCell>
+        <mxCell id="41NrAnwyYw3E1iHJegx3-6" parent="41NrAnwyYw3E1iHJegx3-8" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font face=&quot;Times New Roman&quot;&gt;\((Q^t_{\mathrm{load}},\ T^t_{\mathrm{wb}})\)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="140" x="35" as="geometry" />
+        </mxCell>
+        <mxCell id="41NrAnwyYw3E1iHJegx3-7" parent="41NrAnwyYw3E1iHJegx3-8" style="shape=image;aspect=fixed;image=data:image/svg+xml,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNzcgMTQ4IiByb2xlPSJpbWciIGFyaWEtbGFiZWxsZWRieT0idGl0bGUgZGVzYyI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RXZlbnQtZHJpdmVuIHRpbWUgc2VyaWVzIHNrZXRjaDwvdGl0bGU+CiAgPGRlc2MgaWQ9ImRlc2MiPkEgYmVpZ2UtYmFja2dyb3VuZCBwbG90IHdpdGggYXhlcywgdHdvIGphZ2dlZCB0aW1lIHNlcmllcyBsaW5lcywgYW5kIGxhYmVscyBmb3IgUSBsb2FkIGFuZCBUIHdldCBidWxiLjwvZGVzYz4KCiAgPGRlZnM+CiAgICA8bWFya2VyIGlkPSJhcnJvdyIgdmlld0JveD0iMCAwIDYgNiIgcmVmWD0iNS40IiByZWZZPSIzIiBtYXJrZXJXaWR0aD0iNSIgbWFya2VySGVpZ2h0PSI1IiBvcmllbnQ9ImF1dG8iPgogICAgICA8cGF0aCBkPSJNMCwwIEw2LDMgTDAsNiBaIiBmaWxsPSIjMWIxYjFiIiAvPgogICAgPC9tYXJrZXI+CiAgPC9kZWZzPgoKICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMxYjFiMWIiIHN0cm9rZS13aWR0aD0iMS4yNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBtYXJrZXItZW5kPSJ1cmwoI2Fycm93KSI+CiAgICA8bGluZSB4MT0iMTYiIHkxPSIxMjguNSIgeDI9IjE2MyIgeTI9IjEyOC41IiAvPgogICAgPGxpbmUgeDE9IjE2IiB5MT0iMTI4LjUiIHgyPSIxNiIgeTI9IjU0IiAvPgogIDwvZz4KCiAgPHBhdGgKICAgIGQ9Ik0xOCA3MC41CiAgICAgICBDMjEgNzAuMiAyNCA2OC42IDI3IDY5LjgKICAgICAgIEwzMyA3Mi4yIEwzOSA2NC41IEw0NCA2Mi41IEw0NS41IDU3LjkKICAgICAgIEw1MCA3NS40IEw1NiA2OS4xIEw2MiA2OC4zIEw2NiA3OC43CiAgICAgICBMNzAgNzIuNiBMNzYgNzAuOSBMODEgNzIuMSBMODYgNzYuMQogICAgICAgTDkzIDc0LjkgTDk5IDcyLjIgTDEwNSA3Mi4zIEwxMTIgNzQuMwogICAgICAgTDExOSA3Mi4zIEwxMjYgNzAuNiBMMTMzIDcwLjEgTDE0MCA2OC44CiAgICAgICBMMTQ3IDY5LjMgTDE1NCA2Ny42IEwxNjAgNjcuOSIKICAgIGZpbGw9Im5vbmUiCiAgICBzdHJva2U9IiMzYjhkZjIiCiAgICBzdHJva2Utd2lkdGg9IjEuNSIKICAgIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIKICAgIHN0cm9rZS1saW5lam9pbj0icm91bmQiIC8+CgogIDxwYXRoCiAgICBkPSJNMTggOTYuNgogICAgICAgTDIzIDk0LjMgTDI4IDkxLjIgTDMzIDkwLjggTDM3IDk5LjIgTDQyIDg2LjkKICAgICAgIEw0OCA4NC44IEw1MyAxMDEuNCBMNTYgOTYuMyBMNTkgOTguOAogICAgICAgTDYzIDkyLjIgTDY2IDEwMC4zIEw2OSA5Ni43IEw3MiAxMDEuOAogICAgICAgTDc2IDg3LjggTDgxIDEwMy41IEw4NiA5OS43IEw5MiAxMDMuMgogICAgICAgTDk4IDEwNC4yIEwxMDQgMTAxLjIgTDExMSAxMDEuOCBMMTE4IDk5LjIKICAgICAgIEwxMjUgMTAwLjEgTDEzMiA5OC45IEwxMzkgOTguNiBMMTQ2IDk4LjEKICAgICAgIEwxNTMgOTcuNiBMMTYwIDk3LjgiCiAgICBmaWxsPSJub25lIgogICAgc3Ryb2tlPSIjNmNhNTVhIgogICAgc3Ryb2tlLXdpZHRoPSIxLjM1IgogICAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgLz4KCjwvc3ZnPgo=;" value="" vertex="1">
+          <mxGeometry height="150" width="179" x="15.5" as="geometry" />
+        </mxCell>
+        <mxCell id="41NrAnwyYw3E1iHJegx3-9" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="150" width="210" x="420" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="41NrAnwyYw3E1iHJegx3-10" parent="41NrAnwyYw3E1iHJegx3-9" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="150" width="210" as="geometry" />
+        </mxCell>
+        <mxCell id="41NrAnwyYw3E1iHJegx3-13" parent="41NrAnwyYw3E1iHJegx3-9" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Text" vertex="1">
+          <mxGeometry height="30" width="60" x="75" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
