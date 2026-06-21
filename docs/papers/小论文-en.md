@@ -519,7 +519,7 @@ The quantile level $q$ mainly changes the trend in trigger frequency associated 
 | 0.07 | 1750.28 | 6.02 | 7638.46 |
 | 0.10 | 1730.85 | 4.97 | 7556.95 |
 
-The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger count. As shown in Table 4, when $b_{\mathrm{bias}}$ is -0.13 or -0.09, the gate does not trigger, $N_{\text{daily}}$ remains 0, $R_{\text{test}}$ stays at 634.80, and $E_{\text{daily}}$ stays at 4144.14 kWh/day. As $b_{\mathrm{bias}}$ increases to -0.05, the gate begins to trigger, and both $R_{\text{test}}$ and $E_{\text{daily}}$ increase. When $b_{\mathrm{bias}}$ further increases to -0.01 and 0.03, $N_{\text{daily}}$ rises to 5.89 and 7.19, and the reward also increases to 1752.93 and 1819.57. Further increases to 0.07 and 0.10 keep the trigger count at a relatively high level, but the reward no longer improves. Overall, increasing $b_{\mathrm{bias}}$ shifts the gate from almost no updates to frequent updates. A moderate increase can substantially improve reward, but an overly high value maintains high energy consumption while providing limited additional benefit.
+The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger count. As shown in Table 4, when $b_{\mathrm{bias}}$ is -0.13 or -0.09, the gate does not trigger, $N_{\text{daily}}$ remains 0, $R_{\text{test}}$ stays at 634.80, and $E_{\text{daily}}$ stays at 4144.14 kWh/day. As $b_{\mathrm{bias}}$ increases to -0.05, the gate begins to trigger, and both $R_{\text{test}}$ and $E_{\text{daily}}$ increase. When $b_{\mathrm{bias}}$ further increases to -0.01 and 0.03, $N_{\text{daily}}$ rises to 5.89 and 7.19, and the reward also increases to 1752.93 and 1819.57. Further increases to 0.07 keep the trigger count at a relatively high level, but the reward no longer improves. Overall, increasing $b_{\mathrm{bias}}$ shifts the gate from almost no updates to frequent updates. A moderate increase can substantially improve reward, but an overly high value maintains high energy consumption while providing limited additional benefit.
 
 3. Hysteresis Margin $m_{\mathrm{hys}}$
 
@@ -544,16 +544,13 @@ When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect 
 | Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
 | --- | --- | --- | --- |
 | **$W$** | **$R_{\text{test}}$** | **$N_{\text{daily}}$** | **$E_{\text{daily}}$, kWh/day** |
-| 30 | 1909.19 | 2.22 | 8410.21 |
 | 60 | 1909.19 | 2.22 | 8410.21 |
 | 90 | 1374.46 | 1.83 | 7053.75 |
 | 120 | 1493.12 | 1.44 | 7115.59 |
 | 150 | 1176.24 | 0.98 | 5971.89 |
-| 180 | 1229.66 | 0.98 | 6157.48 |
-| 210 | 1183.50 | 0.78 | 6013.92 |
-| 240 | 1482.38 | 0.85 | 6887.50 |
+| 180 | 1229.66 | 0.85 | 6157.48 |
 
-When the local window length $W$ increases, local statistics cover a longer time range and short term fluctuations are further smoothed. As shown in Table 6, under the short window settings $W=30$ and $W=60$, $N_{\text{daily}}$ is 2.22, $E_{\text{daily}}$ is 8410.21 kWh/day, and $R_{\text{test}}$ remains at a relatively high value of 1909.19. As $W$ increases to the range from 90 to 180, the trigger count generally decreases to 0.98 to 1.83, energy consumption decreases to 5971.89 to 7115.59 kWh/day, and the reward becomes lower than under the short window settings. Overall, a shorter $W$ strengthens the gate response to recent disturbances, yielding a higher reward but higher energy consumption. A longer $W$ reduces triggering and energy consumption, but it may also weaken the response to rapid disturbances and reduce reward.
+When the local window length $W$ increases, local statistics cover a longer time range and short term fluctuations are further smoothed. As shown in Table 6, under the window setting $W=60$, $N_{\text{daily}}$ is 2.22, $E_{\text{daily}}$ is 8410.21 kWh/day, and $R_{\text{test}}$ remains at a relatively high value of 1909.19. As $W$ increases to the range from 90 to 180, the trigger count generally decreases to 0.85 to 1.83, energy consumption decreases to 5971.89 to 7115.59 kWh/day, and the reward becomes lower than under the short window setting. Overall, a shorter $W$ strengthens the gate response to recent disturbances, yielding a higher reward but higher energy consumption. A longer $W$ reduces triggering and energy consumption, but it may also weaken the response to rapid disturbances and reduce reward.
 
 5. Short Scale Weight $w_s$
 
