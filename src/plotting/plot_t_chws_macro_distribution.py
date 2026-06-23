@@ -22,9 +22,9 @@ from matplotlib.patches import Patch
 
 plt.rcParams.update(
     {
-        'font.family': 'Times New Roman',
-        'font.serif': ['Times New Roman'],
-        'mathtext.fontset': 'stix',
+        'font.family': 'sans-serif',
+        'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
+        'mathtext.fontset': 'dejavusans',
         'axes.unicode_minus': False,
         'xtick.direction': 'in',
         'ytick.direction': 'in',
@@ -191,7 +191,7 @@ def _plot_windowed_distribution_panel(
         ax.set_ylim(0.0, 1.0)
         ax.set_yticks([0.0, 0.5, 1.0])
         ax.set_ylabel('')
-        ax.tick_params(axis='both', labelsize=11)
+        ax.tick_params(axis='both', labelsize=17)
         # Keep only baseline guides at 0 and 1; remove the 0.5 dashed guide line.
         ax.grid(False)
         ax.axhline(0.0, color='#B8B8B8', linestyle='--', linewidth=0.55, alpha=0.45, zorder=0)
@@ -204,7 +204,7 @@ def _plot_windowed_distribution_panel(
             transform=ax.transAxes,
             ha='left',
             va='bottom',
-            fontsize=12,
+            fontsize=16,
             clip_on=False,
         )
         for spine in ax.spines.values():
@@ -213,7 +213,7 @@ def _plot_windowed_distribution_panel(
         if idx < len(row_series) - 1:
             ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
         else:
-            ax.set_xlabel('Time (h)', fontsize=12)
+            ax.set_xlabel('Time (h)', fontsize=16)
 
     return axes
 
@@ -255,14 +255,14 @@ def generate_macro_figure(
     merged_values = merged_values[merge_order]
 
     series_map: dict[str, tuple[np.ndarray, np.ndarray]] = {
-        '(a)TTC-RL-1/ST-ETC': (merged_time, merged_values),
-        '(b)ET-PRL': (time_et, et_values),
+        '(a) TTC-RL-1/ST-ETC': (merged_time, merged_values),
+        '(b) ET-PRL': (time_et, et_values),
     }
     all_values = [vals for _, vals in series_map.values()]
     temp_levels = np.unique(np.concatenate(all_values))
     temp_color_map = _build_temperature_color_map(temp_levels)
 
-    preferred_order = ['(a)TTC-RL-1/ST-ETC', '(b)ET-PRL']
+    preferred_order = ['(a) TTC-RL-1/ST-ETC', '(b) ET-PRL']
     panel_rows = [
         (name, series_map[name][0], series_map[name][1])
         for name in preferred_order
@@ -283,7 +283,7 @@ def generate_macro_figure(
         window_hours=window_hours,
     )
 
-    fig.supylabel(r'Proportion of $T_{\mathrm{chws}}$ Setpoints', fontsize=12, x=0.045)
+    fig.supylabel(r'Proportion of $T_{\mathrm{chws}}$ Setpoints', fontsize=16, x=0.045)
 
     temp_handles = [
         Patch(
@@ -298,7 +298,7 @@ def generate_macro_figure(
         loc='lower center',
         bbox_to_anchor=(0.5, 1.02),
         ncol=min(4, len(temp_handles)),
-        fontsize=11,
+        fontsize=16,
         framealpha=0.94,
         columnspacing=1.0,
         handletextpad=0.45,

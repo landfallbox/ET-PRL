@@ -7,6 +7,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+plt.rcParams.update(
+    {
+        'font.family': 'sans-serif',
+        'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
+        'mathtext.fontset': 'dejavusans',
+        'axes.unicode_minus': False,
+    }
+)
+
 
 def _load_data(data_path: Path) -> pd.DataFrame:
     df = pd.read_csv(data_path)
@@ -136,21 +145,21 @@ def plot_distribution_and_joint_pattern(df: pd.DataFrame, output_path: Path) -> 
 
     # (a) CL distribution
     ax_a.hist(df["CL"], bins=45, color="#2f6690", alpha=0.85, edgecolor="white")
-    ax_a.set_title("(a) Distribution of cooling load (CL)", loc="left", fontsize=11)
+    ax_a.set_title("(a) Distribution of cooling load (CL)", loc="left", fontsize=13)
     ax_a.set_xlabel("CL (kW)")
     ax_a.set_ylabel("Frequency")
     ax_a.grid(alpha=0.2, linestyle="--")
 
     # (b) Twb distribution
     ax_b.hist(df["Twb"], bins=35, color="#b23a48", alpha=0.82, edgecolor="white")
-    ax_b.set_title("(b) Distribution of wet-bulb temperature (Twb)", loc="left", fontsize=11)
+    ax_b.set_title("(b) Distribution of wet-bulb temperature (Twb)", loc="left", fontsize=13)
     ax_b.set_xlabel(r"Twb ($^\circ$C)")
     ax_b.set_ylabel("Frequency")
     ax_b.grid(alpha=0.2, linestyle="--")
 
     # (c) CL-Twb dependence
     hb = ax_c.hexbin(df["Twb"], df["CL"], gridsize=40, cmap="YlGnBu", mincnt=1)
-    ax_c.set_title("(c) Joint pattern: Twb vs CL", loc="left", fontsize=11)
+    ax_c.set_title("(c) Joint pattern: Twb vs CL", loc="left", fontsize=13)
     ax_c.set_xlabel(r"Twb ($^\circ$C)")
     ax_c.set_ylabel("CL (kW)")
     cb = fig.colorbar(hb, ax=ax_c)

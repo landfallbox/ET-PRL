@@ -342,7 +342,7 @@ def generate_delta_figure(
         raise ValueError('micro_x_min and micro_x_max must be provided together.')
 
     fig = plt.figure(figsize=(17.2, 7.2))
-    outer = fig.add_gridspec(1, 2, width_ratios=[1.62, 1.0], wspace=0.17)
+    outer = fig.add_gridspec(1, 2, width_ratios=[1.62, 1.0], wspace=0.08)
     left = outer[0].subgridspec(2, 1, height_ratios=[0.84, 1.16], hspace=0.05)
     ax_a_top = fig.add_subplot(left[0])
     ax_a_bottom = fig.add_subplot(left[1], sharex=ax_a_top)
@@ -380,8 +380,7 @@ def generate_delta_figure(
     ax_a_top.grid(False)
     ax_a_top.grid(axis='y', color='#EBEBEB', linestyle='-', linewidth=0.55, alpha=1.0)
     ax_a_top.tick_params(axis='x', labelbottom=False)
-    ax_a_top.text(0.01, 0.98, '(a)', transform=ax_a_top.transAxes,
-                  fontsize=10, fontweight='bold', va='top', ha='left', clip_on=False)
+    fig.text(0.072, 0.955, '(a)', fontsize=10, fontweight='bold', va='top', ha='left')
     # Lower stack: absolute setpoint trajectories for visualizing ZOH hold behavior.
 
     ax_a_bottom.step(
@@ -443,22 +442,24 @@ def generate_delta_figure(
             )
             fig.add_artist(connector)
 
-    # Merge both panel-(a) legends into the upper subplot to avoid covering lower data.
-    ax_a_top.legend(
+    # Panel (a) legend above the left subplot (figure coordinates for alignment).
+    fig.legend(
         handles=[
-            Line2D([0], [0], color=COLOR_DISTURB, linewidth=1.9, label=disturbance_label),
-             Line2D([0], [0], color=COLOR_TRIGGER, linewidth=0.9, linestyle='--', alpha=0.7,
-                 label='ET trigger/action onset'),
+            Line2D([0], [0], color=COLOR_DISTURB, linewidth=1.9, label='Cooling load'),
+            Line2D([0], [0], color=COLOR_TRIGGER, linewidth=0.9, linestyle='--', alpha=0.7,
+                label='ET trigger'),
             Line2D([0], [0], color=COLOR_BASE, linewidth=2.3, linestyle='--', alpha=0.50,
-                   label='TTC-RL-1 (time-triggered baseline)'),
-            Line2D([0], [0], color=COLOR_ET, linewidth=1.5, linestyle='-', label='ET-PRL (event-driven ZOH)'),
+                   label='TTC-RL-1'),
+            Line2D([0], [0], color=COLOR_ET, linewidth=1.5, linestyle='-', label='ET-PRL'),
         ],
-        loc='upper right',
-        ncol=1,
-        fontsize=8,
+        loc='upper center',
+        bbox_to_anchor=(0.33, 0.96),
+        ncol=4,
+        fontsize=7.5,
         frameon=False,
         handlelength=2.0,
-        borderaxespad=0.2,
+        columnspacing=1.2,
+        borderaxespad=0.0,
     )
 
     plot_values = np.arange(-3, 4, 1, dtype=int)
@@ -500,30 +501,29 @@ def generate_delta_figure(
     _style_axes(ax_b)
     ax_b.grid(False)
     ax_b.grid(axis='y', color='#EBEBEB', linestyle='-', linewidth=0.55, alpha=1.0)
-    ax_b.text(0.01, 0.98, '(b)', transform=ax_b.transAxes,
-              fontsize=10, fontweight='bold', va='top', ha='left', clip_on=False)
+    fig.text(0.615, 0.955, '(b)', fontsize=10, fontweight='bold', va='top', ha='left')
 
-    legend_handles = [
-        Patch(facecolor=COLOR_ST, edgecolor=_darken_color(COLOR_ST), linewidth=0.45, alpha=0.68,
-              label='ST-ETC vs TTC-RL-1'),
-        Patch(facecolor=COLOR_ET, edgecolor=_darken_color(COLOR_ET), linewidth=0.45, alpha=0.78,
-              label='ET-PRL vs TTC-RL-1'),
-    ]
-    # ax_b.legend(
-    #     handles=legend_handles,
-    #     title='Methods (all vs TTC-RL-1)',
-    #     loc='upper right',
-    #     ncol=1,
-    #     fontsize=8,
-    #     title_fontsize=8,
-    #     frameon=False,
-    #     handlelength=1.8,
-    #     borderaxespad=0.25,
-    # )
+    # Panel (b) legend above the right subplot (figure coordinates for alignment).
+    fig.legend(
+        handles=[
+            Patch(facecolor=COLOR_ST, edgecolor=_darken_color(COLOR_ST), linewidth=0.45, alpha=0.68,
+                  label='ST-ETC'),
+            Patch(facecolor=COLOR_ET, edgecolor=_darken_color(COLOR_ET), linewidth=0.45, alpha=0.78,
+                  label='ET-PRL'),
+        ],
+        loc='upper center',
+        bbox_to_anchor=(0.77, 0.96),
+        ncol=2,
+        fontsize=7.5,
+        frameon=False,
+        handlelength=1.8,
+        columnspacing=1.2,
+        borderaxespad=0.0,
+    )
 
-    fig.subplots_adjust(left=0.07, right=0.97, top=0.90, bottom=0.12)
+    fig.subplots_adjust(left=0.07, right=0.93, top=0.93, bottom=0.12)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, format='svg', dpi=100, bbox_inches='tight')
+    plt.savefig(output_path, format='svg', dpi=100, bbox_inches='tight', pad_inches=0.02)
     plt.close(fig)
     print(f'Saved Figure 5-2-4 to {output_path}')
 
