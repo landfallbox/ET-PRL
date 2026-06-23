@@ -71,7 +71,7 @@ $$
 
 where $\Phi(\cdot)$ denotes the threshold update operator driven by historical anomaly scores which balances sensitivity and stability. It increases event coverage when disturbances intensify and suppresses redundant triggering during steady periods, thereby reducing the risk of false triggers and missed triggers.
 
-**(1) Definition of System State Features**
+(1) Definition of System State Features
 
 The event gating module and the reinforcement learning controller share the same state feature which is defined as a compact three-dimensional feature vector as Eq. (4):
 
@@ -81,7 +81,7 @@ where, at time step $t$, $Q_{load}^t$ denotes the system cooling load, $T_{wb}^t
 
 The main reason for selecting $T_{wb}^t$ is that it can capture both ambient temperature and humidity and directly constrain cooling tower heat transfer performance and the upper limit of system heat rejection. It therefore serves as a key state variable for characterizing the intensity and direction of exogenous weather disturbances, which improves the ability of the gating mechanism to detect non-stationary environmental changes. Moreover, $\hat{Q}_{load}^{t+1}$ is selected because building thermal systems exhibit strong thermal inertia and control delay. If the gating mechanism relies only on current observations, trigger decisions usually lag behind operating condition shifts. By incorporating one-step-ahead load information, the gating module can sense rising or falling load trends earlier to some extent and trigger control action updates earlier during critical transitions, thereby reducing the risk of delayed response under sparse triggering.
 
-**(2) Streaming Isolation Depth and Multi-Scale Anomaly Tracking**
+(2) Streaming Isolation Depth and Multi-Scale Anomaly Tracking
 
 Traditional offline anomaly detection usually depends on a static sample library and is less stable under seasonal operating drift. To address this issue, a streaming isolation depth mechanism is deployed to score anomalies of the online system state feature $s_t$ in real time. Streaming Isolation Depth dynamically builds and updates isolation tree structures over sliding data windows, and uses the average path length of a sample across multiple trees to measure its degree of isolation. A shorter path means the sample is easier to isolate and therefore more likely to be anomalous. This mechanism can adapt to distribution changes online without retraining a global model.
 
@@ -107,7 +107,7 @@ where $w_{\mathrm{s}}, w_{\mathrm{m}}, w_{\mathrm{l}} \ge 0$ and $w_{\mathrm{s}}
 
 We construct the composite anomaly score through weighted fusion of the short, medium, and long time scales. The short-term scale primarily captures high-frequency disturbances, the medium-term scale characterizes intraday periodic variations, and the long-term scale tracks seasonal drift and long-term slow processes. This multi-scale fusion mechanism enables the gating module to jointly respond to local abrupt disturbances and system-level slow-varying trends, avoiding the insufficient sensitivity or excessive triggering that a single-scale statistic may exhibit under non-stationary operating conditions, thereby improving the adaptability and robustness of the gating mechanism across diverse operating scenarios.
 
-**(3) Streaming Two-Layer Adaptive Threshold Optimization**
+(3) Streaming Two-Layer Adaptive Threshold Optimization
 
 Eq. (8) provides the multi-scale fused anomaly score $A(s_t)$, but the triggering decision still requires comparing this score against a threshold $\tau_t$, as defined in Eq. (2). Under long-term non-stationary HVAC operation, a fixed threshold is prone to either insufficient sensitivity or excessive triggering, whereas a single adaptive statistic cannot simultaneously accommodate rapid response to short-term disturbances and stable tracking of long-term drift. To resolve this issue, we construct a local-global two-layer adaptive threshold that achieves adaptive triggering through coordinated fast- and slow-timescale updates.
 
@@ -447,10 +447,10 @@ Table 1 Overall comparison results of multiple control strategies
 
 | **Strategy** | **$E_{\text{daily}}$ (kWh/day)** | **$\eta_{\text{saving}}$ (%)** | **$\bar{P}_{\text{chiller}}$ (kW)** | **$N_{\text{update}}$** | **ARR (%)** | **$\bar{\Delta a}$** | **$R_{\text{test}}$** | **$\bar{R}_{\text{update}}$** | **PPR (%)** |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PID | 8486.90 | -13.29 | 353.62 | - | - | **0.1669** | - | - | - |
+| PID | 8486.90 | -13.29 | 353.62 | - | - | - | - | - | - |
 | RBC | 8548.72 | -14.12 | 356.20 | - | - | - | - | - | - |
 | TTC-RL-1 | 7491.14 | - | 312.13 | 4404 | - | 0.8101 | **2054.63** | 0.4665 | - |
-| TTC-RL-2 | 7489.98 | 0.02 | 312.08 | 2202 | 50.00 | 0.5617 | 2022.76 | 0.9186 | 98.45 |
+| TTC-RL-2 | 7489.98 | 0.02 | 312.08 | 2202 | 50.00 | **0.5617** | 2022.76 | 0.9186 | 98.45 |
 | ST-ETC | 7485.44 | 0.08 | 311.89 | 3525 | 19.96 | 0.7711 | 2052.42 | 0.5822 | **99.89** |
 | **ET-PRL** | **7331.85** | **2.13** | **305.49** | **2046** | **53.54** | 0.6014 | 1939.74 | **0.9481** | 94.41 |
 
