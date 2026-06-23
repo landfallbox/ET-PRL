@@ -443,14 +443,6 @@ The evaluation metrics and optimization objectives are summarized in Table A3 in
 
 Based on the six comparison strategies and the related evaluation metrics, this section presents a comprehensive comparison of energy efficiency, temperature control, control sparsity, and execution-level performance across all strategies on the unified test set. Table 1 summarizes the test results of all strategies across all evaluation metrics.
 
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PID | 8486.90 | -13.29 | 353.62 | - | - | **0.1669** | - | - | - |
-| RBC | 8548.72 | -14.12 | 356.20 | - | - | - | - | - | - |
-| TTC-RL-1 | 7491.14 | - | 312.13 | 4404 | - | 0.8101 | **2054.63** | 0.4665 | - |
-| TTC-RL-2 | 7489.98 | 0.02 | 312.08 | 2202 | 50.00 | 0.5617 | 2022.76 | 0.9186 | 98.45 |
-| ST-ETC | 7485.44 | 0.08 | 311.89 | 3525 | 19.96 | 0.7711 | 2052.42 | 0.5822 | **99.89** |
-| **ET-PRL** | **7331.85** | **2.13** | **305.49** | **2046** | **53.54** | 0.6014 | 1939.74 | **0.9481** | 94.41 |
-
 Table 1 Overall comparison results of multiple control strategies
 
 | **Strategy** | **$E_{\text{daily}}$ (kWh/day)** | **$\eta_{\text{saving}}$ (%)** | **$\bar{P}_{\text{chiller}}$ (kW)** | **$N_{\text{update}}$** | **ARR (%)** | **$\bar{\Delta a}$** | **$R_{\text{test}}$** | **$\bar{R}_{\text{update}}$** | **PPR (%)** |
@@ -490,11 +482,6 @@ At the global difference level, panel b of Figure 6 shows that the proportion of
 
 The above results show that ET-PRL not only reduces the action update frequency but also changes the distribution of chilled water supply temperature setpoints in the action space. To further characterize the temporal structure of control sparsity and the dynamic response of the system, we compare ET-PRL, ST-ETC, and TTC-RL-1 using the trigger interval and action holding length defined above. The trigger interval reflects the actual sparsity of trigger events at the gating layer, whereas the action holding length reflects setpoint stability at the execution layer. Even after a trigger occurs, the policy network may still output the same optimal setpoint as in the previous step, so the action holding length in the realized trajectory is usually greater than or equal to the trigger interval.
 
-| --- | --- | --- | --- | --- |
-| TTC-RL-1 | 1.000 | 275.25 | 7.57 | 42.9 |
-| ST-ETC | 1.249 | 220.31 | 7.89 | 43.3 |
-| **ET-PRL** | **2.117** | **127.88** | **11.56** | **57.0** |
-
 | **Strategy** | **Mean Trigger Interval (steps)** | **Daily Trigger Count** | **Mean Action Holding Length (steps)** | **95th percentile $P_{95}$ (steps)** |
 | --- | --- | --- | --- | --- |
 | TTC-RL-1 | 1.000 | 275.25 | 7.57 | 42.9 |
@@ -522,15 +509,6 @@ In summary, the proposed ET-PRL method exhibits an adaptive temporal pattern wit
 (4) Ablation Study Analysis
 
 To quantify the contribution of each component in the proposed method, we conduct an ablation study under a controlled variable experimental design. Unless otherwise specified, all experimental groups use the same training configuration, test set, and evaluation protocol. In addition to the fixed step reference baseline TTC-RL-1, the ablation study includes six comparison methods, consisting of five simplified variants and the full model, to analyze the contributions of the dual threshold module and the multi scale module. Table 2 summarizes the test set results of all strategies, where relative metrics such as ACR and PPR use TTC-RL-1 as the computational baseline, whereas the remaining metrics are test set statistics.
-
-| --- | --- | --- | --- | --- | --- | --- |
-| TTC-RL-1 baseline | 2054.63 | 4404 | 288.00 | 7491.14 | 1.0000 | 100.00% |
-| Local Threshold Only | 1958.05 | 2257 | 147.60 | 7367.57 | 1.9513 | 95.30% |
-| Global Threshold Only | 1977.54 | 2251 | 147.20 | 7409.42 | 1.9565 | 96.25% |
-| Short-scale Only | 1951.74 | 2122 | 138.77 | 7407.03 | 2.0754 | 94.99% |
-| Medium-scale Only | 2041.96 | 3891 | 254.45 | 7484.70 | 1.1318 | 99.38% |
-| Long-scale Only | 2032.01 | 4334 | 283.42 | 7431.26 | 1.0162 | 98.90% |
-| **Full ET-PRL** | **1939.74** | **2046** | **133.80** | **7331.85** | **2.1525** | **94.41%** |
 
 Table 2 Key module ablation results
 
