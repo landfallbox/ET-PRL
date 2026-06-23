@@ -206,7 +206,7 @@ def create_update_strategy_comparison(output_path: Path, dpi: int = 220) -> Path
     # unified legend for signal, time-step marks, fixed and dynamic thresholds
     fig.legend(
         handles=[signal_line, fixed_line, dynamic_line, trigger_marker],
-        labels=["室温偏差", "固定阈值", "动态阈值", "触发点"],
+        labels=["Room Temperature Deviation", "Fixed Threshold", "Dynamic Threshold", "Trigger Points"],
         loc="upper center",
         bbox_to_anchor=(0.5, 1.06),
         ncol=4,
