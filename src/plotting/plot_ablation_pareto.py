@@ -84,8 +84,8 @@ def generate_figure(output_path: Path) -> None:
     acr_min = float(df["ACR"].min())
     acr_max = float(df["ACR"].max())
 
-    fig, ax = plt.subplots(figsize=(8.4, 5.2))
-    fig.subplots_adjust(left=0.12, right=0.82, bottom=0.12, top=0.95)
+    fig, ax = plt.subplots(figsize=(7.06, 4.28))
+    fig.subplots_adjust(left=0.10, right=0.92, bottom=0.13, top=0.94)
 
     ax.set_axisbelow(True)
     ax.grid(True, which="major", color="#D9D9D9", linestyle="--", linewidth=0.70, alpha=0.27)
@@ -135,7 +135,7 @@ def generate_figure(output_path: Path) -> None:
             xy=(x, y),
             xytext=(dx, dy),
             textcoords="offset points",
-            fontsize=9.3,
+            fontsize=8,
             fontweight="semibold" if method == PROPOSED_METHOD else "normal",
             color="#1F1F1F",
             ha="left" if dx >= 0 else "right",
@@ -149,9 +149,9 @@ def generate_figure(output_path: Path) -> None:
             zorder=6,
         )
 
-    ax.set_xlabel(r"Energy consumption $E_{\mathrm{daily}}$ (kWh/day)", fontsize=11.0)
-    ax.set_ylabel("Performance preservation rate (PPR, %)", fontsize=11.0)
-    ax.tick_params(axis="both", labelsize=10.8)
+    ax.set_xlabel(r"Energy consumption $E_{\mathrm{daily}}$ (kWh/day)", fontsize=9)
+    ax.set_ylabel("PPR (%)", fontsize=9, labelpad=6)
+    ax.tick_params(axis="both", labelsize=8.5)
 
     x_margin = 24.0
     y_margin = 0.60
@@ -160,9 +160,9 @@ def generate_figure(output_path: Path) -> None:
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(float(df["PPR"].min()) - y_margin, float(df["PPR"].max()) + y_margin)
 
-    cbar = fig.colorbar(scatter, ax=ax, fraction=0.050, pad=0.02)
-    cbar.set_label("Average Communication Rate (ACR)", fontsize=9.8)
-    cbar.ax.tick_params(labelsize=9.2)
+    cbar = fig.colorbar(scatter, ax=ax, fraction=0.055, pad=0.01)
+    cbar.set_label("ACR", fontsize=8, labelpad=6)
+    cbar.ax.tick_params(labelsize=7.5)
 
     pareto_handle = Line2D(
         [0],
@@ -177,7 +177,7 @@ def generate_figure(output_path: Path) -> None:
         loc="lower right",
         bbox_to_anchor=(0.985, 0.05),
         frameon=True,
-        fontsize=9.0,
+        fontsize=7.5,
         title=None,
         borderpad=0.55,
         handlelength=1.9,
@@ -187,7 +187,7 @@ def generate_figure(output_path: Path) -> None:
     legend_main.get_frame().set_alpha(1.00)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, format="svg", dpi=140, bbox_inches="tight")
+    fig.savefig(output_path, format="svg", dpi=140, pad_inches=0.02)
     plt.close(fig)
 
     print(f"Saved figure: {output_path}")

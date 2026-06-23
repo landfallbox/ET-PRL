@@ -154,7 +154,7 @@ def _plot_windowed_distribution_panel(
     window_hours: float,
 ) -> list[plt.Axes]:
     """Render one multi-row windowed stacked-percentage panel."""
-    subgrid = panel_spec.subgridspec(len(row_series), 1, hspace=0.10)
+    subgrid = panel_spec.subgridspec(len(row_series), 1, hspace=0.22)
     axes: list[plt.Axes] = []
 
     for idx, (row_name, time_hours, values) in enumerate(row_series):
@@ -191,7 +191,7 @@ def _plot_windowed_distribution_panel(
         ax.set_ylim(0.0, 1.0)
         ax.set_yticks([0.0, 0.5, 1.0])
         ax.set_ylabel('')
-        ax.tick_params(axis='both', labelsize=17)
+        ax.tick_params(axis='both', labelsize=7)
         # Keep only baseline guides at 0 and 1; remove the 0.5 dashed guide line.
         ax.grid(False)
         ax.axhline(0.0, color='#B8B8B8', linestyle='--', linewidth=0.55, alpha=0.45, zorder=0)
@@ -204,7 +204,7 @@ def _plot_windowed_distribution_panel(
             transform=ax.transAxes,
             ha='left',
             va='bottom',
-            fontsize=16,
+            fontsize=7,
             clip_on=False,
         )
         for spine in ax.spines.values():
@@ -213,7 +213,7 @@ def _plot_windowed_distribution_panel(
         if idx < len(row_series) - 1:
             ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
         else:
-            ax.set_xlabel('Time (h)', fontsize=16)
+            ax.set_xlabel('Time (h)', fontsize=7)
 
     return axes
 
@@ -269,9 +269,9 @@ def generate_macro_figure(
         if name in series_map
     ]
 
-    fig_height = 7.0 + 1.15 * len(panel_rows)
-    fig = plt.figure(figsize=(18.0, fig_height))
-    outer = fig.add_gridspec(1, 1)
+    fig_height = 4.28
+    fig = plt.figure(figsize=(7.06, fig_height))
+    outer = fig.add_gridspec(1, 1, left=0.07, right=0.98, top=0.90, bottom=0.12)
     panel_axes = _plot_windowed_distribution_panel(
         fig=fig,
         panel_spec=outer[0],
@@ -283,7 +283,7 @@ def generate_macro_figure(
         window_hours=window_hours,
     )
 
-    fig.supylabel(r'Proportion of $T_{\mathrm{chws}}$ Setpoints', fontsize=16, x=0.045)
+    fig.supylabel(r'Proportion of $T_{\mathrm{chws}}$ Setpoints', fontsize=6, x=0.015)
 
     temp_handles = [
         Patch(
@@ -295,19 +295,18 @@ def generate_macro_figure(
     ]
     panel_axes[0].legend(
         handles=temp_handles,
-        loc='lower center',
-        bbox_to_anchor=(0.5, 1.02),
+        loc='upper center',
+        bbox_to_anchor=(0.5, 0.96),
         ncol=min(4, len(temp_handles)),
-        fontsize=16,
+        fontsize=5.5,
         framealpha=0.94,
-        columnspacing=1.0,
-        handletextpad=0.45,
-        borderaxespad=0.1,
+        columnspacing=0.8,
+        handletextpad=0.35,
+        borderaxespad=0.05,
+        bbox_transform=fig.transFigure,
     )
-
-    fig.subplots_adjust(left=0.08, right=0.97, top=0.92, bottom=0.10)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, format='svg', dpi=100, bbox_inches='tight')
+    plt.savefig(output_path, format='svg', dpi=100, pad_inches=0.02)
     plt.close(fig)
     print(f'Saved Figure 5-2-3 to {output_path}')
 

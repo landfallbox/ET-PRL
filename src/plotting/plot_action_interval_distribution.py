@@ -166,7 +166,7 @@ def _draw_grouped_bars(
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=11)
+    ax.set_xticklabels(labels, fontsize=8)
 
 
 def _add_tail_inset(
@@ -207,13 +207,13 @@ def _add_tail_inset(
         max_tail = 1.0
 
     inset.set_xticks(tail_x)
-    inset.set_xticklabels(tail_labels, fontsize=9)
+    inset.set_xticklabels(tail_labels, fontsize=7)
     inset.set_ylim(0.0, max_tail * 1.32)
     inset.yaxis.set_major_locator(MultipleLocator(0.5 if max_tail <= 2.0 else 1.0))
-    inset.set_ylabel('Share (%)', fontsize=10, labelpad=8)
+    inset.set_ylabel('Share (%)', fontsize=7, labelpad=6)
     inset.minorticks_off()
     inset.grid(axis='y', color='#EFEFEF', linewidth=0.5, zorder=0)
-    _style_axes(inset, labelsize=9, tick_length=3.0)
+    _style_axes(inset, labelsize=7, tick_length=2.5)
 
     for spine in inset.spines.values():
         spine.set_linewidth(0.8)
@@ -302,7 +302,7 @@ def generate_interval_distribution_figure(
     x = np.arange(len(labels), dtype=float)
     width = 0.23
 
-    fig, ax = plt.subplots(figsize=(9.3, 6.2), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(7.06, 4.28), constrained_layout=True)
     _draw_grouped_bars(
         ax=ax,
         x=x,
@@ -342,22 +342,22 @@ def generate_interval_distribution_figure(
         ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=8))
         ax.minorticks_off()
 
-    ax.set_xlabel('Trigger interval categories (steps)', fontsize=13)
-    ax.set_ylabel('Share (%)', fontsize=13)
+    ax.set_xlabel('Trigger interval categories (steps)', fontsize=10)
+    ax.set_ylabel('Share (%)', fontsize=10)
     ax.grid(axis='y', which='major', color='#EAEAEA', linewidth=0.8, zorder=0)
     ax.legend(
         loc='upper right',
         bbox_to_anchor=(0.985, 0.995),
         ncol=1,
-        fontsize=11,
+        fontsize=8,
         frameon=False,
         handlelength=1.8,
         borderaxespad=0.0,
     )
-    _style_axes(ax, labelsize=11, tick_length=4.5)
+    _style_axes(ax, labelsize=8, tick_length=3.5)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, format='svg', dpi=120, bbox_inches='tight')
+    fig.savefig(output_path, format='svg', dpi=120, pad_inches=0.02)
     plt.close(fig)
 
     print(f'Saved figure: {output_path}')

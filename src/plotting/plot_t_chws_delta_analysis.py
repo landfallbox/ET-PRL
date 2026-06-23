@@ -91,7 +91,7 @@ def _prepare_action_series(
 
 
 def _style_axes(ax: plt.Axes) -> None:
-    ax.tick_params(axis='both', labelsize=8)
+    ax.tick_params(axis='both', labelsize=6.5)
     for spine in ax.spines.values():
         spine.set_linewidth(0.9)
 
@@ -341,8 +341,8 @@ def generate_delta_figure(
     elif micro_x_min is None or micro_x_max is None:
         raise ValueError('micro_x_min and micro_x_max must be provided together.')
 
-    fig = plt.figure(figsize=(17.2, 7.2))
-    outer = fig.add_gridspec(1, 2, width_ratios=[1.62, 1.0], wspace=0.08)
+    fig = plt.figure(figsize=(7.06, 4.28))
+    outer = fig.add_gridspec(1, 2, width_ratios=[1.62, 1.0], wspace=0.22)
     left = outer[0].subgridspec(2, 1, height_ratios=[0.84, 1.16], hspace=0.05)
     ax_a_top = fig.add_subplot(left[0])
     ax_a_bottom = fig.add_subplot(left[1], sharex=ax_a_top)
@@ -370,17 +370,17 @@ def generate_delta_figure(
         local_t,
         local_disturbance,
         color=COLOR_DISTURB,
-        linewidth=1.9,
+        linewidth=0.8,
         alpha=0.95,
         zorder=3,
     )
 
-    ax_a_top.set_ylabel(disturbance_label, fontsize=9)
+    ax_a_top.set_ylabel(disturbance_label, fontsize=6.5)
     _style_axes(ax_a_top)
     ax_a_top.grid(False)
     ax_a_top.grid(axis='y', color='#EBEBEB', linestyle='-', linewidth=0.55, alpha=1.0)
     ax_a_top.tick_params(axis='x', labelbottom=False)
-    fig.text(0.072, 0.955, '(a)', fontsize=10, fontweight='bold', va='top', ha='left')
+    fig.text(0.095, 0.955, '(a)', fontsize=6.5, fontweight='bold', va='top', ha='left')
     # Lower stack: absolute setpoint trajectories for visualizing ZOH hold behavior.
 
     ax_a_bottom.step(
@@ -388,7 +388,7 @@ def generate_delta_figure(
         local_ttc_action,
         where='post',
         color=COLOR_BASE,
-        linewidth=2.3,
+        linewidth=1.0,
         linestyle='--',
         alpha=0.50,
         zorder=4.5,
@@ -400,7 +400,7 @@ def generate_delta_figure(
         local_et_action,
         where='post',
         color=COLOR_ET,
-        linewidth=1.5,
+        linewidth=0.6,
         alpha=0.95,
         zorder=5.0,
         label='ET-PRL (event-driven ZOH)',
@@ -415,8 +415,8 @@ def generate_delta_figure(
     ax_a_bottom.set_ylim(y_low, y_high)
     ax_a_bottom.set_yticks(y_ticks)
     ax_a_bottom.set_xticks(x_ticks)
-    ax_a_bottom.set_xlabel('Time (h)', fontsize=9)
-    ax_a_bottom.set_ylabel(r'$T_{\mathrm{chws}}$ setpoint ($^{\circ}$C)', fontsize=9)
+    ax_a_bottom.set_xlabel('Time (h)', fontsize=6.5)
+    ax_a_bottom.set_ylabel(r'$T_{\mathrm{chws}}$ setpoint ($^{\circ}$C)', fontsize=6.5)
     _style_axes(ax_a_bottom)
     ax_a_bottom.grid(False)
     ax_a_bottom.grid(axis='y', color='#EBEBEB', linestyle='-', linewidth=0.55, alpha=1.0)
@@ -435,7 +435,7 @@ def generate_delta_figure(
                 axesB=ax_a_bottom,
                 color=COLOR_TRIGGER,
                 linestyle='--',
-                linewidth=0.9,
+                linewidth=0.4,
                 alpha=0.7,
                 zorder=3,
                 clip_on=False,
@@ -445,17 +445,17 @@ def generate_delta_figure(
     # Panel (a) legend above the left subplot (figure coordinates for alignment).
     fig.legend(
         handles=[
-            Line2D([0], [0], color=COLOR_DISTURB, linewidth=1.9, label='Cooling load'),
-            Line2D([0], [0], color=COLOR_TRIGGER, linewidth=0.9, linestyle='--', alpha=0.7,
+            Line2D([0], [0], color=COLOR_DISTURB, linewidth=0.8, label='Cooling load'),
+            Line2D([0], [0], color=COLOR_TRIGGER, linewidth=0.4, linestyle='--', alpha=0.7,
                 label='ET trigger'),
-            Line2D([0], [0], color=COLOR_BASE, linewidth=2.3, linestyle='--', alpha=0.50,
+            Line2D([0], [0], color=COLOR_BASE, linewidth=1.0, linestyle='--', alpha=0.50,
                    label='TTC-RL-1'),
-            Line2D([0], [0], color=COLOR_ET, linewidth=1.5, linestyle='-', label='ET-PRL'),
+            Line2D([0], [0], color=COLOR_ET, linewidth=0.6, linestyle='-', label='ET-PRL'),
         ],
         loc='upper center',
         bbox_to_anchor=(0.33, 0.96),
         ncol=4,
-        fontsize=7.5,
+        fontsize=5.5,
         frameon=False,
         handlelength=2.0,
         columnspacing=1.2,
@@ -477,7 +477,7 @@ def generate_delta_figure(
         color=COLOR_ST,
         alpha=0.68,
         edgecolor=_darken_color(COLOR_ST),
-        linewidth=0.45,
+        linewidth=0.2,
         zorder=2,
         label='ST-ETC vs TTC-RL-1',
     )
@@ -488,7 +488,7 @@ def generate_delta_figure(
         color=COLOR_ET,
         alpha=0.78,
         edgecolor=_darken_color(COLOR_ET),
-        linewidth=0.45,
+        linewidth=0.2,
         zorder=3,
         label='ET-PRL vs TTC-RL-1',
     )
@@ -496,12 +496,12 @@ def generate_delta_figure(
     ax_b.set_yscale('log')
     ax_b.set_xlim(plot_values[0] - 0.8, plot_values[-1] + 0.8)
     ax_b.set_xticks(plot_values)
-    ax_b.set_xlabel(r'$\Delta T_{\mathrm{chws}}$ ($^{\circ}$C)', fontsize=9)
-    ax_b.set_ylabel('Frequency (log scale)', fontsize=9)
+    ax_b.set_xlabel(r'$\Delta T_{\mathrm{chws}}$ ($^{\circ}$C)', fontsize=6.5)
+    ax_b.set_ylabel('Frequency (log scale)', fontsize=6.5)
     _style_axes(ax_b)
     ax_b.grid(False)
     ax_b.grid(axis='y', color='#EBEBEB', linestyle='-', linewidth=0.55, alpha=1.0)
-    fig.text(0.615, 0.955, '(b)', fontsize=10, fontweight='bold', va='top', ha='left')
+    fig.text(0.67, 0.955, '(b)', fontsize=6.5, fontweight='bold', va='top', ha='left')
 
     # Panel (b) legend above the right subplot (figure coordinates for alignment).
     fig.legend(
@@ -512,18 +512,18 @@ def generate_delta_figure(
                   label='ET-PRL'),
         ],
         loc='upper center',
-        bbox_to_anchor=(0.77, 0.96),
+        bbox_to_anchor=(0.82, 0.96),
         ncol=2,
-        fontsize=7.5,
+        fontsize=5.5,
         frameon=False,
         handlelength=1.8,
         columnspacing=1.2,
         borderaxespad=0.0,
     )
 
-    fig.subplots_adjust(left=0.07, right=0.93, top=0.93, bottom=0.12)
+    fig.subplots_adjust(left=0.09, right=0.97, top=0.93, bottom=0.12)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, format='svg', dpi=100, bbox_inches='tight', pad_inches=0.02)
+    plt.savefig(output_path, format='svg', dpi=100, pad_inches=0.02)
     plt.close(fig)
     print(f'Saved Figure 5-2-4 to {output_path}')
 
