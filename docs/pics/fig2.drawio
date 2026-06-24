@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="第 1 页" id="nKLNyVw5YLTnMkdmajJ2">
-        <mxGraphModel dx="5265" dy="5155" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="1" shadow="0">
+        <mxGraphModel dx="3633" dy="2318" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="1" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -12,8 +12,8 @@
                 </mxCell>
                 <mxCell id="421" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;shape=flexArrow;strokeColor=none;fillColor=#9E9E9E;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="934" y="-135" as="sourcePoint"/>
-                        <mxPoint x="1062" y="-135" as="targetPoint"/>
+                        <mxPoint x="954" y="-137.44" as="sourcePoint"/>
+                        <mxPoint x="1040" y="-137.44" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="310" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F7FF;dashed=1;dashPattern=8 8;strokeWidth=3;strokeColor=#3F51B5;shadow=0;glass=0;absoluteArcSize=0;arcSize=4;container=0;" parent="1" vertex="1">
@@ -259,7 +259,7 @@
                     <mxGeometry x="-1131.4240579710142" y="-469.9950774044828" width="272.18" height="154" as="geometry"/>
                 </mxCell>
                 <mxCell id="53" value="" style="fontSize=14;fontFamily=Times New Roman;rounded=1;whiteSpace=wrap;html=1;container=0;fillColor=#FFF8E1;strokeColor=#FFB74D;arcSize=8;" parent="1" vertex="1">
-                    <mxGeometry x="1061" y="-690" width="830" height="891" as="geometry"/>
+                    <mxGeometry x="1040" y="-695" width="880" height="891" as="geometry"/>
                 </mxCell>
                 <mxCell id="title_proc" value="&lt;h2&gt;&lt;font style=&quot;font-size: 48px;&quot;&gt;Anomaly Scoring&lt;/font&gt;&lt;/h2&gt;" style="fontSize=14;fontFamily=Times New Roman;text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;container=0;fontColor=#F57F17;" parent="1" vertex="1">
                     <mxGeometry x="1251" y="-673" width="500" height="65.48" as="geometry"/>
@@ -357,12 +357,13 @@
                 <mxCell id="404" value="&lt;span style=&quot;color: rgb(63, 63, 63); font-family: &amp;quot;Times New Roman&amp;quot;; font-size: 48px;&quot;&gt;\((Q_{\mathrm{load}}^{t+1},&amp;nbsp; &amp;nbsp;T_{\mathrm{wb}}^{t+1})\)&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="452" y="533.3" width="320" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="406" value="" style="shape=flexArrow;endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;strokeColor=none;fillColor=#9E9E9E;exitX=0.998;exitY=0.816;exitDx=0;exitDy=0;endFill=0;exitPerimeter=0;" parent="1" source="53" edge="1">
+                <mxCell id="406" value="" style="shape=flexArrow;endArrow=none;html=1;edgeStyle=orthogonalEdgeStyle;strokeColor=none;fillColor=#9E9E9E;endFill=0;" parent="1" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1933" y="-370" as="sourcePoint"/>
+                        <mxPoint x="1890" y="40" as="sourcePoint"/>
                         <mxPoint x="2671" y="190" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="2001" y="18"/>
+                            <mxPoint x="1889" y="40"/>
+                            <mxPoint x="2001" y="40"/>
                             <mxPoint x="2001" y="190"/>
                         </Array>
                     </mxGeometry>
@@ -574,8 +575,8 @@
                 </mxCell>
                 <mxCell id="429" value="" style="shape=flexArrow;endArrow=none;html=1;fillColor=#9E9E9E;strokeColor=none;fontSize=32;exitX=1;exitY=0.5;exitDx=0;exitDy=0;endFill=0;" parent="1" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1701" y="39.44000000000018" as="sourcePoint"/>
-                        <mxPoint x="1891" y="39" as="targetPoint"/>
+                        <mxPoint x="1701" y="40.44000000000018" as="sourcePoint"/>
+                        <mxPoint x="1891" y="40" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="452" value="&lt;font style=&quot;font-size: 36px;&quot;&gt;Anomaly Score&lt;/font&gt;&lt;div&gt;&lt;font style=&quot;font-size: 36px;&quot;&gt;\(A(S_t)\)&lt;/font&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
@@ -651,11 +652,11 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="461" value="&lt;font style=&quot;font-size: 40px;&quot;&gt;&lt;font style=&quot;color: rgb(63, 63, 63); scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); font-family: &amp;quot;Times New Roman&amp;quot;;&quot;&gt;Adaptive Threshold&lt;/font&gt;&lt;br style=&quot;color: rgb(63, 63, 63); scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); font-family: &amp;quot;Times New Roman&amp;quot;;&quot;&gt;&lt;font style=&quot;color: rgb(63, 63, 63); scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); font-family: &amp;quot;Times New Roman&amp;quot;;&quot; face=&quot;Times New Roman&quot;&gt;τ̃&lt;/font&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
-                    <mxGeometry x="2751" y="73.37" width="340" height="106.63" as="geometry"/>
+                    <mxGeometry x="2720" y="109.66" width="340" height="106.63" as="geometry"/>
                 </mxCell>
                 <mxCell id="464" style="edgeStyle=orthogonalEdgeStyle;html=1;entryX=-0.002;entryY=0.323;entryDx=0;entryDy=0;shape=flexArrow;fillColor=#9E9E9E;strokeColor=none;strokeWidth=0;entryPerimeter=0;" edge="1" parent="1" target="q_p0T_GBWAsgQkmlztXI-362">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="2001" y="30" as="sourcePoint"/>
+                        <mxPoint x="2001" y="70" as="sourcePoint"/>
                         <mxPoint x="2262" y="5.5" as="targetPoint"/>
                         <Array as="points">
                             <mxPoint x="2001" y="-109"/>
