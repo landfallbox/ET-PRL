@@ -38,6 +38,7 @@ PAPER_MD = PAPER_DIR / "小论文.md"
 OUTPUT_DOCX = PAPER_DIR / "小论文.docx"
 
 ALGO_TITLE_MARKER = "Algorithm 1. Event-Triggered Predictive Reinforcement Learning"
+ALGO_TITLE_MARKER_EN = "Algorithm 1. Event-triggered predictive reinforcement learning"
 NORMAL_TABLE_BORDER_COLOR = "000000"
 NORMAL_TABLE_BORDER_SIZE = "4"
 SENSITIVITY_PARAMETER_HEADER = "参数值 / Parameter Value"
@@ -231,20 +232,30 @@ def _merge_sensitivity_table_group_headers(doc: Document) -> int:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build paper docx from 小论文.md and inject the formatted algorithm table."
+        description="Build paper docx from markdown source and inject the formatted algorithm table."
+    )
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=PAPER_MD,
+        help="Input markdown file. Defaults to docs/papers/小论文.md.",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=OUTPUT_DOCX,
-        help="Output docx path. Defaults to docs/papers/小论文.docx.",
+        default=None,
+        help="Output docx path. Defaults to <input_stem>.docx in the same directory.",
     )
     return parser.parse_args()
 
 
 def main() -> int:
     args = _parse_args()
-    output_docx = args.output if args.output.is_absolute() else (Path.cwd() / args.output)
+    input_md = args.input if args.input.is_absolute() else (Path.cwd() / args.input)
+    if args.output is not None:
+        output_docx = args.output if args.output.is_absolute() else (Path.cwd() / args.output)
+    else:
+        output_docx = input_md.with_suffix('.docx')
 
     # --- Step 1: 构建算法 docx ---
     GENERATED_DIR.mkdir(parents=True, exist_ok=True)
@@ -260,7 +271,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmpdir:
         temp_docx = Path(tmpdir) / "paper_temp.docx"
 
-        print(f"[2/4] Converting {PAPER_MD.name} to docx via pandoc...")
+        print(f"[2/4] Converting {input_md.name} to docx via pandoc...")
         subprocess.run(
             [
                 pandoc,
@@ -270,7 +281,7 @@ def main() -> int:
                 "docx",
                 "-o",
                 str(temp_docx),
-                str(PAPER_MD),
+                str(input_md),
             ],
             check=True,
             cwd=str(PAPER_DIR),
@@ -295,11 +306,13 @@ def main() -> int:
             return 1
         algo_table = algo_doc.tables[0]
 
-        # 定位算法标题段落
+        # 定位算法标题段落（大小写不敏感）
         algo_title_para = None
         algo_title_idx = -1
         for i, para in enumerate(doc.paragraphs):
-            if ALGO_TITLE_MARKER in para.text:
+            para_text_lower = para.text.lower()
+            if (ALGO_TITLE_MARKER.lower() in para_text_lower
+                    or ALGO_TITLE_MARKER_EN.lower() in para_text_lower):
                 algo_title_para = para
                 algo_title_idx = i
                 break
