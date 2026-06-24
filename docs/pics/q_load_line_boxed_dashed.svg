@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="620" height="280" viewBox="0 0 620 280" role="img" aria-labelledby="title desc">
+  <title id="title">Q load line only (Dashed)</title>
+  <desc id="desc">A blue dashed fluctuating line representing Q load time series, enclosed in a box.</desc>
+
+  <!-- Line only -->
+  <polyline
+    fill="none"
+    stroke="#2f65b8"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-dasharray="12 6"
+    transform="translate(-48, -80.5)"
+    points="
+      139,239 145,190 153,260 160,228 166,305 173,246 179,270 185,251
+      191,286 198,242 205,274 212,236 220,249 229,236 237,266 245,208
+      252,263 260,239 269,218 279,224 287,245 295,222 304,233 313,211
+      322,187 331,197 340,167 349,176 357,136 366,173 375,138 384,179
+      393,162 402,214 411,188 420,195 430,188 440,207 450,200 460,183
+      470,202 481,190 492,198 502,158 510,205 520,222 529,230 538,209
+      548,229 558,205 568,235 577,284
+    "/>
+</svg>
