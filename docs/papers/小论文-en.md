@@ -38,10 +38,15 @@ Building on these studies, we reformulate HVAC event triggering as an online uns
 
 # 3. Methodology
 
-Given the thermal inertia and delayed response of building HVAC systems, together with distribution shift caused by seasonal changes in operating conditions, traditional event-triggered control methods that rely on offline calibration and static thresholds usually require frequent recalibration when transferred across scenarios, which increases engineering maintenance cost. To address this issue, we propose event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand control method that couples streaming anomaly gating with DRL.
+Given the thermal inertia and delayed response of building HVAC systems, together with distribution shift caused by seasonal changes in operating conditions, traditional event-triggered control methods that rely on offline calibration and static thresholds usually require frequent recalibration when transferred across scenarios, which increases engineering maintenance cost. To address this issue, we propose event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand control method that couples streaming anomaly gating with DRL. The overall architecture of the proposed method is shown in Figure 2.
 
-> **Figure 2 placeholder: Overall ET-PRL method diagram**
->
+![Figure 2 Architecture of the proposed ET-PRL method, comprising offline training and model preparation (Step 1) and online streaming event detection and control (Step 2)](../pics/fig2.svg)
+
+Figure 2 presents the architecture of the proposed ET-PRL method, which comprises two stages: offline training and model preparation (Step 1), and online streaming event detection and control (Step 2).
+
+In Step 1, the raw operational data, including the cooling load $Q_{\mathrm{load}}^t$ and outdoor wet-bulb temperature $T_{\mathrm{wb}}^t$, are first used to train an LSTM that generates one-step-ahead load predictions $\hat{Q}_{\mathrm{load}}^{t+1}$. The trained LSTM then provides $\hat{Q}_{\mathrm{load}}^{t+1}$ as an input feature for the state builder to construct the predictive state $s_t=[Q_{\mathrm{load}}^t,\,T_{\mathrm{wb}}^t,\,\hat{Q}_{\mathrm{load}}^{t+1}]$, which is subsequently used to train the DQN policy network offline. Both models are frozen after training and deployed for online inference.
+
+In Step 2, the HVAC environment continuously supplies real-time measurements to the state builder, which assembles the predictive state $s_t$ at each sampling step. The online streaming gate operates through three cascaded modules to determine whether a control update is required. First, the multi-scale sliding window module maintains three reference windows of different lengths: a short window $\mathcal{W}_{\mathrm{short}}$ with size $n_s$ for capturing high-frequency fluctuations, a medium window $\mathcal{W}_{\mathrm{medium}}$ with size $n_m$ for representing intraday cycles, and a long window $\mathcal{W}_{\mathrm{long}}$ with size $n_l$ for tracking seasonal drift. Second, the anomaly scoring module computes scale-specific anomaly scores by combining streaming statistics with a streaming isolation depth mechanism, and then fuses them into a composite anomaly score $A(s_t)$ through weighted aggregation. Third, the dynamic threshold module constructs a two-layer adaptive threshold $\tilde{\tau}_t$ by combining a quantile-based threshold $\tau_q$ and a MAD-based threshold $\tau_{\mathrm{mad}}$, followed by local and global exponential smoothing to adapt to both short-term disturbances and long-term drift. The trigger rule evaluates two joint conditions: whether the anomaly score exceeds the adaptive threshold, $A(s_t)>\tau_t^*$, and whether the minimum trigger interval has elapsed, $t-t_{\mathrm{last}}>\Delta_{\min}$. When both conditions are satisfied, the DQN policy generates a new chilled water supply temperature setpoint $a_t$. Otherwise, a zero-order hold (ZOH) maintains the previous action $a_{t-1}$. The selected action is executed in the HVAC environment, and the resulting reward $r_t$ is fed back to the DQN for policy improvement during any subsequent fine-tuning.
 
 ## 3.1 Dynamic Event Triggering Design Based on Streaming Feature Tracking
 
@@ -221,7 +226,7 @@ The complete online execution procedure is summarized below.
 **Algorithm 1. Event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL) online control procedure**
 
 ```text
-Input: Trained DQN policy $\pi_{\mathrm{DQN}}$; gate parameters $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,N_{\mathrm{ref}},\nu,m_{\mathrm{hys}}\}$ defined in Eqs. (7)-(16); minimum trigger interval $\Delta_{\min}$; total control horizon $T$.
+Input: Trained DQN policy $\pi_{\mathrm{DQN}}$; gate parameters $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,m_{\mathrm{hys}}\}$ defined in Eqs. (7)-(16); minimum trigger interval $\Delta_{\min}$; total control horizon $T$.
 Output: Control setpoint sequence $\{a_t\}_{t=1}^{T}$.
 
 Initialization:
