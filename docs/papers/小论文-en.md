@@ -485,6 +485,8 @@ At the global difference level, panel b of Figure 6 shows that the proportion of
 
 The above results show that ET-PRL not only reduces the action update frequency but also changes the distribution of chilled water supply temperature setpoints in the action space. To further characterize the temporal structure of control sparsity and the dynamic response of the system, we compare ET-PRL, ST-ETC, and TTC-RL-1 using the trigger interval and action holding length defined above. The trigger interval reflects the actual sparsity of trigger events at the gating layer, whereas the action holding length reflects setpoint stability at the execution layer. Even after a trigger occurs, the policy network may still output the same optimal setpoint as in the previous step, so the action holding length in the realized trajectory is usually greater than or equal to the trigger interval.
 
+Table 2 Temporal sparsity and action holding statistics of different control strategies
+
 | **Strategy** | **Mean Trigger Interval (steps)** | **Daily Trigger Count** | **Mean Action Holding Length (steps)** | **95th percentile $P_{95}$ (steps)** |
 | --- | --- | --- | --- | --- |
 | TTC-RL-1 | 1.000 | 275.25 | 7.57 | 42.9 |
@@ -511,9 +513,9 @@ In summary, the proposed ET-PRL method exhibits an adaptive temporal pattern wit
 
 (4) Ablation Study Analysis
 
-To quantify the contribution of each component in the proposed method, we conduct an ablation study under a controlled variable experimental design. Unless otherwise specified, all experimental groups use the same training configuration, test set, and evaluation protocol. In addition to the fixed step reference baseline TTC-RL-1, the ablation study includes six comparison methods, consisting of five simplified variants and the full model, to analyze the contributions of the dual threshold module and the multi scale module. Table 2 summarizes the test set results of all strategies, where relative metrics such as ACR and PPR use TTC-RL-1 as the computational baseline, whereas the remaining metrics are test set statistics.
+To quantify the contribution of each component in the proposed method, we conduct an ablation study under a controlled variable experimental design. Unless otherwise specified, all experimental groups use the same training configuration, test set, and evaluation protocol. In addition to the fixed step reference baseline TTC-RL-1, the ablation study includes six comparison methods, consisting of five simplified variants and the full model, to analyze the contributions of the dual threshold module and the multi scale module. Table 3 summarizes the test set results of all strategies, where relative metrics such as ACR and PPR use TTC-RL-1 as the computational baseline, whereas the remaining metrics are test set statistics.
 
-Table 2 Key module ablation results
+Table 3 Key module ablation results
 
 | **Method** | $R_{\text{test}}$ | $N_{\text{update}}$ | $N_{\text{daily}}$ | $E_{\text{daily}}$, kWh/day | ACR | PPR |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -533,7 +535,7 @@ For temporal scale ablation, Short-scale Only yields a slightly higher PPR than 
 
 We use a compact three dimensional state vector $s_t = [Q_{\mathrm{load}}^t, T_{\mathrm{wb}}^t, \hat{Q}_{\mathrm{load}}^{t+1}]$ without stacking high dimensional historical sequences. This design reduces online inference overhead but also requires the gating mechanism to compensate for long term historical information. If the gate relies only on short scale statistics, the gating score may treat slow drift as a new local steady state, weakening its ability to identify long term energy efficiency degradation. Physically, during seasonal transitions, the equivalent thermal resistance and heat storage state of the building envelope change gradually, and long term chiller operation may also lead to accumulated fouling thermal resistance in heat exchangers. These slowly changing factors progressively increase the effective cooling load required to achieve the same cooling effect. A short scale gate may absorb this slow shift into the local steady baseline, causing the controller to keep the action unchanged when policy correction should be triggered. As a result, the control setpoint may stay for an extended period in a locally stable but overall suboptimal region, for example near a relatively high value of 15°C, while the chiller continues to operate away from the optimal COP condition, eventually leading to increased daily energy consumption. By introducing medium and long scale scores, Full ET-PRL supplements the compact state representation with implicit historical information and can identify gradual equipment performance degradation and seasonal drift as events that require intervention, which explains its lower daily energy consumption than Short-scale Only.
 
-For the dual threshold ablation, Local Threshold Only and Global Threshold Only obtain ACR values of 1.9513 and 1.9565, respectively, both lower than the 2.1525 of Full ET-PRL. Their daily energy consumption values are 7367.57 and 7409.42 kWh/day, respectively, which are also higher than that of Full ET-PRL. Mechanistically, Local Threshold Only tends to overfollow recent changes, meaning that it is overly sensitive to short term disturbances while lacking long term baseline constraints. Global Threshold Only, by contrast, tends to show delayed response, meaning that it responds too slowly to minute scale disturbances and therefore requires larger compensatory control afterward. These two simplified variants correspond to the loss of fast response capability and long term steady state constraint, respectively. With dual threshold coordination, Full ET-PRL obtains lower daily energy consumption and a higher ACR in Table 2 while maintaining a PPR of 94.41%.
+For the dual threshold ablation, Local Threshold Only and Global Threshold Only obtain ACR values of 1.9513 and 1.9565, respectively, both lower than the 2.1525 of Full ET-PRL. Their daily energy consumption values are 7367.57 and 7409.42 kWh/day, respectively, which are also higher than that of Full ET-PRL. Mechanistically, Local Threshold Only tends to overfollow recent changes, meaning that it is overly sensitive to short term disturbances while lacking long term baseline constraints. Global Threshold Only, by contrast, tends to show delayed response, meaning that it responds too slowly to minute scale disturbances and therefore requires larger compensatory control afterward. These two simplified variants correspond to the loss of fast response capability and long term steady state constraint, respectively. With dual threshold coordination, Full ET-PRL obtains lower daily energy consumption and a higher ACR in Table 3 while maintaining a PPR of 94.41%.
 
 (5) Parameter Sensitivity Analysis
 
@@ -541,7 +543,7 @@ To further show how streaming gate hyperparameters affect trigger count, reward,
 
 1. Quantile Level $q$
 
-**Table 3** Sensitivity results for quantile level $q$
+**Table 4** Sensitivity results for quantile level $q$
 
 | Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
 | --- | --- | --- | --- |
@@ -555,11 +557,11 @@ To further show how streaming gate hyperparameters affect trigger count, reward,
 | 0.85 | 1560.47 | 3.20 | 7097.17 |
 | 0.90 | 1678.75 | 5.43 | 7513.54 |
 
-The quantile level $q$ mainly changes the trend in trigger frequency associated with the quantile reference. As shown in Table 3, when $q$ increases from 0.60 to 0.90, $N_{\text{daily}}$ increases from 0.78 to 5.43, $R_{\text{test}}$ increases from 1103.87 to 1678.75, and $E_{\text{daily}}$ also increases from 6095.77 kWh/day to 7513.54 kWh/day. Overall, a lower $q$ leads to fewer gate triggers, insufficient action updates, and a lower reward, while energy consumption is also lower. A higher $q$ increases the trigger count and makes the controller update setpoints more often, which improves reward but raises daily energy consumption. Therefore, increasing $q$ mainly produces a simultaneous increase in reward and trigger count at the cost of higher daily energy consumption.
+The quantile level $q$ mainly changes the trend in trigger frequency associated with the quantile reference. As shown in Table 4, when $q$ increases from 0.60 to 0.90, $N_{\text{daily}}$ increases from 0.78 to 5.43, $R_{\text{test}}$ increases from 1103.87 to 1678.75, and $E_{\text{daily}}$ also increases from 6095.77 kWh/day to 7513.54 kWh/day. Overall, a lower $q$ leads to fewer gate triggers, insufficient action updates, and a lower reward, while energy consumption is also lower. A higher $q$ increases the trigger count and makes the controller update setpoints more often, which improves reward but raises daily energy consumption. Therefore, increasing $q$ mainly produces a simultaneous increase in reward and trigger count at the cost of higher daily energy consumption.
 
 2. Bias Correction Term $b_{\mathrm{bias}}$
 
-**Table 4** Sensitivity results for bias correction term $b_{\mathrm{bias}}$
+**Table 5** Sensitivity results for bias correction term $b_{\mathrm{bias}}$
 
 | Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
 | --- | --- | --- | --- |
@@ -571,11 +573,11 @@ The quantile level $q$ mainly changes the trend in trigger frequency associated 
 | 0.03 | 1819.57 | 7.19 | 7439.78 |
 | 0.07 | 1750.28 | 6.02 | 7638.46 |
 
-The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger count. As shown in Table 4, when $b_{\mathrm{bias}}$ is -0.13 or -0.09, the gate does not trigger, $N_{\text{daily}}$ remains 0, $R_{\text{test}}$ stays at 634.80, and $E_{\text{daily}}$ stays at 4144.14 kWh/day. As $b_{\mathrm{bias}}$ increases to -0.05, the gate begins to trigger, and both $R_{\text{test}}$ and $E_{\text{daily}}$ increase. When $b_{\mathrm{bias}}$ further increases to -0.01 and 0.03, $N_{\text{daily}}$ rises to 5.89 and 7.19, and the reward also increases to 1752.93 and 1819.57. Further increases to 0.07 keep the trigger count at a relatively high level, but the reward no longer improves. Overall, increasing $b_{\mathrm{bias}}$ shifts the gate from almost no updates to frequent updates. A moderate increase of $b_{\mathrm{bias}}$ can substantially improve reward, but an overly high value maintains high energy consumption while providing limited additional benefit.
+The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger count. As shown in Table 5, when $b_{\mathrm{bias}}$ is -0.13 or -0.09, the gate does not trigger, $N_{\text{daily}}$ remains 0, $R_{\text{test}}$ stays at 634.80, and $E_{\text{daily}}$ stays at 4144.14 kWh/day. As $b_{\mathrm{bias}}$ increases to -0.05, the gate begins to trigger, and both $R_{\text{test}}$ and $E_{\text{daily}}$ increase. When $b_{\mathrm{bias}}$ further increases to -0.01 and 0.03, $N_{\text{daily}}$ rises to 5.89 and 7.19, and the reward also increases to 1752.93 and 1819.57. Further increases to 0.07 keep the trigger count at a relatively high level, but the reward no longer improves. Overall, increasing $b_{\mathrm{bias}}$ shifts the gate from almost no updates to frequent updates. A moderate increase of $b_{\mathrm{bias}}$ can substantially improve reward, but an overly high value maintains high energy consumption while providing limited additional benefit.
 
 3. Hysteresis Margin $m_{\mathrm{hys}}$
 
-**Table 5** Sensitivity results for hysteresis margin $m_{\mathrm{hys}}$
+**Table 6** Sensitivity results for hysteresis margin $m_{\mathrm{hys}}$
 
 | Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
 | --- | --- | --- | --- |
@@ -587,11 +589,11 @@ The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger c
 | 0.07 | 634.80 | 0.00 | 4144.14 |
 | 0.09 | 634.80 | 0.00 | 4144.14 |
 
-When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect is to suppress triggering. As shown in Table 5, when $m_{\mathrm{hys}}$ is 0, the gate triggers most frequently, $N_{\text{daily}}$ reaches 9.16, and $E_{\text{daily}}$ reaches 7799.43 kWh/day. As $m_{\mathrm{hys}}$ increases to 0.02 and 0.03, the trigger count decreases to 1.44 and 0.78, and energy consumption decreases to 6516.55 and 6802.66 kWh/day. When $m_{\mathrm{hys}}$ further increases to 0.07 and 0.09, the gate no longer triggers and $R_{\text{test}}$ drops to 634.80. Overall, increasing $m_{\mathrm{hys}}$ reduces frequent updates near the threshold and lowers energy consumption, but an overly large margin causes the controller to miss necessary updates and degrades reward to the no trigger state.
+When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect is to suppress triggering. As shown in Table 6, when $m_{\mathrm{hys}}$ is 0, the gate triggers most frequently, $N_{\text{daily}}$ reaches 9.16, and $E_{\text{daily}}$ reaches 7799.43 kWh/day. As $m_{\mathrm{hys}}$ increases to 0.02 and 0.03, the trigger count decreases to 1.44 and 0.78, and energy consumption decreases to 6516.55 and 6802.66 kWh/day. When $m_{\mathrm{hys}}$ further increases to 0.07 and 0.09, the gate no longer triggers and $R_{\text{test}}$ drops to 634.80. Overall, increasing $m_{\mathrm{hys}}$ reduces frequent updates near the threshold and lowers energy consumption, but an overly large margin causes the controller to miss necessary updates and degrades reward to the no trigger state.
 
 4. Local Window Length $W$
 
-**Table 6** Sensitivity results for local window length $W$
+**Table 7** Sensitivity results for local window length $W$
 
 | Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
 | --- | --- | --- | --- |
@@ -602,11 +604,11 @@ When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect 
 | 150 | 1176.24 | 0.98 | 5971.89 |
 | 180 | 1229.66 | 0.85 | 6157.48 |
 
-When the local window length $W$ increases, local statistics cover a longer time range and short term fluctuations are further smoothed. As shown in Table 6, under the window setting $W=60$, $N_{\text{daily}}$ is 2.22, $E_{\text{daily}}$ is 8410.21 kWh/day, and $R_{\text{test}}$ remains at a relatively high value of 1909.19. As $W$ increases to the range from 90 to 180, the trigger count generally decreases to 0.85 to 1.83, energy consumption decreases to 5971.89 to 7115.59 kWh/day, and the reward becomes lower than under the short window setting. Overall, a shorter $W$ strengthens the gate response to recent disturbances, yielding a higher reward but higher energy consumption. A longer $W$ reduces triggering and energy consumption, but it may also weaken the response to rapid disturbances and reduce reward.
+When the local window length $W$ increases, local statistics cover a longer time range and short term fluctuations are further smoothed. As shown in Table 7, under the window setting $W=60$, $N_{\text{daily}}$ is 2.22, $E_{\text{daily}}$ is 8410.21 kWh/day, and $R_{\text{test}}$ remains at a relatively high value of 1909.19. As $W$ increases to the range from 90 to 180, the trigger count generally decreases to 0.85 to 1.83, energy consumption decreases to 5971.89 to 7115.59 kWh/day, and the reward becomes lower than under the short window setting. Overall, a shorter $W$ strengthens the gate response to recent disturbances, yielding a higher reward but higher energy consumption. A longer $W$ reduces triggering and energy consumption, but it may also weaken the response to rapid disturbances and reduce reward.
 
 5. Short Scale Weight $w_s$
 
-**Table 7** Sensitivity results for short scale weight $w_s$
+**Table 8** Sensitivity results for short scale weight $w_s$
 
 | Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
 | --- | --- | --- | --- |
@@ -620,7 +622,7 @@ When the local window length $W$ increases, local statistics cover a longer time
 | 0.66 | 1542.72 | 1.96 | 7283.76 |
 | 0.72 | 1704.65 | 2.62 | 7806.51 |
 
-When the short scale weight $w_s$ increases, short term disturbances account for a larger proportion of the multi scale score. As shown in Table 7, when $w_s$ increases from 0.30 to 0.72, $N_{\text{daily}}$ rises from 0.13 to 2.62, $R_{\text{test}}$ generally increases from 1066.50 to 1704.65, and $E_{\text{daily}}$ also increases from 6426.31 kWh/day to 7806.51 kWh/day. Overall, a lower $w_s$ makes the gate respond less often to rapid load changes, resulting in fewer triggers and a lower reward. A higher $w_s$ strengthens the capture of short term disturbances and brings more control updates and a higher reward, but it also raises energy consumption. Therefore, the main role of $w_s$ is to adjust the tradeoff among short term response strength, reward improvement, and increased energy consumption.
+When the short scale weight $w_s$ increases, short term disturbances account for a larger proportion of the multi scale score. As shown in Table 8, when $w_s$ increases from 0.30 to 0.72, $N_{\text{daily}}$ rises from 0.13 to 2.62, $R_{\text{test}}$ generally increases from 1066.50 to 1704.65, and $E_{\text{daily}}$ also increases from 6426.31 kWh/day to 7806.51 kWh/day. Overall, a lower $w_s$ makes the gate respond less often to rapid load changes, resulting in fewer triggers and a lower reward. A higher $w_s$ strengthens the capture of short term disturbances and brings more control updates and a higher reward, but it also raises energy consumption. Therefore, the main role of $w_s$ is to adjust the tradeoff among short term response strength, reward improvement, and increased energy consumption.
 
 Overall, these parameters affect reward and energy consumption mainly by changing the trigger count. Increasing $q$ and $w_s$ generally raises the trigger frequency and improves reward, but it also increases energy consumption. Increasing $m_{\mathrm{hys}}$ suppresses triggering, and an overly large value keeps the control action unchanged for an extended period. Increasing $b_{\mathrm{bias}}$ shifts the gate from almost no triggering to frequent triggering. A moderate value substantially improves reward, whereas the benefit becomes limited when the value is too high. Increasing $W$ smooths short term fluctuations and reduces both trigger count and energy consumption, but it may weaken the response to rapid disturbances. Therefore, when selecting parameter values in this paper, we first exclude values that make the gate never trigger or trigger too often. Among the remaining values, we prioritize parameter combinations that produce fewer triggers without clear reward degradation, and avoid introducing excessive energy increases only to improve reward.
 
