@@ -25,8 +25,11 @@
 - 门控超参敏感性分析：`uv run event-dqn-analyze-gate-sensitivity`
 
 ### 3) 论文导出（Markdown -> Word）
-- 前置：已安装 Pandoc（可用 `pandoc --version` 检查）和 rsvg-convert（用于 SVG 转 PNG，Pandoc 处理 Markdown 中的 SVG 图像时需要）
-- 在 `docs/papers/` 目录下执行：`pandoc 小论文.md -o 小论文.docx`
+- 前置：已安装 Pandoc（可用 `pandoc --version` 检查）；若要从 `docs/pics/fig2.drawio` 重新导出 Figure 2，还需要 draw.io/diagrams.net 与 Inkscape 命令行工具
+- 若修改了 `docs/pics/fig2.drawio`，先导出 Word 友好的 plain SVG：`uv run python docs/papers/_docx_build/export_drawio_plain_svg.py`
+- 若缺少 draw.io 或 Inkscape 命令行工具，按脚本提示安装后重试；也可通过 `DRAWIO_EXE`、`INKSCAPE_EXE` 指定可执行文件路径
+- 若未安装 rsvg-convert，Pandoc 可能提示无法为 SVG 生成 PNG fallback；当前 Figure 2 使用 plain SVG，可避免 draw.io SVG 在 Word/微信预览中的 HTML 图层遮挡问题
+- 生成 Word：`uv run python docs/papers/_docx_build/merge_paper.py --input docs/papers/小论文-en.md`
 
 ## 目录约定
 
