@@ -38,7 +38,7 @@ Building on these studies, we reformulate HVAC event triggering as an online uns
 
 Given the thermal inertia and delayed response of building HVAC systems, together with distribution shift caused by seasonal changes in operating conditions, traditional event-triggered control methods that rely on offline calibration and static thresholds usually require frequent recalibration when transferred across scenarios, which increases engineering maintenance cost. To address this issue, we propose event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand control method that couples streaming anomaly gating with DRL. The overall architecture of the proposed method is shown in Figure 2.
 
-![Figure 2 Architecture of the proposed ET-PRL method, comprising offline training and model preparation (Step 1) and online streaming event detection and control (Step 2)](../pics/fig2.svg)
+![Figure 2 Architecture of the proposed ET-PRL method, comprising offline training and model preparation (Step 1) and online streaming event detection and control (Step 2)](../pics/fig2.drawio.svg)
 
 Figure 2 presents the architecture of the proposed ET-PRL method, which comprises two stages: offline training and model preparation (Step 1), and online streaming event detection and control (Step 2).
 
