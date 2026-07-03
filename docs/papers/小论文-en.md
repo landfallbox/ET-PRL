@@ -1,5 +1,15 @@
 # HVAC Predictive Control Method Based on Dynamic Event Triggering
 
+> Dynamic Event-Gated Predictive Reinforcement Learning for Sparse and Energy-Efficient HVAC Control
+>
+> Event-Triggered Predictive Reinforcement Learning with Dynamic Anomaly Gating for HVAC Control
+>
+> Sparse Predictive Reinforcement Learning for HVAC Control via Dynamic Event Gating
+>
+> Dynamic Event-Gated Reinforcement Learning for Energy-Efficient HVAC Predictive Control
+>
+> Anomaly-Gated Predictive Reinforcement Learning for Event-Driven HVAC Control
+
 # Abstract
 
 Deep reinforcement learning (DRL) has shown strong potential for HVAC control, yet existing methods generally follow a fixed time-step control paradigm that cannot adapt the decision frequency to the intensity of load disturbances, resulting in an inherent trade-off between response speed and control cost. Event-triggered control (ETC) can mitigate this issue through on-demand update mechanisms, but existing schemes rely on static triggering rules that lack dynamic adaptability to long-term operating condition drift. To address these issues, we propose event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand control method that couples streaming anomaly gating with predictive reinforcement learning. ET-PRL reformulates event triggering as an online unsupervised anomaly detection problem, computes multi-scale anomaly scores through a streaming isolation depth mechanism, and determines whether to trigger a control update using a local-global two-layer adaptive threshold. This enables the method to update the chilled water supply temperature setpoint only when the system state deviates significantly from recent patterns, while holding the previous setpoint via a zero-order hold during stable periods, which reduces unnecessary actuator switching, allows the chiller to maintain steady-state operation for longer durations, and suppresses cycling losses caused by frequent adjustments. Experiments on 102 days of real chiller operation data show that ET-PRL reduces action updates by 53.54%, achieves a 2.13% energy saving, and retains 94.41% of baseline performance, thereby offering a better trade-off between control accuracy and execution cost for building HVAC control.
