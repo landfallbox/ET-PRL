@@ -1,14 +1,4 @@
-# HVAC Predictive Control Method Based on Dynamic Event Triggering
-
-> Dynamic Event-Gated Predictive Reinforcement Learning for Sparse and Energy-Efficient HVAC Control
->
-> Event-Triggered Predictive Reinforcement Learning with Dynamic Anomaly Gating for HVAC Control
->
-> Sparse Predictive Reinforcement Learning for HVAC Control via Dynamic Event Gating
->
-> Dynamic Event-Gated Reinforcement Learning for Energy-Efficient HVAC Predictive Control
->
-> Anomaly-Gated Predictive Reinforcement Learning for Event-Driven HVAC Control
+# Event-Triggered Predictive Reinforcement Learning with Dynamic Anomaly Gating for HVAC Control
 
 # Abstract
 
