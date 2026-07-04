@@ -1,4 +1,4 @@
-# Event-Triggered Predictive Reinforcement Learning with Dynamic Anomaly Gating for HVAC Control
+# Event-Triggered Predictive Reinforcement Learning with Dynamic Anomaly Gating for Energy-Efficient HVAC Control
 
 # Abstract
 
