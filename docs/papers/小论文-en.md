@@ -30,7 +30,7 @@ Driven by the above motivations, we propose a new HVAC control method, event-tri
 
 - **We formulate event-triggered HVAC control as predictive state deviation testing**: We define control updates by the online deviation of the predictive state, replacing manually specified static trigger rules with a data-driven intervention criterion.
 
-- **We develop an unsupervised streaming event gate for non-stationary operation**: The gate combines multi-scale isolation-depth scoring and local-global adaptive thresholding to track disturbances and drift while suppressing repeated triggers.
+- **We develop an unsupervised streaming event gate**: The gate combines multi-scale isolation-depth scoring and local-global adaptive thresholding to track disturbances and drift while suppressing repeated triggers.
 
 - **We establish a sparse predictive RL control paradigm for HVAC operation**: ET-PRL turns fixed-frequency policy execution into event-dependent intervention, reducing redundant control updates while preserving most of the dense-control performance.
 
