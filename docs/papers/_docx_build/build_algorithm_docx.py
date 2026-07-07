@@ -72,7 +72,7 @@ ROWS: list[dict[str, object]] = [
     {
         "kind": "title",
         "indent": 0,
-        "segments": [("text", "Algorithm 1. Event-Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating (ET-PRL) Online Control Procedure")],
+        "segments": [("text", "Algorithm 1. Event Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating (ET-PRL) Online Control Procedure")],
     },
     {
         "kind": "meta",

@@ -6,7 +6,7 @@
     1. 运行 build_algorithm_docx.py → generated/algorithm1_for_merge.docx
   2. pandoc 将 小论文.md → 临时 docx
     3. 为 pandoc 生成的普通论文表格补全所有框线，并合并敏感性表的分组表头
-    4. 在临时 docx 中找到算法标题段落 ("Algorithm 1. Event-Triggered...")
+    4. 在临时 docx 中找到算法标题段落 ("Algorithm 1. Event Triggered...")
     5. 删除算法标题至其后第一个 fenced code block 结束之间的旧文本
     6. 将其替换为算法 docx 中的完整表格
     7. 保存到 小论文.docx
@@ -37,8 +37,10 @@ MERGE_ALGO_DOCX = GENERATED_DIR / "algorithm1_for_merge.docx"
 PAPER_MD = PAPER_DIR / "小论文.md"
 OUTPUT_DOCX = PAPER_DIR / "小论文.docx"
 
-ALGO_TITLE_MARKER = "Algorithm 1. Event-Triggered Predictive Reinforcement Learning"
-ALGO_TITLE_MARKER_EN = "Algorithm 1. Event-triggered predictive reinforcement learning"
+ALGO_TITLE_MARKER = "Algorithm 1. Event Triggered Predictive Reinforcement Learning"
+ALGO_TITLE_MARKER_EN = "Algorithm 1. Event triggered predictive reinforcement learning"
+ALGO_TITLE_MARKER_LEGACY = "Algorithm 1. Event-Triggered Predictive Reinforcement Learning"
+ALGO_TITLE_MARKER_EN_LEGACY = "Algorithm 1. Event-triggered predictive reinforcement learning"
 NORMAL_TABLE_BORDER_COLOR = "000000"
 NORMAL_TABLE_BORDER_SIZE = "4"
 SENSITIVITY_PARAMETER_HEADER = "参数值 / Parameter Value"
@@ -311,8 +313,12 @@ def main() -> int:
         algo_title_idx = -1
         for i, para in enumerate(doc.paragraphs):
             para_text_lower = para.text.lower()
-            if (ALGO_TITLE_MARKER.lower() in para_text_lower
-                    or ALGO_TITLE_MARKER_EN.lower() in para_text_lower):
+            if (
+                ALGO_TITLE_MARKER.lower() in para_text_lower
+                or ALGO_TITLE_MARKER_EN.lower() in para_text_lower
+                or ALGO_TITLE_MARKER_LEGACY.lower() in para_text_lower
+                or ALGO_TITLE_MARKER_EN_LEGACY.lower() in para_text_lower
+            ):
                 algo_title_para = para
                 algo_title_idx = i
                 break
