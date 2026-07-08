@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "LaTeX: build current file",
+            "type": "shell",
+            "command": "latexmk",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "-xelatex",
+                "-outdir=${fileDirname}/build",
+                "${file}"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "LaTeX: clean current file",
+            "type": "shell",
+            "command": "latexmk",
+            "args": [
+                "-C",
+                "-outdir=${fileDirname}/build",
+                "${file}"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
