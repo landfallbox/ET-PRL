@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  11 JUL 2026 20:51
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  11 JUL 2026 22:27
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -597,7 +597,25 @@ File: fig10_ablation_pareto_scatter.pdf Graphic file (type pdf)
 <use fig10_ablation_pareto_scatter.pdf>
  [35] [36] [37] [38] [39] [40] [41] [42]
 ET_PRL_Applied_Energy.tex:954: ignored error: Infinite glue shrinkage found in 
-box being split [43] [44] [45] [46] [47] [48]
+box being split [43] [44]
+Underfull \hbox (badness 2837) in paragraph at lines 1023--1024
+\T1/lmr/m/n/12 En-vi-ron-ment 282 (2025): 113322. []$\T1/lmtt/m/n/12 https : / 
+/ doi . org / 10 . 1016 / j .
+ []
+
+[45] [46]
+Underfull \hbox (badness 1264) in paragraph at lines 1036--1037
+\T1/lmr/m/n/12 build-ing." Build-ings 14.1 (2023): 66. []$\T1/lmtt/m/n/12 https
+ : / / doi . org / 10 . 3390 /
+ []
+
+[47]
+Underfull \hbox (badness 2503) in paragraph at lines 1044--1045
+\T1/lmr/m/n/12 tel-li-gence Re-view 57.7 (2024): 173. []$\T1/lmtt/m/n/12 https 
+: / / doi . org / 10 . 1007 /
+ []
+
+[48] [49]
 (D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-latex\submission\bui
 ld\ET_PRL_Applied_Energy.aux)
  ***********
@@ -608,13 +626,13 @@ Package rerunfilecheck Info: File `ET_PRL_Applied_Energy.out' has not changed.
 (rerunfilecheck)             Checksum: 72870A589AA17B6EA9DB73C606305351;3529.
  ) 
 Here is how much of TeX's memory you used:
- 11212 strings out of 402987
- 169908 string characters out of 5448732
- 591462 words of memory out of 5000000
- 39754 multiletter control sequences out of 15000+600000
+ 11209 strings out of 402987
+ 169869 string characters out of 5448732
+ 591446 words of memory out of 5000000
+ 39751 multiletter control sequences out of 15000+600000
  714958 words of font info for 98 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,20n,79p,2078b,585s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-lat
-ex\submission\build\ET_PRL_Applied_Energy.xdv (49 pages, 182952 bytes).
+ex\submission\build\ET_PRL_Applied_Energy.xdv (50 pages, 188960 bytes).

@@ -32,7 +32,7 @@ Coordinated control of energy efficiency and thermal comfort in building HVAC sy
 
 To overcome the modeling and adaptability limits of traditional control, data-driven methods have become an important direction for intelligent HVAC control. Among them, reinforcement learning (RL) can learn optimized mappings between operating states and control actions through trial-and-error interaction with the building environment without requiring an accurate physical model, and has therefore been increasingly applied to building energy management, HVAC control, and demand response tasks [18]. Savino et al. [19] demonstrated the potential of deep reinforcement learning for low-level control in multi-zone buildings. Wang et al. [20] and Zhuang et al. [21] used Deep Q-Network (DQN) and Deep Deterministic Policy Gradient (DDPG) based frameworks to learn mappings from high-dimensional sensor states to control actions, confirming the optimization benefits of reinforcement learning in complex scenarios. However, most reinforcement learning methods rely mainly on current observations, which can lead to control delay and oscillation in systems with strong thermal inertia and time lag [22]. To mitigate this issue, Li et al. [23] integrated temporal models such as Long Short-Term Memory (LSTM) into the decision process, improving awareness of system evolution and partially improving control stability; He et al. [24] further developed a model-free predictive reinforcement learning (PRL) method for chiller plant optimization by combining LSTM-based load prediction with DQN control, showing that predictive information can improve control foresight while preserving the adaptability of RL. Nevertheless, existing RL and PRL methods still generally follow the TTC paradigm at the execution level, where states are sampled and actions are updated at preset intervals. This makes it difficult to adapt the decision frequency to the intensity of load disturbances and leads to an inherent conflict between redundant computation and actuator wear [25].
 
-As control strategies have evolved from rule-driven to data-driven methods, reducing redundant computation and actuator wear has become another key issue. Liu et al. [26] and Xue et al. [27] showed that event triggered control (ETC) updates control and communication only when the state exceeds a threshold or a defined event occurs, thereby reducing unnecessary updates in TTC. Fu et al. [9] further proposed ED-DQN, an event-driven deep reinforcement learning control method for multi-zone residential building HVAC systems, which introduces event triggering into DRL so that the agent updates control actions only when predefined events occur, thereby reducing redundant decisions under fixed-step control. Liu et al. [28] pointed out that ETC methods in practical deployment still rely heavily on expert-defined static threshold rules. Under non-stationary factors such as drift in building thermal characteristics, climate variation, and equipment aging, fixed thresholds usually cannot balance sensitivity and stability, which can lead to excessive triggering or delayed responses and thus weaken computational efficiency and comfort performance [29].
+As control strategies have evolved from rule-driven to data-driven methods, reducing redundant computation and actuator wear has become another key issue. Liu et al. [26] showed that event triggered control (ETC) updates control and communication only when the state exceeds a threshold or a defined event occurs, thereby reducing unnecessary updates in TTC. Fu et al. [9] further proposed ED-DQN, an event-driven deep reinforcement learning control method for multi-zone residential building HVAC systems, which introduces event triggering into DRL so that the agent updates control actions only when predefined events occur, thereby reducing redundant decisions under fixed-step control. Liu et al. [27] pointed out that ETC methods in practical deployment still rely heavily on expert-defined static threshold rules. Under non-stationary factors such as drift in building thermal characteristics, climate variation, and equipment aging, fixed thresholds usually cannot balance sensitivity and stability, which can lead to excessive triggering or delayed responses and thus weaken computational efficiency and comfort performance [28].
 
 Building on these studies, we reformulate HVAC event triggering as an online unsupervised anomaly detection problem and propose event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand method that combines dynamic gating with predictive reinforcement learning. Compared with traditional static-rule methods and existing ETC schemes, ET-PRL introduces streaming feature tracking and adaptive thresholding to update triggering conditions dynamically, reducing dependence on manual tuning and improving adaptability to long-term drift. Unlike fixed-step reinforcement learning, the method further decouples decision timing through event-driven execution, thereby reducing redundant inference and equipment wear while using predictive features to compensate for the loss of state information caused by sparse control. As a result, ET-PRL achieves a practical balance between control performance and execution cost under non-stationary building operating conditions.
 
@@ -251,7 +251,7 @@ The complete online execution procedure of the proposed ET-PRL method is summari
 
 ## 4.1 Building Thermal System Modeling
 
-We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model was calibrated in previous work using measured operational data and can reproduce the main thermodynamic response of the chilled water system [30]. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
+We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model was calibrated in previous work using measured operational data and can reproduce the main thermodynamic response of the chilled water system [29]. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
 
 ## 4.2 Weather and Load Dataset Characteristics
 
@@ -799,64 +799,66 @@ Table A3 Evaluation metrics and optimization objectives
 </tbody>
 </table>
 
+# Declaration of generative AI and AI-assisted technologies in the writing process
+
+During the preparation of this work, the authors used GitHub Copilot to assist with language polishing, formatting checks, and reference metadata checking. After using this tool, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+
 # References
 
-[1] Arghand, Taha, et al. "Individually controlled localized chilled beam combined with chilled ceiling: Thermal environment." Building and Environment 282 (2025): 113322.
+[1] Arghand, Taha, et al. "Individually controlled localized chilled beam combined with chilled ceiling: Thermal environment." Building and Environment 282 (2025): 113322. https://doi.org/10.1016/j.buildenv.2025.113322.
 
-[2] Wu, Zeqing, et al. "AE-TD3 with adaptive expert guidance: towards responsive deep reinforcement learning for building HVAC control systems." Energy and Buildings (2025): 116744.
+[2] Wu, Zeqing, et al. "AE-TD3 with adaptive expert guidance: towards responsive deep reinforcement learning for building HVAC control systems." Energy and Buildings (2025): 116744. https://doi.org/10.1016/j.enbuild.2025.116744.
 
-[3] Xia, Yihan, et al. "Federated accelerated deep reinforcement learning for multi-zone HVAC control in commercial buildings." IEEE Transactions on Smart Grid 16.3 (2025): 2599-2610.
+[3] Xia, Yihan, et al. "Federated accelerated deep reinforcement learning for multi-zone HVAC control in commercial buildings." IEEE Transactions on Smart Grid 16.3 (2025): 2599-2610. https://doi.org/10.1109/TSG.2024.3524756.
 
-[4] Wu, Zeqing, et al. "AE-TD3 with adaptive expert guidance: towards responsive deep reinforcement learning for building HVAC control systems." Energy and Buildings (2025): 116744.
+[4] Shin, Minjae, et al. "Development of an HVAC system control method using weather forecasting data with deep reinforcement learning algorithms." Building and Environment 248 (2024): 111069. https://doi.org/10.1016/j.buildenv.2023.111069.
 
-[5] Xue, Zhouzhou, Zhaoxu Yu, and Shugang Li. "Event-triggered adaptive neural control for uncertain nontriangular nonlinear systems with time-varying delays." International Journal of Control, Automation and Systems 20.12 (2022): 4090-4099.
+[5] Xue, Zhouzhou, Zhaoxu Yu, and Shugang Li. "Event-triggered adaptive neural control for uncertain nontriangular nonlinear systems with time-varying delays." International Journal of Control, Automation and Systems 20.12 (2022): 4090-4099. https://doi.org/10.1007/s12555-021-0544-8.
 
-[6] Coraci, Davide, et al. "An innovative heterogeneous transfer learning framework to enhance the scalability of deep reinforcement learning controllers in buildings with integrated energy systems." Building simulation. Vol. 17. No. 5. Beijing: Tsinghua University Press, 2024.
+[6] Coraci, Davide, et al. "An innovative heterogeneous transfer learning framework to enhance the scalability of deep reinforcement learning controllers in buildings with integrated energy systems." Building simulation. Vol. 17. No. 5. Beijing: Tsinghua University Press, 2024. https://doi.org/10.1007/s12273-024-1109-6.
 
-[7] Gu, Zhou, Ruiyan Cao, and Engang Tian. "Reinforcement learning-based event-triggered optimal control of power systems with control input saturation." IEEE Transactions on Industrial Informatics 21.2 (2024): 1528-1536.
+[7] Gu, Zhou, Ruiyan Cao, and Engang Tian. "Reinforcement learning-based event-triggered optimal control of power systems with control input saturation." IEEE Transactions on Industrial Informatics 21.2 (2024): 1528-1536. https://doi.org/10.1109/TII.2024.3485724.
 
-[8] Wang, Ke, Zhuo Tang, and Chaoxu Mu. "Dynamic event-triggered model-free reinforcement learning for cooperative control of multiagent systems." IEEE Transactions on Reliability 74.3 (2024): 3166-3179.
+[8] Wang, Ke, Zhuo Tang, and Chaoxu Mu. "Dynamic event-triggered model-free reinforcement learning for cooperative control of multiagent systems." IEEE Transactions on Reliability 74.3 (2024): 3166-3179. https://doi.org/10.1109/TR.2024.3485211.
 
-[9] Fu, Qiming, et al. "ED-DQN: An event-driven deep reinforcement learning control method for multi-zone residential buildings." Building and Environment 242 (2023): 110546.
+[9] Fu, Qiming, et al. "ED-DQN: An event-driven deep reinforcement learning control method for multi-zone residential buildings." Building and Environment 242 (2023): 110546. https://doi.org/10.1016/j.buildenv.2023.110546.
 
-[10] Li, Wenzhuo, Hangxin Li, and Shengwei Wang. "An event-driven multi-agent based distributed optimal control strategy for HVAC systems in IoT-enabled smart buildings." Automation in Construction 132 (2021): 103919.
+[10] Li, Wenzhuo, Hangxin Li, and Shengwei Wang. "An event-driven multi-agent based distributed optimal control strategy for HVAC systems in IoT-enabled smart buildings." Automation in Construction 132 (2021): 103919. https://doi.org/10.1016/j.autcon.2021.103919.
 
-[11] Wang, Xin, et al. "Observer-based event-triggered optimal control for nonlinear multiagent systems with input delay via reinforcement learning strategy." IEEE Transactions on Emerging Topics in Computational Intelligence 9.3 (2024): 2398-2409.
+[11] Wang, Xin, et al. "Observer-based event-triggered optimal control for nonlinear multiagent systems with input delay via reinforcement learning strategy." IEEE Transactions on Emerging Topics in Computational Intelligence 9.3 (2024): 2398-2409. https://doi.org/10.1109/TETCI.2024.3452685.
 
-[12] Chaya, P., et al. "Human-Centric Smart Energy Optimization and Automation System." 2025 3rd International Conference on Intelligent Cyber Physical Systems and Internet of Things (ICoICI). IEEE, 2025.
+[12] Chaya, P., et al. "Human-Centric Smart Energy Optimization and Automation System." 2025 3rd International Conference on Intelligent Cyber Physical Systems and Internet of Things (ICoICI). IEEE, 2025. https://doi.org/10.1109/ICOICI65217.2025.11253954.
 
-[13] Choi, Youngsik, et al. "Optimization-informed rule extraction for HVAC system: A case study of dedicated outdoor air system control in a mixed-humid climate zone." Energy and Buildings 295 (2023): 113295.
+[13] Choi, Youngsik, et al. "Optimization-informed rule extraction for HVAC system: A case study of dedicated outdoor air system control in a mixed-humid climate zone." Energy and Buildings 295 (2023): 113295. https://doi.org/10.1016/j.enbuild.2023.113295.
 
-[14] Lee, Dongkyu, Jinhwa Jeong, and Young Tae Chae. "Application of deep reinforcement learning for proportional–integral–derivative controller tuning on air handling unit system in existing commercial building." Buildings 14.1 (2023): 66.
+[14] Lee, Dongkyu, Jinhwa Jeong, and Young Tae Chae. "Application of deep reinforcement learning for proportional–integral–derivative controller tuning on air handling unit system in existing commercial building." Buildings 14.1 (2023): 66. https://doi.org/10.3390/buildings14010066.
 
-[15] Chojecki, Adrian, Arkadiusz Ambroziak, and Piotr Borkowski. "Fuzzy controllers instead of classical PIDs in HVAC equipment: Dusting off a well-known technology and Today's implementation for better energy efficiency and user comfort." Energies 16.7 (2023): 2967.
+[15] Chojecki, Adrian, Arkadiusz Ambroziak, and Piotr Borkowski. "Fuzzy controllers instead of classical PIDs in HVAC equipment: Dusting off a well-known technology and Today's implementation for better energy efficiency and user comfort." Energies 16.7 (2023): 2967. https://doi.org/10.3390/en16072967.
 
-[16] Tang, Lingfeng, et al. "Deeply flexible commercial building HVAC system control: A physics-aware deep learning-embedded MPC approach." Applied Energy 388 (2025): 125631.
+[16] Tang, Lingfeng, et al. "Deeply flexible commercial building HVAC system control: A physics-aware deep learning-embedded MPC approach." Applied Energy 388 (2025): 125631. https://doi.org/10.1016/j.apenergy.2025.125631.
 
-[17] Lu, Shengze, et al. "Exploring the comprehensive integration of artificial intelligence in optimizing HVAC system operations: A review and future outlook." Results in Engineering 25 (2025): 103765.
+[17] Lu, Shengze, et al. "Exploring the comprehensive integration of artificial intelligence in optimizing HVAC system operations: A review and future outlook." Results in Engineering 25 (2025): 103765. https://doi.org/10.1016/j.rineng.2024.103765.
 
-[18] Fu, Qiming, et al. "Applications of reinforcement learning for building energy efficiency control: A review." Journal of Building Engineering 50 (2022): 104165.
+[18] Fu, Qiming, et al. "Applications of reinforcement learning for building energy efficiency control: A review." Journal of Building Engineering 50 (2022): 104165. https://doi.org/10.1016/j.jobe.2022.104165.
 
-[19] Savino, Sabrina, et al. "Deploying deep reinforcement learning for low-level HVAC control in multi-zone buildings: A comparative study with ASHRAE G36 sequences." Energy and Buildings (2025): 116456.
+[19] Savino, Sabrina, et al. "Deploying deep reinforcement learning for low-level HVAC control in multi-zone buildings: A comparative study with ASHRAE G36 sequences." Energy and Buildings (2025): 116456. https://doi.org/10.1016/j.enbuild.2025.116456.
 
-[20] Wang, Man, and Borong Lin. "MF^2: Model-free reinforcement learning for modeling-free building HVAC control with data-driven environment construction in a residential building." Building and Environment 244 (2023): 110816.
+[20] Wang, Man, and Borong Lin. "MF^2: Model-free reinforcement learning for modeling-free building HVAC control with data-driven environment construction in a residential building." Building and Environment 244 (2023): 110816. https://doi.org/10.1016/j.buildenv.2023.110816.
 
-[21] Zhuang, Dian, et al. "Data-driven predictive control for smart HVAC system in IoT-integrated buildings with time-series forecasting and reinforcement learning." Applied Energy 338 (2023): 120936.
+[21] Zhuang, Dian, et al. "Data-driven predictive control for smart HVAC system in IoT-integrated buildings with time-series forecasting and reinforcement learning." Applied Energy 338 (2023): 120936. https://doi.org/10.1016/j.apenergy.2023.120936.
 
-[22] Manjavacas, Antonio, et al. "An experimental evaluation of deep reinforcement learning algorithms for HVAC control." Artificial Intelligence Review 57.7 (2024): 173.
+[22] Manjavacas, Antonio, et al. "An experimental evaluation of deep reinforcement learning algorithms for HVAC control." Artificial Intelligence Review 57.7 (2024): 173. https://doi.org/10.1007/s10462-024-10819-x.
 
-[23] Li, Kai, Wei Ni, and Falko Dressler. "LSTM-characterized deep reinforcement learning for continuous flight control and resource allocation in UAV-assisted sensor network." IEEE Internet of Things Journal 9.6 (2021): 4179-4189.
+[23] Li, Kai, Wei Ni, and Falko Dressler. "LSTM-characterized deep reinforcement learning for continuous flight control and resource allocation in UAV-assisted sensor network." IEEE Internet of Things Journal 9.6 (2021): 4179-4189. https://doi.org/10.1109/JIOT.2021.3102831.
 
-[24] Al Sayed, Khalil, et al. "Reinforcement learning for HVAC control in intelligent buildings: A technical and conceptual review." Journal of Building Engineering 95 (2024): 110085.
+[24] Al Sayed, Khalil, et al. "Reinforcement learning for HVAC control in intelligent buildings: A technical and conceptual review." Journal of Building Engineering 95 (2024): 110085. https://doi.org/10.1016/j.jobe.2024.110085.
 
-[25] He, Kun, et al. "Predictive control optimization of chiller plants based on deep reinforcement learning." Journal of Building Engineering 76 (2023): 107158.
+[25] He, Kun, et al. "Predictive control optimization of chiller plants based on deep reinforcement learning." Journal of Building Engineering 76 (2023): 107158. https://doi.org/10.1016/j.jobe.2023.107158.
 
-[26] Liu, Xinghua, et al. "Event-triggered load frequency control of smart grids under deception attacks." IET Control Theory & Applications 15.10 (2021): 1335-1345.
+[26] Liu, Xinghua, et al. "Event-triggered load frequency control of smart grids under deception attacks." IET Control Theory & Applications 15.10 (2021): 1335-1345. https://doi.org/10.1049/cth2.12124.
 
-[27] Xue, Zhouzhou, Zhaoxu Yu, and Shugang Li. "Event-triggered adaptive neural control for uncertain nontriangular nonlinear systems with time-varying delays." International Journal of Control, Automation and Systems 20.12 (2022): 4090-4099.
+[27] Liu, Derong, et al. "Adaptive dynamic programming for control: A survey and recent advances." IEEE Transactions on Systems, Man, and Cybernetics: Systems 51.1 (2020): 142-160. https://doi.org/10.1109/TSMC.2020.3042876.
 
-[28] Liu, Derong, et al. "Adaptive dynamic programming for control: A survey and recent advances." IEEE Transactions on Systems, Man, and Cybernetics: Systems 51.1 (2020): 142-160.
+[28] Wang, Yuan, et al. "Dynamic event-triggered control for persistent dwell-time switched nonlinear multiagent systems with random packet loss." IEEE Transactions on Systems, Man, and Cybernetics: Systems 54.4 (2023): 2045-2054. https://doi.org/10.1109/TSMC.2023.3338465.
 
-[29] Wang, Yuan, et al. "Dynamic event-triggered control for persistent dwell-time switched nonlinear multiagent systems with random packet loss." IEEE Transactions on Systems, Man, and Cybernetics: Systems 54.4 (2023): 2045-2054.
-
-[30] Liu, Xin, et al. "Building-MoE: A closed-loop routing sparse mixture-of-experts time-series foundation model for building short-term load forecasting." Building Simulation. Beijing: Tsinghua University Press, 2026.
+[29] Liu, Xin, et al. "Building-MoE: A closed-loop routing sparse mixture-of-experts time-series foundation model for building short-term load forecasting." Building Simulation. Beijing: Tsinghua University Press, 2026. https://doi.org/10.1007/s12273-026-1403-6.
