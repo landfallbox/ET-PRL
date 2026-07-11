@@ -1,20 +1,14 @@
-# Event Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating for Energy-Efficient HVAC Control
+# Introduction
 
-# Abstract
+As global climate change intensifies, reducing energy consumption and emissions in the building sector has become an urgent priority. Statistics show that buildings account for over 35 percent of global energy consumption, and heating, ventilation, and air conditioning (HVAC) systems are responsible for about 50 percent of this building energy use and also serve as key resources for demand response where the chiller is the main energy consuming component, and its operating efficiency directly determines the overall system performance to some extent \cite{ref1}. However, in real engineering scenarios, building thermal load is affected by several changing factors, including outdoor weather, occupant activity, equipment heat release and so on, while the HVAC system is nonlinear, changes over time, and has strong thermal inertia with delayed response, which makes HVAC control challenging \cite{ref2}.
 
-Deep reinforcement learning (DRL) has shown strong potential for HVAC control, yet existing methods generally follow a time triggered control (TTC) paradigm that cannot adapt the decision frequency to the intensity of load disturbances, resulting in an inherent trade-off between response speed and control cost. Event triggered control (ETC) can mitigate this issue through on-demand update mechanisms, but existing schemes rely on static triggering rules that lack dynamic adaptability to long-term operating condition drift. To address this gap, we propose event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand HVAC control method that turns time triggered policy execution into state-dependent action updates, where the key idea is to treat control triggering as an online anomaly detection problem over the predictive state, so that control action updates are released only when the current state deviates sufficiently from the recent reference distribution. We construct a multi-scale fused anomaly score and a local-global two-layer adaptive threshold, allowing the trigger boundary to remain sensitive to abrupt disturbances while adapting to intraday variation and long-term operating condition drift. Coupled with a predictive DQN controller, ET-PRL preserves timely intervention during abrupt load changes and suppresses unnecessary policy inference and actuator wear during stable operation. Experiments on real chiller operation data show that, compared with the fixed-step reinforcement learning baseline, ET-PRL reduces action updates by 53.54% and achieves a 2.13% reduction in energy consumption, thereby offering a better trade-off between control performance and execution cost for building HVAC control.
+Nowadays, deep reinforcement learning (DRL) has shown strong potential in HVAC control because it can make adaptive decisions without relying on a predefined model. By interacting directly with complex and changing environments, DRL can learn and adapt to nonlinear operating conditions \cite{ref3}. Moreover, Predictive DRL further advances by using temporal features, which improves the agent's ability to anticipate future changes and helps reduce the control lag caused by the large thermal inertia of buildings \cite{ref4}. However, in practical deployment, current DRL methods are still limited by the common time triggered control (TTC) scheme, where the agent samples states and updates actions at a fixed clock cycle which ignores the fact that building thermal loads do not evolve at a uniform rate over time \cite{ref5}. As a result, there is an inherent trade-off between response speed and control cost: frequent updates can react quickly to disturbances, but they also increase computation cost and actuator wear, while infrequent updates reduce wear but often hurt temperature control accuracy \cite{ref6}.
 
-# 1. Introduction
-
-As global climate change intensifies, reducing energy consumption and emissions in the building sector has become an urgent priority. Statistics show that buildings account for over 35 percent of global energy consumption, and heating, ventilation, and air conditioning (HVAC) systems are responsible for about 50 percent of this building energy use and also serve as key resources for demand response where the chiller is the main energy consuming component, and its operating efficiency directly determines the overall system performance to some extent [1]. However, in real engineering scenarios, building thermal load is affected by several changing factors, including outdoor weather, occupant activity, equipment heat release and so on, while the HVAC system is nonlinear, changes over time, and has strong thermal inertia with delayed response, which makes HVAC control challenging [2].
-
-Nowadays, deep reinforcement learning (DRL) has shown strong potential in HVAC control because it can make adaptive decisions without relying on a predefined model. By interacting directly with complex and changing environments, DRL can learn and adapt to nonlinear operating conditions [3]. Moreover, Predictive DRL further advances by using temporal features, which improves the agent's ability to anticipate future changes and helps reduce the control lag caused by the large thermal inertia of buildings [4]. However, in practical deployment, current DRL methods are still limited by the common time triggered control (TTC) scheme, where the agent samples states and updates actions at a fixed clock cycle which ignores the fact that building thermal loads do not evolve at a uniform rate over time [5]. As a result, there is an inherent trade-off between response speed and control cost: frequent updates can react quickly to disturbances, but they also increase computation cost and actuator wear, while infrequent updates reduce wear but often hurt temperature control accuracy [6].
-
-The event triggered control (ETC) mechanism was developed to reduce the extra computation and actuator wear caused by TTC [7]. By updating the control system only when the system state changes significantly, ETC overcomes the constraint of TTC and provides a practical way to balance response speed and control cost [8]. Building on this advantage, prior studies have introduced ETC into DRL, where the control policy is updated when static triggering rules are satisfied, which helps balance thermal comfort and energy consumption [9]. However, most existing ETC methods still rely on static rules set by experts, such as fixed temperature deadbands or load fluctuation thresholds [10]. Such static triggering rules cannot adapt well to real building environments that are highly nonlinear and time varying. They also struggle to handle differences in thermal inertia across buildings and performance drift caused by equipment aging, which can lead to frequent false triggers or delayed control responses [11].
+The event triggered control (ETC) mechanism was developed to reduce the extra computation and actuator wear caused by TTC \cite{ref7}. By updating the control system only when the system state changes significantly, ETC overcomes the constraint of TTC and provides a practical way to balance response speed and control cost \cite{ref8}. Building on this advantage, prior studies have introduced ETC into DRL, where the control policy is updated when static triggering rules are satisfied, which helps balance thermal comfort and energy consumption \cite{ref9}. However, most existing ETC methods still rely on static rules set by experts, such as fixed temperature deadbands or load fluctuation thresholds \cite{ref10}. Such static triggering rules cannot adapt well to real building environments that are highly nonlinear and time varying. They also struggle to handle differences in thermal inertia across buildings and performance drift caused by equipment aging, which can lead to frequent false triggers or delayed control responses \cite{ref11}.
 
 With respect to the above problems, a dynamic-threshold update strategy that can adapt to the current operating state of the system is considered, so that the triggering boundary is determined not by static triggering rules but by an adaptive criterion driven by the evolution of the deviation signal, as detailed in Figure 1. Among HVAC control update strategies, the fixed-interval update strategy executes updates at a constant cadence regardless of disturbance intensity. The fixed-threshold update strategy can trigger responses upon threshold exceedance, yet its static boundary lacks adaptability to time-varying operating conditions: too loose a threshold leads to redundant updates during steady periods, while too tight a threshold causes delayed responses during disturbances. In contrast, the dynamic-threshold update strategy continuously adjusts the triggering boundary according to the deviation trend, increasing update density during intensified disturbances to preserve responsiveness and reducing trigger frequency during relatively steady periods to suppress redundant execution. Therefore, the dynamic-threshold update strategy enables a more effective balance between control responsiveness and execution cost.
 
-![Figure 1 Comparison of fixed-interval, fixed-threshold, and dynamic-threshold update strategies. The top row shows the relationship between room temperature deviation signals and different trigger thresholds, and the bottom row shows the distribution of trigger times. Dashed markers indicate trigger times](../pics/fig1_update_strategy_comparison.svg)
+![Comparison of fixed-interval, fixed-threshold, and dynamic-threshold update strategies. The top row shows the relationship between room temperature deviation signals and different trigger thresholds, and the bottom row shows the distribution of trigger times. Dashed markers indicate trigger times](fig1_update_strategy_comparison.pdf)
 
 Driven by the above motivations, we propose a new HVAC control method, event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), that combines time series prediction with unsupervised dynamic event gating in a deep reinforcement learning setting. ET-PRL learns event triggering rules online from operational data through a data-driven method and activates a predictive reinforcement learning policy network to generate control actions when critical events are detected, allowing control sensitivity to adapt to different building characteristics and operating conditions. By integrating predictive features, adaptive gating, and the reinforcement learning controller within a unified method, ET-PRL preserves full control capability during major disturbances while reducing redundant updates during stable periods. The main contributions of this paper are as follows:
 
@@ -26,27 +20,27 @@ Driven by the above motivations, we propose a new HVAC control method, event tri
 
 - We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost.
 
-# 2. Related Work
+# Related Work
 
-Coordinated control of energy efficiency and thermal comfort in building HVAC systems has long been a major engineering challenge. To address rising building energy demand and requirements for stable operation, early studies mainly relied on classic methods such as rule-based control (RBC) and proportional-integral-derivative (PID) control [12]. Choi et al. [13] improved the practicality of HVAC rule-based control through optimization-informed rule extraction. Lee et al. [14] used deep reinforcement learning to tune PID parameters and improve tracking performance. Chojecki et al. [15] further introduced fuzzy control to improve adaptability under specific operating conditions. Tang et al. [16] proposed a physics-aware deep learning-embedded model predictive control (MPC) approach, which builds predictive models of building thermal dynamics and solves constrained optimization problems over a receding horizon to explicitly coordinate energy use, comfort, and equipment constraints. Although these methods are easy to deploy and reliable in industrial scenarios, or can achieve strong control performance when the model is accurate, they still depend on static rules, linear feedback assumptions, or high-fidelity predictive models. As a result, they have limited ability to represent nonlinear coupling, time-varying disturbances, and long thermal delays in buildings, and they often struggle to maintain both energy savings and comfort under complex operation and maintenance conditions [17].
+Coordinated control of energy efficiency and thermal comfort in building HVAC systems has long been a major engineering challenge. To address rising building energy demand and requirements for stable operation, early studies mainly relied on classic methods such as rule-based control (RBC) and proportional-integral-derivative (PID) control \cite{ref12}. Choi et al. \cite{ref13} improved the practicality of HVAC rule-based control through optimization-informed rule extraction. Lee et al. \cite{ref14} used deep reinforcement learning to tune PID parameters and improve tracking performance. Chojecki et al. \cite{ref15} further introduced fuzzy control to improve adaptability under specific operating conditions. Tang et al. \cite{ref16} proposed a physics-aware deep learning-embedded model predictive control (MPC) approach, which builds predictive models of building thermal dynamics and solves constrained optimization problems over a receding horizon to explicitly coordinate energy use, comfort, and equipment constraints. Although these methods are easy to deploy and reliable in industrial scenarios, or can achieve strong control performance when the model is accurate, they still depend on static rules, linear feedback assumptions, or high-fidelity predictive models. As a result, they have limited ability to represent nonlinear coupling, time-varying disturbances, and long thermal delays in buildings, and they often struggle to maintain both energy savings and comfort under complex operation and maintenance conditions \cite{ref17}.
 
-To overcome the modeling and adaptability limits of traditional control, data-driven methods have become an important direction for intelligent HVAC control. Among them, reinforcement learning (RL) can learn optimized mappings between operating states and control actions through trial-and-error interaction with the building environment without requiring an accurate physical model, and has therefore been increasingly applied to building energy management, HVAC control, and demand response tasks [18]. Savino et al. [19] demonstrated the potential of deep reinforcement learning for low-level control in multi-zone buildings. Wang et al. [20] and Zhuang et al. [21] used Deep Q-Network (DQN) and Deep Deterministic Policy Gradient (DDPG) based frameworks to learn mappings from high-dimensional sensor states to control actions, confirming the optimization benefits of reinforcement learning in complex scenarios. However, most reinforcement learning methods rely mainly on current observations, which can lead to control delay and oscillation in systems with strong thermal inertia and time lag [22]. To mitigate this issue, Li et al. [23] integrated temporal models such as Long Short-Term Memory (LSTM) into the decision process, improving awareness of system evolution and partially improving control stability; He et al. [24] further developed a model-free predictive reinforcement learning (PRL) method for chiller plant optimization by combining LSTM-based load prediction with DQN control, showing that predictive information can improve control foresight while preserving the adaptability of RL. Nevertheless, existing RL and PRL methods still generally follow the TTC paradigm at the execution level, where states are sampled and actions are updated at preset intervals. This makes it difficult to adapt the decision frequency to the intensity of load disturbances and leads to an inherent conflict between redundant computation and actuator wear [25].
+To overcome the modeling and adaptability limits of traditional control, data-driven methods have become an important direction for intelligent HVAC control. Among them, reinforcement learning (RL) can learn optimized mappings between operating states and control actions through trial-and-error interaction with the building environment without requiring an accurate physical model, and has therefore been increasingly applied to building energy management, HVAC control, and demand response tasks \cite{ref18}. Savino et al. \cite{ref19} demonstrated the potential of deep reinforcement learning for low-level control in multi-zone buildings. Wang et al. \cite{ref20} and Zhuang et al. \cite{ref21} used Deep Q-Network (DQN) and Deep Deterministic Policy Gradient (DDPG) based frameworks to learn mappings from high-dimensional sensor states to control actions, confirming the optimization benefits of reinforcement learning in complex scenarios. However, most reinforcement learning methods rely mainly on current observations, which can lead to control delay and oscillation in systems with strong thermal inertia and time lag \cite{ref22}. To mitigate this issue, Li et al. \cite{ref23} integrated temporal models such as Long Short-Term Memory (LSTM) into the decision process, improving awareness of system evolution and partially improving control stability; He et al. \cite{ref24} further developed a model-free predictive reinforcement learning (PRL) method for chiller plant optimization by combining LSTM-based load prediction with DQN control, showing that predictive information can improve control foresight while preserving the adaptability of RL. Nevertheless, existing RL and PRL methods still generally follow the TTC paradigm at the execution level, where states are sampled and actions are updated at preset intervals. This makes it difficult to adapt the decision frequency to the intensity of load disturbances and leads to an inherent conflict between redundant computation and actuator wear \cite{ref25}.
 
-As control strategies have evolved from rule-driven to data-driven methods, reducing redundant computation and actuator wear has become another key issue. Liu et al. [26] showed that event triggered control (ETC) updates control and communication only when the state exceeds a threshold or a defined event occurs, thereby reducing unnecessary updates in TTC. Fu et al. [9] further proposed ED-DQN, an event-driven deep reinforcement learning control method for multi-zone residential building HVAC systems, which introduces event triggering into DRL so that the agent updates control actions only when predefined events occur, thereby reducing redundant decisions under fixed-step control. Liu et al. [27] pointed out that ETC methods in practical deployment still rely heavily on expert-defined static threshold rules. Under non-stationary factors such as drift in building thermal characteristics, climate variation, and equipment aging, fixed thresholds usually cannot balance sensitivity and stability, which can lead to excessive triggering or delayed responses and thus weaken computational efficiency and comfort performance [28].
+As control strategies have evolved from rule-driven to data-driven methods, reducing redundant computation and actuator wear has become another key issue. Liu et al. \cite{ref26} showed that event triggered control (ETC) updates control and communication only when the state exceeds a threshold or a defined event occurs, thereby reducing unnecessary updates in TTC. Fu et al. \cite{ref9} further proposed ED-DQN, an event-driven deep reinforcement learning control method for multi-zone residential building HVAC systems, which introduces event triggering into DRL so that the agent updates control actions only when predefined events occur, thereby reducing redundant decisions under fixed-step control. Liu et al. \cite{ref27} pointed out that ETC methods in practical deployment still rely heavily on expert-defined static threshold rules. Under non-stationary factors such as drift in building thermal characteristics, climate variation, and equipment aging, fixed thresholds usually cannot balance sensitivity and stability, which can lead to excessive triggering or delayed responses and thus weaken computational efficiency and comfort performance \cite{ref28}.
 
 Building on these studies, we reformulate HVAC event triggering as an online unsupervised anomaly detection problem and propose event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand method that combines dynamic gating with predictive reinforcement learning. Compared with traditional static-rule methods and existing ETC schemes, ET-PRL introduces streaming feature tracking and adaptive thresholding to update triggering conditions dynamically, reducing dependence on manual tuning and improving adaptability to long-term drift. Unlike fixed-step reinforcement learning, the method further decouples decision timing through event-driven execution, thereby reducing redundant inference and equipment wear while using predictive features to compensate for the loss of state information caused by sparse control. As a result, ET-PRL achieves a practical balance between control performance and execution cost under non-stationary building operating conditions.
 
-# 3. Methodology
+# Methodology
 
 Given the thermal inertia and delayed response of building HVAC systems, together with distribution shift caused by seasonal changes in operating conditions, traditional event triggered control methods that rely on offline calibration and static thresholds usually require frequent recalibration when transferred across scenarios, which increases engineering maintenance cost. To address this issue, we propose event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand control method that couples streaming anomaly gating with DRL. The overall architecture of the proposed method is shown in Figure 2.
 
-![Figure 2 Architecture of the proposed ET-PRL method, comprising offline training and model preparation (Step 1) and online streaming event detection and control (Step 2)](../pics/fig2_plain.svg)
+![Architecture of the proposed ET-PRL method, comprising offline training and model preparation (Step 1) and online streaming event detection and control (Step 2)](fig2_plain.pdf)
 
 In Step 1, historical operating data are used to train the load prediction model and the DQN policy offline. The LSTM provides a one-step-ahead cooling load estimate, which is combined with the current cooling load and outdoor wet-bulb temperature to form the compact state used by the controller. After training, both models are kept fixed during online deployment.
 
 In Step 2, real-time measurements are continuously converted into the current state and passed to the online streaming gate. The gate compares the current operating condition with recent patterns through multi-scale tracking and an adaptive threshold, and then determines whether a new control update is needed. If an event is triggered, the DQN generates a new chilled water supply temperature setpoint. Otherwise, the previous setpoint is held by zero-order hold (ZOH). In this way, the method remains responsive during significant operating changes while reducing redundant updates during stable operation.
 
-## 3.1 Dynamic Event Triggering Design Based on Streaming Feature Tracking
+## Dynamic Event Triggering Design Based on Streaming Feature Tracking
 
 In event triggered control, activating a control update depends on identifying critical events, that is, moments when the system state deviates significantly from normal operation and demands prompt control action. Most existing methods define such events using manually preset static rules, which are difficult to adapt to nonlinear and time-varying characteristics of building HVAC systems. We reformulate critical event identification as an online anomaly detection problem. Specifically, in control terms, critical events correspond to abrupt operating condition shifts that require immediate control intervention, while in statistical terms, such moments usually appear as significant deviations of state samples from the normal distribution. Therefore, event judgment can be uniformly modeled as a deviation test rather than relying on manually defined static rules.
 
@@ -74,7 +68,7 @@ $$
 
 where $\Phi(\cdot)$ denotes the threshold update operator driven by historical anomaly scores which balances sensitivity and stability. It increases event coverage when disturbances intensify and suppresses redundant triggering during steady periods, thereby reducing the risk of false triggers and missed triggers.
 
-(1) Definition of System State Features
+#### (1) Definition of System State Features
 
 The event gating module and the reinforcement learning controller share the same state feature which is defined as a compact three-dimensional feature vector as Eq. (4):
 
@@ -84,7 +78,7 @@ where, at time step $t$, $Q_{load}^t$ denotes the system cooling load, $T_{wb}^t
 
 The main reason for selecting $T_{wb}^t$ is that it can capture both ambient temperature and humidity and directly constrain cooling tower heat transfer performance and the upper limit of system heat rejection. It therefore serves as a key state variable for characterizing the intensity and direction of exogenous weather disturbances, which improves the ability of the gating mechanism to detect non-stationary environmental changes. Moreover, $\hat{Q}_{load}^{t+1}$ is selected because building thermal systems exhibit strong thermal inertia and control delay. If the gating mechanism relies only on current observations, trigger decisions usually lag behind operating condition shifts. By incorporating one-step-ahead load information, the gating module can sense rising or falling load trends earlier to some extent and trigger control action updates earlier during critical transitions, thereby reducing the risk of delayed response under sparse triggering.
 
-(2) Streaming Isolation Depth and Multi-Scale Anomaly Tracking
+#### (2) Streaming Isolation Depth and Multi-Scale Anomaly Tracking
 
 Traditional offline anomaly detection usually depends on a static sample library and is less stable under seasonal operating drift. To address this issue, a streaming isolation depth mechanism is deployed to score anomalies of the online system state feature $s_t$ in real time. Streaming Isolation Depth dynamically builds and updates isolation tree structures over sliding data windows, and uses the average path length of a sample across multiple trees to measure its degree of isolation. A shorter path means the sample is easier to isolate and therefore more likely to be anomalous. This mechanism can adapt to distribution changes online without retraining a global model.
 
@@ -110,7 +104,7 @@ where $w_{\mathrm{s}}, w_{\mathrm{m}}, w_{\mathrm{l}} \ge 0$ and $w_{\mathrm{s}}
 
 We construct the composite anomaly score through weighted fusion of the short, medium, and long time scales. The short-term scale primarily captures high-frequency disturbances, the medium-term scale characterizes intraday periodic variations, and the long-term scale tracks seasonal drift and long-term slow processes. This multi-scale fusion mechanism enables the gating module to jointly respond to local abrupt disturbances and system-level slow-varying trends, avoiding the insufficient sensitivity or excessive triggering that a single-scale statistic may exhibit under non-stationary operating conditions, thereby improving the adaptability and robustness of the gating mechanism across diverse operating scenarios.
 
-(3) Streaming Two-Layer Adaptive Threshold Optimization
+#### (3) Streaming Two-Layer Adaptive Threshold Optimization
 
 Eq. (8) provides the multi-scale fused anomaly score $A(s_t)$, but the triggering decision still requires comparing this score against a threshold $\tau_t$, as defined in Eq. (2). Under long-term non-stationary HVAC operation, a fixed threshold is prone to either insufficient sensitivity or excessive triggering, whereas a single adaptive statistic cannot simultaneously accommodate rapid response to short-term disturbances and stable tracking of long-term drift. To resolve this issue, we construct a local-global two-layer adaptive threshold that achieves adaptive triggering through coordinated fast- and slow-timescale updates.
 
@@ -151,7 +145,7 @@ $$\tilde{\tau}_t=\alpha_{\mathrm{local}}\tau_{\mathrm{local}}^{(t)}+(1-\alpha_{\
 
 where $\alpha_{\mathrm{local}}\in[0,1]$ controls the blending ratio between short-term and long-term information. Increasing $\alpha_{\mathrm{local}}$ shifts the final threshold toward recent operating conditions, yielding more responsive triggering behavior; decreasing it shifts the threshold toward the long-term baseline, yielding more stable judgment. The term $b_{\mathrm{bias}}\in[-1, 1]$ is a global offset correction that compensates for potential systematic bias arising from finite-window estimation at different operating stages. During highly stable phases such as nighttime low-load periods, the triggering boundary computed solely from local and global statistics may be biased due to window effects, leading to frequent boundary oscillations. Incorporating this offset therefore improves the robustness of the decision criterion.
 
-## 3.2 Online Streaming Event Gating Module Construction
+## Online Streaming Event Gating Module Construction
 
 After obtaining the basic adaptive gating threshold $\tilde{\tau}_t$, we further convert it into an actionable triggering criterion. Unlike traditional fixed-threshold or single-condition exceedance triggering strategies, our gating module employs a joint determination form that combines anomaly intensity discrimination with time-constraint oscillation suppression. The objective is to guarantee coverage of critical disturbances while suppressing chatter triggering near threshold boundaries. The former component evaluates the current state deviation by comparing $A(s_t)$ against the adaptive threshold, whereas the latter explicitly regulates the action update frequency through a minimum trigger interval constraint. This design prevents consecutive triggering caused by short-term high-frequency fluctuations, which would otherwise lead to frequent setpoint switching and actuator wear.
 
@@ -165,11 +159,11 @@ where $\tilde{\tau}_t$ is the streaming two-layer adaptive threshold defined in 
 
 Regardless of the value of $\mathrm{Trigger}(s_t)$, the gating module executes anomaly score window maintenance and two-layer threshold recursive update at every time step. Specifically, after performing the trigger determination in Eq. (15), we append the current anomaly score $A(s_t)$ to the sliding window $\mathcal{A}_t^{(W)}$ and sequentially update the candidate threshold, local threshold, and global threshold according to Eqs. (11)-(14), thereby providing the most recent statistical reference baseline for the next time step. Through the update, the gating module's threshold estimation is always grounded in the latest observations, thereby preventing the statistics from lagging behind operating condition changes due to trigger sparsification and guaranteeing that the trigger sensitivity can be promptly restored once a stable period ends and disturbances intensify.
 
-## 3.3 Predictive RL Control Algorithm with Dynamic Event Triggering
+## Predictive RL Control Algorithm with Dynamic Event Triggering
 
 Based on the trigger signal provided by the gating module, we construct a lightweight DQN agent augmented with short-term load prediction as the RL controller, balancing control performance against online computational cost. Once the trigger happens, the controller receives the state vector $s_t$ and a composite reward $r_t$, outputs a chilled water supply temperature setpoint that trades off energy reduction with temperature tracking quality. Moreover, we adopt a hierarchical execution strategy that decouples the high-level model-free optimization decisions from the low-level physical operating constraints of the equipment, ensuring that the generated actions satisfy engineering requirements such as unit start/stop sequencing and minimum run-time durations.
 
-(1) Task formulation and problem definition
+#### (1) Task formulation and problem definition
 
 To address high dimensional state spaces and strong temporal correlations among samples in HVAC control, we adopt a compact state representation and formulate the control problem as an MDP $\langle \mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma \rangle$, where $\mathcal{S}$ denotes the state space, $\mathcal{A}$ denotes the action space, $\mathcal{P}$ denotes the state transition kernel, $\mathcal{R}$ denotes the reward function, and $\gamma$ denotes the discount factor.
 
@@ -195,7 +189,7 @@ $$r_t^{\mathrm{track}} = \exp \left( -\frac{1}{2} \left( \frac{T_t - T_{\mathrm{
 
 where $T_t$ is the actual supply water temperature, $T_{\mathrm{set}}$ is the target setpoint temperature, and $\sigma$ is the Gaussian kernel bandwidth parameter, which controls the sensitivity of the reward to temperature deviations. This term takes a larger value when the actual supply temperature is closer to the target setpoint, thereby encouraging the control policy to maintain stable temperature regulation.
 
-(2) Predictive DQN network architecture and training procedure
+#### (2) Predictive DQN network architecture and training procedure
 
 We formulate the chilled water supply temperature setpoint optimization process as an action-value function approximation problem over a discrete action space and employ a predictive DQN controller to solve it. A multi-layer fully connected network approximates the action-value function $Q_{\theta}$, where $\theta$ denotes the parameters of the online network. The network takes the state vector $s_t$ defined by Eq. (17) as input and outputs the action value $Q_{\theta}[s_t,a]$ for each candidate action $a$ in the discrete action space $\mathcal{A}$. Unlike reactive action selection that relies solely on current observations, the one-step load prediction term in the state enables $Q_{\theta}$ to evaluate the long-term return of each candidate setpoint under the joint constraints of the current operating condition and short-term load evolution which can provide forward-looking action inference when an event is triggered.
 
@@ -211,7 +205,7 @@ $$\mathcal{L}_{\theta} = \mathbb{E}_{\mathcal{D}}\left[\ell_{\mathrm{SL1}}(\delt
 
 We update the online network using the Adam optimizer and synchronize the target network with the online network at a fixed frequency. During training, we disable exploration on the validation sequence and evaluate the current policy by greedy action selection in terms of cumulative reward. If the validation reward shows no continuous improvement in the second half of training, we apply early stopping and retain the policy network with the best validation performance. The final DQN policy serves only for action inference during online operation: it outputs the chilled water supply temperature setpoint from the predictive state when an event is triggered.
 
-(3) Event-driven online execution algorithm
+#### (3) Event-driven online execution algorithm
 
 During online operation, the system directly collects the cooling load $Q_{\mathrm{load}}^t$, outdoor wet-bulb temperature $T_{\mathrm{wb}}^t$, and one-step-ahead predicted load $\hat{Q}_{\mathrm{load}}^{t+1}$ from the building operating environment at a fixed sampling interval to construct the predictive state $s_t$. The streaming gate then evaluates whether the current operating state deviates from the recent reference distribution represented by the multi-scale sliding windows. A new chilled water supply temperature setpoint is inferred from the trained DQN only when the triggering criterion is satisfied. By coupling multi-scale anomaly scoring with predictive reinforcement learning control, this design enables the controller to respond to load changes, outdoor thermal disturbances, and operating-condition transitions while reducing unnecessary policy evaluations, frequent setpoint switching, and actuator oscillation under stable conditions.
 
@@ -219,11 +213,11 @@ Specifically, the streaming gate first computes scale-specific anomaly scores ov
 
 $$a_t = \begin{cases}\pi_{\mathrm{DQN}}(s_t), & \mathrm{Trigger}(s_t) = 1 \\a_{t-1}, & \mathrm{Trigger}(s_t) = 0\end{cases} \tag{23}$$
 
-The complete online execution procedure of the proposed ET-PRL method is summarized below.
+The complete online execution procedure of the proposed ET-PRL method is summarized in Algorithm~\ref{alg:et-prl-online-control}.
 
 \begin{paperalgorithm}{alg:et-prl-online-control}{ET-PRL online control procedure}
 \algline{\textbf{Input:} Trained DQN policy $\pi_{\mathrm{DQN}}$; gate parameters $\Omega$; minimum trigger interval $\Delta_{\min}$; total control horizon $T$.}
-\algline{Here, $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,m_{\mathrm{hys}}\}$ is defined in Eqs. (7)-(16).}
+\algline{Here, $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,m_{\mathrm{hys}}\}$ is defined in Eqs.~\eqref{eq:scale-specific-score}--\eqref{eq:trigger-rule}.}
 \algline{\textbf{Output:} Control setpoint sequence $\{a_t\}_{t=1}^{T}$.}
 \algline{\textbf{Initialization:}}
 \algline[\paperalgindent]{Set the initial control action $a_0$.}
@@ -233,9 +227,9 @@ The complete online execution procedure of the proposed ET-PRL method is summari
 \algline[\paperalgindent]{Collect $Q_{\mathrm{load}}^t$, $T_{\mathrm{wb}}^t$, and $\hat{Q}_{\mathrm{load}}^{t+1}$.}
 \algline[\paperalgindent]{Construct the predictive state $s_t=[Q_{\mathrm{load}}^t,T_{\mathrm{wb}}^t,\hat{Q}_{\mathrm{load}}^{t+1}]$.}
 \algline[\paperalgindent]{Compute $A_{\mathrm{short}}(s_t)$, $A_{\mathrm{medium}}(s_t)$, and $A_{\mathrm{long}}(s_t)$.}
-\algline[\paperalgindent]{Compute $A(s_t)$ according to Eq. (8).}
-\algline[\paperalgindent]{Compute the candidate, local, and global thresholds according to Eqs. (11)-(14).}
-\algline[\paperalgindent]{Compute $\tau_t^*$ according to Eq. (15).}
+\algline[\paperalgindent]{Compute $A(s_t)$ according to Eq.~\eqref{eq:multi-scale-score}.}
+\algline[\paperalgindent]{Compute the candidate, local, and global thresholds according to Eqs.~\eqref{eq:candidate-threshold}--\eqref{eq:streaming-threshold}.}
+\algline[\paperalgindent]{Compute $\tau_t^*$ according to Eq.~\eqref{eq:trigger-threshold}.}
 \algline[\paperalgindent]{\textbf{if} $A(s_t)>\tau_t^*$ and $t-t_{\mathrm{last}}>\Delta_{\min}$ \textbf{then}}
 \algline[\paperalgsubindent]{Infer a new control setpoint using the trained DQN policy: $a_t=\pi_{\mathrm{DQN}}(s_t)$.}
 \algline[\paperalgsubindent]{Update the last trigger time: $t_{\mathrm{last}}=t$.}
@@ -247,37 +241,37 @@ The complete online execution procedure of the proposed ET-PRL method is summari
 \algline{\textbf{end for}}
 \end{paperalgorithm}
 
-# 4. Case System and Simulation Environment
+# Case System and Simulation Environment
 
-## 4.1 Building Thermal System Modeling
+## Building Thermal System Modeling
 
-We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model was calibrated in previous work using measured operational data and can reproduce the main thermodynamic response of the chilled water system [29]. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
+We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model was calibrated in previous work using measured operational data and can reproduce the main thermodynamic response of the chilled water system \cite{ref29}. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
 
-## 4.2 Weather and Load Dataset Characteristics
+## Weather and Load Dataset Characteristics
 
 We use a cooling load sequence directly collected from the operating environment of a commercial building HVAC system in Shanghai as $Q_{\mathrm{load}}$, with a sampling interval of $5\,\mathrm{min}$, and pair it with the outdoor wet bulb temperature $T_{\mathrm{wb}}$ on the same time axis to form the main state data. The period extends from July 1 to October 10, corresponding to $102$ days, or $29,376$ time steps at the $5\,\mathrm{min}$ resolution, thereby capturing both intraday periodic fluctuations and seasonal scale variations. Descriptive statistics show that the peak cooling load is $5102.77\,\mathrm{kW}$, with a standard deviation of $962.02\,\mathrm{kW}$ and a coefficient of variation (CV) of $37.3\%$, while the outdoor wet bulb temperature $T_{\mathrm{wb}}$ ranges from $21$ to $28\,\mathrm{^{\circ}C}$.
 
 Figure 3 presents the multi-scale temporal characteristics of the cooling load and outdoor wet bulb temperature. In the representative 14 day segment shown in Figure 3a, $Q_{\mathrm{load}}$ and $T_{\mathrm{wb}}$ generally increase and decrease together during high load periods, although $Q_{\mathrm{load}}$ exhibits a much larger diurnal amplitude. The time of day averaged profiles in Figure 3b further show that $Q_{\mathrm{load}}$ rises during daytime operating hours and decreases at night, whereas $T_{\mathrm{wb}}$ varies more smoothly over the day.
 
-![Figure 3 Visualization of dataset temporal characteristics, full period sequence and intraday statistical profiles](../pics/fig3_dataset_temporal_characteristics.svg)
+![Visualization of dataset temporal characteristics, full period sequence and intraday statistical profiles](fig3_dataset_temporal_characteristics.pdf)
 
 Figure 4 further presents the marginal and joint distributions of the key variables. The cooling load $Q_{\mathrm{load}}$ forms pronounced density clusters across multiple load ranges, indicating that the dataset contains several typical operating regimes, whereas $T_{\mathrm{wb}}$ is concentrated within a relatively narrow range, indicating limited variability in the outdoor wet bulb temperature in this dataset. Moreover, the joint density of $T_{\mathrm{wb}}$ and $Q_{\mathrm{load}}$ does not indicate a simple linear relationship. Instead, it forms several density clusters across different temperature ranges, indicating segmented distributional patterns and nonlinear joint variation between the two variables. Together with the temporal results in Figure 3, these observations show that the dataset contains both intraday periodic load variation and nonlinear dependence among variables. These characteristics support adaptive triggering decisions by the streaming gating module based on the joint variation of cooling load and wet bulb temperature rather than on deviations of a single variable.
 
-![Figure 4 Visualization of dataset distributions and feature dependence](../pics/fig4_dataset_distribution_and_correlation.svg)
+![Visualization of dataset distributions and feature dependence](fig4_dataset_distribution_and_correlation.pdf)
 
 During preprocessing, the original collected cooling load sequence contained eight negative cooling load samples, which we truncated to zero. Because these samples account for only a negligible proportion of the full sequence, this correction has an insignificant effect on the overall load distribution. To introduce short term predictive information, we use the one step ahead load prediction $\hat{Q}_{\mathrm{load}}^{t+1}$ generated by the LSTM as an additional state input to characterize short term load variation trends, thereby ensuring that the final state input includes both the current operating conditions and the short term evolution trend.
 
 To avoid temporal information leakage and better reflect practical online deployment conditions, we adopt a strict chronological splitting strategy. The dataset is divided into training, validation, and test sets in a ratio of 70:15:15. The normalization statistics, LSTM training, and hyperparameter selection are determined using only information from the training and validation sets, and they remain fixed during testing.
 
-# 5. Experiments and Results
+# Experiments and Results
 
-## 5.1 Experimental Setup
+## Experimental Setup
 
-### 5.1.1 Experimental and Hyperparameter Settings
+### Experimental and Hyperparameter Settings
 
 This section describes the experimental settings and hyperparameters. To ensure experimental reproducibility, the key parameters of the DQN based control policy and the online streaming gate are kept constant across all experimental groups. Unless otherwise stated, the sampling interval is 5 min. All hyperparameters are determined through Bayesian optimization and fixed after validation set screening. Parameters of the DQN based control policy define the state representation, action space, and training process of the reinforcement learning controller, whereas parameters of the online streaming gate govern the sensitivity and stability of event-driven action updates. The complete hyperparameter settings are reported in Table A2 in Appendix A.
 
-### 5.1.2 Comparison Methods
+### Comparison Methods
 
 To systematically evaluate the control performance of the proposed ET-PRL method, we design six comparison strategies under the same test set and evaluation protocol, including two conventional control baselines and four RL strategies, to examine the relationship between control sparsity and energy efficiency under different triggering mechanisms.
 
@@ -285,7 +279,7 @@ The two conventional control baselines are PID and RBC. PID is a discrete closed
 
 All four RL strategies reuse the same trained DQN policy network and state inputs but differ in action update scheduling. Time Triggered Reinforcement Learning (TTC-RL) includes TTC-RL-1 and TTC-RL-2. TTC-RL-1 recomputes and executes the control action at every sampling step, serving as the fixed-step RL baseline for the RL strategy group. TTC-RL-2 updates the action every two sampling steps, which allows us to examine the effect of fixed-frequency reduction. Static-Threshold Event Triggered Control (ST-ETC) releases action updates only when the static threshold condition is satisfied, representing sparse control under a static trigger threshold. The proposed ET-PRL method incorporates streaming multi-scale anomaly scoring with two-layer adaptive threshold, and triggers action updates only when the current operating condition deviates significantly from the recent reference distribution.
 
-### 5.1.3 Evaluation Metrics
+### Evaluation Metrics
 
 To comprehensively evaluate the performance of the proposed ET-PRL method, we construct four groups of evaluation metrics, namely energy efficiency, temperature control and stability, control sparsity, and execution level statistics, to ensure the completeness and reproducibility of the experimental results.
 
@@ -435,13 +429,13 @@ where $h_m$ denotes the length of the $m$th constant setpoint segment and $M$ is
 
 The evaluation metrics and optimization objectives are summarized in Table A3 in Appendix A.
 
-## 5.2 Experimental Results Analysis
+## Experimental Results Analysis
 
-(1) Overall Performance Analysis
+#### (1) Overall Performance Analysis
 
 Based on the six comparison strategies and the related evaluation metrics, this section presents a comprehensive comparison of energy efficiency, temperature control, control sparsity, and execution-level performance across all strategies on the unified test set. Table 1 summarizes the test results of all strategies across all evaluation metrics.
 
-Table 1 Overall comparison results of multiple control strategies
+Table: Overall comparison results of multiple control strategies
 
 | **Strategy** | **$E_{\text{daily}}$ (kWh/day)** | **$\eta_{\text{saving}}$ (%)** | **$\bar{P}_{\text{chiller}}$ (kW)** | **$N_{\text{update}}$** | **ARR (%)** | **$\bar{\Delta a}$** | **$R_{\text{test}}$** | **$\bar{R}_{\text{update}}$** | **PPR (%)** |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -460,27 +454,27 @@ In terms of action smoothness, ET-PRL obtains $\bar{\Delta a}=0.6014$, which is 
 
 For the reward, cumulative return and return per update should be interpreted separately. ET-PRL obtains a cumulative test reward $R_{\text{test}}$ of 1939.74, which is lower than the 2054.63 of TTC-RL-1 and corresponds to a PPR of 94.41%. However, its average reward per update $\bar{R}_{\text{update}}$ reaches 0.9481, the highest value among the RL strategies. This represents an improvement of approximately 103.24% over the 0.4665 of TTC-RL-1 and approximately 62.85% over the 0.5822 of ST-ETC, and it also exceeds the 0.9186 of TTC-RL-2. These results suggest that although ET-PRL reduces the number of action updates, the remaining updates occur more often during periods when load or operating condition changes require control adjustment. As a result, it improves update efficiency while retaining most of the cumulative reward, which is consistent with the design objective of event driven control for intervention on demand.
 
-(2) Chilled Water Supply Temperature Setpoint Strategy Behavior Analysis
+#### (2) Chilled Water Supply Temperature Setpoint Strategy Behavior Analysis
 
 To further examine whether different trigger mechanisms affect the preference for selecting the chilled water supply temperature setpoint, Figure 5 compares the overall action distributions of each strategy over the discrete action space of $T_{\mathrm{chws}}$. It should be noted that ST-ETC reaches an action equivalence ratio of 99.2% relative to TTC-RL-1, indicating that the setpoints selected by the two strategies are almost identical at most time steps. This suggests that the main function of ST-ETC is to reduce the action update frequency of TTC-RL-1, rather than to substantially change the setpoint selection preference learned by the original Q network. Therefore, Figure 5 presents the action distributions of TTC-RL-1 and ST-ETC jointly as the reference, which will highlight how ET-PRL adjusts the action selection distribution later.
 
-![Figure 5 Comparison of the $T_{\mathrm{chws}}$ window distributions for ET-PRL, TTC-RL-1, and ST-ETC. Each bar represents the action proportion within a 10 h window](../pics/fig6_t_chws_macro_distribution.svg)
+![Comparison of the $T_{\mathrm{chws}}$ window distributions for ET-PRL, TTC-RL-1, and ST-ETC. Each bar represents the action proportion within a 10 h window](fig6_t_chws_macro_distribution.pdf)
 
-Figure 5 shows that, during typical low load periods such as 0 to 50 h and 200 to 250 h, ET-PRL substantially increases the proportion of high temperature setpoints such as 15 °C. This behavior is consistent with the off design thermodynamic characteristics of chillers. When the building cooling demand is weak, increasing $T_{\mathrm{chws}}$ is equivalent to increasing the evaporation temperature, which reduces the compressor pressure ratio and improves COP, thereby reducing electricity consumption per unit cooling output without violating indoor thermal comfort limits. It should be emphasized that ST-ETC and ET-PRL reuse the same trained TTC-RL-1 Q network and the same state inputs, so both strategies retain value estimation capability based on predictive features. Their difference mainly lies in the gating layer. The static threshold in ST-ETC is more likely to mismatch the current operating condition under cross period distribution shift, which can cause false triggering at noncritical moments and shorten the continuous holding duration of efficient setpoints. In contrast, the streaming local-global two-layer adaptive threshold in ET-PRL can correct the trigger boundary online and filter high frequency noise induced triggers, allowing high temperature setpoints to be held for longer continuous periods and leading to a clearer adjustment of the action selection distribution.
+Figure 5 shows that, during typical low load periods such as 0 to 50 h and 200 to 250 h, ET-PRL substantially increases the proportion of high temperature setpoints such as 15~$^\circ$C. This behavior is consistent with the off design thermodynamic characteristics of chillers. When the building cooling demand is weak, increasing $T_{\mathrm{chws}}$ is equivalent to increasing the evaporation temperature, which reduces the compressor pressure ratio and improves COP, thereby reducing electricity consumption per unit cooling output without violating indoor thermal comfort limits. It should be emphasized that ST-ETC and ET-PRL reuse the same trained TTC-RL-1 Q network and the same state inputs, so both strategies retain value estimation capability based on predictive features. Their difference mainly lies in the gating layer. The static threshold in ST-ETC is more likely to mismatch the current operating condition under cross period distribution shift, which can cause false triggering at noncritical moments and shorten the continuous holding duration of efficient setpoints. In contrast, the streaming local-global two-layer adaptive threshold in ET-PRL can correct the trigger boundary online and filter high frequency noise induced triggers, allowing high temperature setpoints to be held for longer continuous periods and leading to a clearer adjustment of the action selection distribution.
 
 However, the overall window distribution alone is insufficient to explain how the action selection distribution changes. On the one hand, setpoint holding and updating behaviors should be examined in representative temporal segments during load variation. On the other hand, the degree of action deviation between event triggered strategies and TTC-RL-1 should be quantified over the full sample, so that we can determine whether these strategies form setpoint adjustments that are genuinely distinct from the baseline. For this reason, Figure 6 further analyzes the trigger behavior of ET-PRL from two perspectives, namely local trajectory response and global difference frequency.
 
-![Figure 6 Local event triggered response and global difference frequency statistics. Panel a shows the cooling load and absolute setpoint trajectories from 65 h to 85 h, and panel b shows the logarithmic frequency distributions of $\Delta T_{\mathrm{chws}}$ for ST-ETC and ET-PRL relative to TTC-RL-1](../pics/fig7_t_chws_delta_analysis.svg)
+![Local event triggered response and global difference frequency statistics. Panel a shows the cooling load and absolute setpoint trajectories from 65 h to 85 h, and panel b shows the logarithmic frequency distributions of $\Delta T_{\mathrm{chws}}$ for ST-ETC and ET-PRL relative to TTC-RL-1](fig7_t_chws_delta_analysis.pdf)
 
 For the local trajectory analysis, panel a of Figure 6 examines a representative window from 65 to 85 h. ET-PRL exhibits longer stepwise holding periods and updates the setpoint only when key disturbances occur, whereas TTC-RL-1 maintains high frequency time triggered updates. Because the same trained Q network is used, this difference mainly comes from when updates are triggered. ST-ETC is constrained by a static boundary and is therefore more likely to trigger falsely near the boundary, which causes frequent switching and drives the output closer to the baseline strategy. ET-PRL suppresses updates caused by noise through the local-global two-layer adaptive threshold and the minimum trigger interval, which allows the predictive Q network to keep efficient setpoints for longer periods during low load windows.
 
 At the global difference level, panel b of Figure 6 shows that the proportion of nonzero differences between ST-ETC and TTC-RL-1 is only 0.82%, whereas the corresponding proportion for ET-PRL is 14.12%. The full sample variances of the differences are $0.446$ and $5.879$, respectively. This indicates that the action outputs of ST-ETC remain very close to the baseline strategy and are insufficient to produce substantive temperature setpoint optimization. In contrast, ET-PRL achieves clearer action selection adjustment while preserving sparse execution.
 
-(3) Event Triggered Control Sparsity and Temporal Dynamics Analysis
+#### (3) Event Triggered Control Sparsity and Temporal Dynamics Analysis
 
 The above results show that ET-PRL not only reduces the action update frequency but also changes the distribution of chilled water supply temperature setpoints in the action space. To further characterize the temporal structure of control sparsity and the dynamic response of the system, we compare ET-PRL, ST-ETC, and TTC-RL-1 using the trigger interval and action holding length defined above. The trigger interval reflects the actual sparsity of trigger events at the gating layer, whereas the action holding length reflects setpoint stability at the execution layer. Even after a trigger occurs, the policy network may still output the same optimal setpoint as in the previous step, so the action holding length in the realized trajectory is usually greater than or equal to the trigger interval.
 
-Table 2 Temporal sparsity and action holding statistics of different control strategies
+Table: Temporal sparsity and action holding statistics of different control strategies
 
 | **Strategy** | **Mean Trigger Interval (steps)** | **Daily Trigger Count** | **Mean Holding Length (steps)** | **95th Percentile $P_{95}$ (steps)** |
 | --- | --- | --- | --- | --- |
@@ -492,11 +486,11 @@ Based on these statistics, the mean trigger interval of ET-PRL is 2.117 steps, w
 
 To further illustrate the distribution pattern of these trigger interval differences, Figure 7 shows the distribution of action update intervals under the different control strategies. The main panel reports the proportion in each interval bin for TTC-RL-1, ST-ETC, and ET-PRL, and the inset enlarges the long tail region for intervals of at least 4 steps. TTC-RL-1 concentrates almost entirely at an interval of 1 step because it updates at a fixed cadence, whereas ST-ETC updates are mainly concentrated in the short interval range. By contrast, ET-PRL exhibits a much more pronounced long tail, with a maximum trigger interval of 74 steps, indicating that the dynamic event gating mechanism can keep the setpoint unchanged for longer periods under low disturbance conditions.
 
-![Figure 7 Distribution of action update intervals under different control strategies. The main panel shows the share of each discrete bin, and the inset enlarges the long tail region](../pics/fig8_action_update_interval_distribution.svg)
+![Distribution of action update intervals under different control strategies. The main panel shows the share of each discrete bin, and the inset enlarges the long tail region](fig8_action_update_interval_distribution.pdf)
 
 To reveal the temporal alignment between dynamic load variation and triggering actions, Figure 8 further presents the alignment results for a representative day 5 operating profile.
 
-![Figure 8 Alignment of daily load variation and trigger times on day 5 with 5 min sampling. Panel a shows the cooling load curve, panel b shows the trigger pulse raster of ET-PRL, ST-ETC, and TTC-RL-1, and the shaded band across panels indicates a typical high variation period](../pics/fig9_trigger_load_alignment.svg)
+![Alignment of daily load variation and trigger times on day 5 with 5 min sampling. Panel a shows the cooling load curve, panel b shows the trigger pulse raster of ET-PRL, ST-ETC, and TTC-RL-1, and the shaded band across panels indicates a typical high variation period](fig9_trigger_load_alignment.pdf)
 
 By comparison, the ET-PRL trigger pulses are densely distributed during load ramp-up and abrupt change periods, but become much sparser during stable periods such as nighttime. In contrast, because ST-ETC uses a fixed decision boundary, its trigger actions are more concentrated in time, whereas TTC-RL-1 triggers at every time step.
 
@@ -506,11 +500,11 @@ From an energy efficiency perspective, the benefits of control sparsification ar
 
 In summary, the proposed ET-PRL method exhibits an adaptive temporal pattern with fast responses during disturbed periods and fewer updates during stable periods. This pattern shows that multi-scale anomaly score fusion in the streaming gating mechanism can effectively capture disturbances at different time scales, while the local-global two-layer adaptive threshold helps suppress control oscillations near the threshold boundary. Together, these components provide a clear physical explanation for sparse control.
 
-(4) Ablation Study Analysis
+#### (4) Ablation Study Analysis
 
 To quantify the contribution of each component in the proposed method, we conduct an ablation study under a controlled variable experimental design. Unless otherwise specified, all experimental groups use the same training configuration, test set, and evaluation protocol. In addition to TTC-RL-1, the ablation study includes six comparison methods, consisting of five simplified variants and the full model, to analyze the contributions of the two-layer threshold module and the multi-scale module. Table 3 summarizes the test set results of all strategies, where relative metrics such as ACR and PPR use TTC-RL-1 as the computational baseline, whereas the remaining metrics are test set statistics.
 
-Table 3 Key module ablation results
+Table: Key module ablation results
 
 | **Method** | $R_{\text{test}}$ | $N_{\text{update}}$ | $N_{\text{daily}}$ | $E_{\text{daily}}$, kWh/day | ACR | PPR |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -522,24 +516,24 @@ Table 3 Key module ablation results
 | Long-scale Only | 2032.01 | 4334 | 283.42 | 7431.26 | 1.0162 | 98.90% |
 | **Full ET-PRL** | **1939.74** | **2046** | **133.80** | **7331.85** | **2.1525** | **94.41%** |
 
-![Figure 9 Scatter plot of ablation strategies under the tradeoff among energy consumption, performance, and sparsity. The x axis indicates average daily energy consumption, the y axis indicates PPR, color encodes ACR, and text labels identify each ablation strategy](../pics/fig10_ablation_pareto_scatter.svg)
+![Scatter plot of ablation strategies under the tradeoff among energy consumption, performance, and sparsity. The x axis indicates average daily energy consumption, the y axis indicates PPR, color encodes ACR, and text labels identify each ablation strategy](fig10_ablation_pareto_scatter.pdf)
 
 As shown in Figure 9, under the three objective tradeoff that minimizes $E_{\text{daily}}$ while maximizing PPR and ACR, Full ET-PRL lies in the low energy consumption and high sparsity region. It achieves the lowest $E_{\text{daily}}$ and the highest ACR among the ablation groups while maintaining a PPR of 94.41%, making it closer to the ideal compromise solution on the current test set.
 
 For temporal scale ablation, Short-scale Only yields a slightly higher PPR than Full ET-PRL, with values of 94.99% and 94.41%, respectively, but its ACR decreases by 3.58% and its daily energy consumption increases by 75.18 kWh/day. Given the comfort constraints adopted in this study, both methods maintain PPR values above 94%, and the difference of 0.58 percentage points is small. In contrast, the reduced action compression capability and increased energy consumption directly raise the execution burden and operating cost. Furthermore, although Medium-scale Only and Long-scale Only maintain high PPR values of 99.38% and 98.90%, respectively, their trigger sparsity deteriorates markedly, with $N_{\text{daily}}$ values of 254.45 and 283.42, and their energy optimization remains limited, with daily energy consumption values of 7484.70 and 7431.26 kWh/day. These results indicate that single scale statistics cannot simultaneously accommodate short term disturbance response and long term drift correction.
 
-We use a compact three dimensional state vector $s_t = [Q_{\mathrm{load}}^t, T_{\mathrm{wb}}^t, \hat{Q}_{\mathrm{load}}^{t+1}]$ without stacking high dimensional historical sequences. This design reduces online inference overhead but also requires the gating mechanism to compensate for long term historical information. If the gate relies only on short scale statistics, the gating score may treat slow drift as a new local steady state, weakening its ability to identify long term energy efficiency degradation. Physically, during seasonal transitions, the equivalent thermal resistance and heat storage state of the building envelope change gradually, and long term chiller operation may also lead to accumulated fouling thermal resistance in heat exchangers. These slowly changing factors progressively increase the effective cooling load required to achieve the same cooling effect. A short scale gate may absorb this slow shift into the local steady baseline, causing the controller to keep the action unchanged when policy correction should be triggered. As a result, the control setpoint may stay for an extended period in a locally stable but overall suboptimal region, for example near a relatively high value of 15°C, while the chiller continues to operate away from the optimal COP condition, eventually leading to increased daily energy consumption. By introducing medium and long scale scores, Full ET-PRL supplements the compact state representation with implicit historical information and can identify gradual equipment performance degradation and seasonal drift as events that require intervention, which explains its lower daily energy consumption than Short-scale Only.
+We use a compact three dimensional state vector $s_t = [Q_{\mathrm{load}}^t, T_{\mathrm{wb}}^t, \hat{Q}_{\mathrm{load}}^{t+1}]$ without stacking high dimensional historical sequences. This design reduces online inference overhead but also requires the gating mechanism to compensate for long term historical information. If the gate relies only on short scale statistics, the gating score may treat slow drift as a new local steady state, weakening its ability to identify long term energy efficiency degradation. Physically, during seasonal transitions, the equivalent thermal resistance and heat storage state of the building envelope change gradually, and long term chiller operation may also lead to accumulated fouling thermal resistance in heat exchangers. These slowly changing factors progressively increase the effective cooling load required to achieve the same cooling effect. A short scale gate may absorb this slow shift into the local steady baseline, causing the controller to keep the action unchanged when policy correction should be triggered. As a result, the control setpoint may stay for an extended period in a locally stable but overall suboptimal region, for example near a relatively high value of 15~$^\circ$C, while the chiller continues to operate away from the optimal COP condition, eventually leading to increased daily energy consumption. By introducing medium and long scale scores, Full ET-PRL supplements the compact state representation with implicit historical information and can identify gradual equipment performance degradation and seasonal drift as events that require intervention, which explains its lower daily energy consumption than Short-scale Only.
 
 For the two-layer threshold ablation, Local Threshold Only and Global Threshold Only obtain ACR values of 1.9513 and 1.9565, respectively, both lower than the 2.1525 of Full ET-PRL. Their daily energy consumption values are 7367.57 and 7409.42 kWh/day, respectively, which are also higher than that of Full ET-PRL. Mechanistically, Local Threshold Only tends to overfollow recent changes, meaning that it is overly sensitive to short term disturbances while lacking long term baseline constraints. Global Threshold Only, by contrast, tends to show delayed response, meaning that it responds too slowly to minute scale disturbances and therefore requires larger compensatory control afterward. These two simplified variants correspond to the loss of fast response capability and long term steady state constraint, respectively. With two-layer threshold coordination, Full ET-PRL obtains lower daily energy consumption and a higher ACR in Table 3 while maintaining a PPR of 94.41%.
 
-(5) Parameter Sensitivity Analysis
+#### (5) Parameter Sensitivity Analysis
 
 To further show how streaming gate hyperparameters affect trigger count, reward, and daily energy consumption in the proposed ET-PRL method, we conduct single factor parameter perturbation experiments. In each run, we adjust only one parameter, keep the remaining parameters at their baseline values, and evaluate $R_{\text{test}}$, $N_{\text{daily}}$, and $E_{\text{daily}}$ on the same test set. The analyzed parameters are the quantile level $q$, the bias correction term $b_{\mathrm{bias}}$, the hysteresis margin $m_{\mathrm{hys}}$, the local window length $W$, and the short scale weight $w_s$.
 
-1. Quantile Level $q$
+#### 1. Quantile Level $q$
 
 <table>
-    <caption><strong>Table 4</strong> Sensitivity results for quantile level $q$</caption>
+    <caption>Sensitivity results for quantile level $q$</caption>
     <thead>
         <tr>
             <th>Parameter Value</th>
@@ -566,10 +560,10 @@ To further show how streaming gate hyperparameters affect trigger count, reward,
 
 The quantile level $q$ mainly changes the trend in trigger frequency associated with the quantile reference. As shown in Table 4, when $q$ increases from 0.60 to 0.90, $N_{\text{daily}}$ increases from 0.78 to 5.43, $R_{\text{test}}$ increases from 1103.87 to 1678.75, and $E_{\text{daily}}$ also increases from 6095.77 kWh/day to 7513.54 kWh/day. Overall, a lower $q$ leads to fewer gate triggers, insufficient action updates, and a lower reward, while energy consumption is also lower. A higher $q$ increases the trigger count and makes the controller update setpoints more often, which improves reward but raises daily energy consumption. Therefore, increasing $q$ mainly produces a simultaneous increase in reward and trigger count at the cost of higher daily energy consumption.
 
-2. Bias Correction Term $b_{\mathrm{bias}}$
+#### 2. Bias Correction Term $b_{\mathrm{bias}}$
 
 <table>
-    <caption><strong>Table 5</strong> Sensitivity results for bias correction term $b_{\mathrm{bias}}$</caption>
+    <caption>Sensitivity results for bias correction term $b_{\mathrm{bias}}$</caption>
     <thead>
         <tr>
             <th>Parameter Value</th>
@@ -594,10 +588,10 @@ The quantile level $q$ mainly changes the trend in trigger frequency associated 
 
 The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger count. As shown in Table 5, when $b_{\mathrm{bias}}$ is -0.13 or -0.09, the gate does not trigger, $N_{\text{daily}}$ remains 0, $R_{\text{test}}$ stays at 634.80, and $E_{\text{daily}}$ stays at 4144.14 kWh/day. As $b_{\mathrm{bias}}$ increases to -0.05, the gate begins to trigger, and both $R_{\text{test}}$ and $E_{\text{daily}}$ increase. When $b_{\mathrm{bias}}$ further increases to -0.01 and 0.03, $N_{\text{daily}}$ rises to 5.89 and 7.19, and the reward also increases to 1752.93 and 1819.57. Further increases to 0.07 keep the trigger count at a relatively high level, but the reward no longer improves. Overall, increasing $b_{\mathrm{bias}}$ shifts the gate from almost no updates to frequent updates. A moderate increase of $b_{\mathrm{bias}}$ can substantially improve reward, but an overly high value maintains high energy consumption while providing limited additional benefit.
 
-3. Hysteresis Margin $m_{\mathrm{hys}}$
+#### 3. Hysteresis Margin $m_{\mathrm{hys}}$
 
 <table>
-    <caption><strong>Table 6</strong> Sensitivity results for hysteresis margin $m_{\mathrm{hys}}$</caption>
+    <caption>Sensitivity results for hysteresis margin $m_{\mathrm{hys}}$</caption>
     <thead>
         <tr>
             <th>Parameter Value</th>
@@ -622,10 +616,10 @@ The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger c
 
 When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect is to suppress triggering. As shown in Table 6, when $m_{\mathrm{hys}}$ is 0, the gate triggers most frequently, $N_{\text{daily}}$ reaches 9.16, and $E_{\text{daily}}$ reaches 7799.43 kWh/day. As $m_{\mathrm{hys}}$ increases to 0.02 and 0.03, the trigger count decreases to 1.44 and 0.78, and energy consumption decreases to 6516.55 and 6802.66 kWh/day. When $m_{\mathrm{hys}}$ further increases to 0.07 and 0.09, the gate no longer triggers and $R_{\text{test}}$ drops to 634.80. Overall, increasing $m_{\mathrm{hys}}$ reduces frequent updates near the threshold and lowers energy consumption, but an overly large margin causes the controller to miss necessary updates and degrades reward to the no trigger state.
 
-4. Local Window Length $W$
+#### 4. Local Window Length $W$
 
 <table>
-    <caption><strong>Table 7</strong> Sensitivity results for local window length $W$</caption>
+    <caption>Sensitivity results for local window length $W$</caption>
     <thead>
         <tr>
             <th>Parameter Value</th>
@@ -649,10 +643,10 @@ When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect 
 
 When the local window length $W$ increases, local statistics cover a longer time range and short term fluctuations are further smoothed. As shown in Table 7, under the window setting $W=60$, $N_{\text{daily}}$ is 2.22, $E_{\text{daily}}$ is 8410.21 kWh/day, and $R_{\text{test}}$ remains at a relatively high value of 1909.19. As $W$ increases to the range from 90 to 180, the trigger count generally decreases to 0.85 to 1.83, energy consumption decreases to 5971.89 to 7115.59 kWh/day, and the reward becomes lower than under the short window setting. Overall, a shorter $W$ strengthens the gate response to recent disturbances, yielding a higher reward but higher energy consumption. A longer $W$ reduces triggering and energy consumption, but it may also weaken the response to rapid disturbances and reduce reward.
 
-5. Short Scale Weight $w_s$
+#### 5. Short Scale Weight $w_s$
 
 <table>
-    <caption><strong>Table 8</strong> Sensitivity results for short scale weight $w_s$</caption>
+    <caption>Sensitivity results for short scale weight $w_s$</caption>
     <thead>
         <tr>
             <th>Parameter Value</th>
@@ -681,15 +675,17 @@ When the short scale weight $w_s$ increases, short term disturbances account for
 
 Overall, these parameters affect reward and energy consumption mainly by changing the trigger count. Increasing $q$ and $w_s$ generally raises the trigger frequency and improves reward, but it also increases energy consumption. Increasing $m_{\mathrm{hys}}$ suppresses triggering, and an overly large value keeps the control action unchanged for an extended period. Increasing $b_{\mathrm{bias}}$ shifts the gate from almost no triggering to frequent triggering. A moderate value substantially improves reward, whereas the benefit becomes limited when the value is too high. Increasing $W$ smooths short term fluctuations and reduces both trigger count and energy consumption, but it may weaken the response to rapid disturbances. Therefore, when selecting parameter values, we first exclude values that make the gate never trigger or trigger too often. Among the remaining values, we prioritize parameter combinations that produce fewer triggers without clear reward degradation, and avoid introducing excessive energy increases only to improve reward.
 
-# 6. Conclusion
+# Conclusion
 
 This paper proposes event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL) to address the redundant computation and actuator wear caused by fixed-step reinforcement learning control in building HVAC systems. ET-PRL constructs an online gating mechanism by combining streaming multi-scale anomaly scoring with a two-layer adaptive threshold, and couples it with a predictive DQN controller so that control actions are updated only when the system state deviates significantly from the recent reference distribution. Experimental results show that, compared with the fixed-step reinforcement learning baseline, the proposed method reduces action updates by 53.54% while achieving a 2.13% energy saving rate and retaining 94.41% of baseline performance, demonstrating its ability to achieve an effective trade-off between control performance and execution cost. 
 
 Future work will focus on extending the event triggering mechanism with uncertainty awareness by jointly modeling load prediction uncertainty, sensor noise, and anomaly-score confidence in the trigger decision. We hope to further reduce false triggers and missed triggers under imperfect measurements and operating-condition shifts.
 
-# Appendix A: Supplementary Tables
+\appendix
 
-Table A1 Key design parameters of the HVAC system
+# Supplementary Tables
+
+Table: Key design parameters of the HVAC system
 
 <table>
 <thead>
@@ -733,7 +729,7 @@ Table A1 Key design parameters of the HVAC system
 </tbody>
 </table>
 
-Table A2 Key Hyperparameter Settings
+Table: Key Hyperparameter Settings
 
 <table>
 <thead>
@@ -767,7 +763,7 @@ Table A2 Key Hyperparameter Settings
 </tbody>
 </table>
 
-Table A3 Evaluation metrics and optimization objectives
+Table: Evaluation metrics and optimization objectives
 
 <table>
 <thead>
@@ -798,67 +794,3 @@ Table A3 Evaluation metrics and optimization objectives
 <tr><td>Average reward per update</td><td>$\bar{R}_{\text{update}}$</td><td>-</td><td>Maximize</td></tr>
 </tbody>
 </table>
-
-# Declaration of generative AI and AI-assisted technologies in the writing process
-
-During the preparation of this work, the authors used GitHub Copilot to assist with language polishing, formatting checks, and reference metadata checking. After using this tool, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
-
-# References
-
-[1] Arghand, Taha, et al. "Individually controlled localized chilled beam combined with chilled ceiling: Thermal environment." Building and Environment 282 (2025): 113322. https://doi.org/10.1016/j.buildenv.2025.113322.
-
-[2] Wu, Zeqing, et al. "AE-TD3 with adaptive expert guidance: towards responsive deep reinforcement learning for building HVAC control systems." Energy and Buildings (2025): 116744. https://doi.org/10.1016/j.enbuild.2025.116744.
-
-[3] Xia, Yihan, et al. "Federated accelerated deep reinforcement learning for multi-zone HVAC control in commercial buildings." IEEE Transactions on Smart Grid 16.3 (2025): 2599-2610. https://doi.org/10.1109/TSG.2024.3524756.
-
-[4] Shin, Minjae, et al. "Development of an HVAC system control method using weather forecasting data with deep reinforcement learning algorithms." Building and Environment 248 (2024): 111069. https://doi.org/10.1016/j.buildenv.2023.111069.
-
-[5] Xue, Zhouzhou, Zhaoxu Yu, and Shugang Li. "Event-triggered adaptive neural control for uncertain nontriangular nonlinear systems with time-varying delays." International Journal of Control, Automation and Systems 20.12 (2022): 4090-4099. https://doi.org/10.1007/s12555-021-0544-8.
-
-[6] Coraci, Davide, et al. "An innovative heterogeneous transfer learning framework to enhance the scalability of deep reinforcement learning controllers in buildings with integrated energy systems." Building simulation. Vol. 17. No. 5. Beijing: Tsinghua University Press, 2024. https://doi.org/10.1007/s12273-024-1109-6.
-
-[7] Gu, Zhou, Ruiyan Cao, and Engang Tian. "Reinforcement learning-based event-triggered optimal control of power systems with control input saturation." IEEE Transactions on Industrial Informatics 21.2 (2024): 1528-1536. https://doi.org/10.1109/TII.2024.3485724.
-
-[8] Wang, Ke, Zhuo Tang, and Chaoxu Mu. "Dynamic event-triggered model-free reinforcement learning for cooperative control of multiagent systems." IEEE Transactions on Reliability 74.3 (2024): 3166-3179. https://doi.org/10.1109/TR.2024.3485211.
-
-[9] Fu, Qiming, et al. "ED-DQN: An event-driven deep reinforcement learning control method for multi-zone residential buildings." Building and Environment 242 (2023): 110546. https://doi.org/10.1016/j.buildenv.2023.110546.
-
-[10] Li, Wenzhuo, Hangxin Li, and Shengwei Wang. "An event-driven multi-agent based distributed optimal control strategy for HVAC systems in IoT-enabled smart buildings." Automation in Construction 132 (2021): 103919. https://doi.org/10.1016/j.autcon.2021.103919.
-
-[11] Wang, Xin, et al. "Observer-based event-triggered optimal control for nonlinear multiagent systems with input delay via reinforcement learning strategy." IEEE Transactions on Emerging Topics in Computational Intelligence 9.3 (2024): 2398-2409. https://doi.org/10.1109/TETCI.2024.3452685.
-
-[12] Chaya, P., et al. "Human-Centric Smart Energy Optimization and Automation System." 2025 3rd International Conference on Intelligent Cyber Physical Systems and Internet of Things (ICoICI). IEEE, 2025. https://doi.org/10.1109/ICOICI65217.2025.11253954.
-
-[13] Choi, Youngsik, et al. "Optimization-informed rule extraction for HVAC system: A case study of dedicated outdoor air system control in a mixed-humid climate zone." Energy and Buildings 295 (2023): 113295. https://doi.org/10.1016/j.enbuild.2023.113295.
-
-[14] Lee, Dongkyu, Jinhwa Jeong, and Young Tae Chae. "Application of deep reinforcement learning for proportional–integral–derivative controller tuning on air handling unit system in existing commercial building." Buildings 14.1 (2023): 66. https://doi.org/10.3390/buildings14010066.
-
-[15] Chojecki, Adrian, Arkadiusz Ambroziak, and Piotr Borkowski. "Fuzzy controllers instead of classical PIDs in HVAC equipment: Dusting off a well-known technology and Today's implementation for better energy efficiency and user comfort." Energies 16.7 (2023): 2967. https://doi.org/10.3390/en16072967.
-
-[16] Tang, Lingfeng, et al. "Deeply flexible commercial building HVAC system control: A physics-aware deep learning-embedded MPC approach." Applied Energy 388 (2025): 125631. https://doi.org/10.1016/j.apenergy.2025.125631.
-
-[17] Lu, Shengze, et al. "Exploring the comprehensive integration of artificial intelligence in optimizing HVAC system operations: A review and future outlook." Results in Engineering 25 (2025): 103765. https://doi.org/10.1016/j.rineng.2024.103765.
-
-[18] Fu, Qiming, et al. "Applications of reinforcement learning for building energy efficiency control: A review." Journal of Building Engineering 50 (2022): 104165. https://doi.org/10.1016/j.jobe.2022.104165.
-
-[19] Savino, Sabrina, et al. "Deploying deep reinforcement learning for low-level HVAC control in multi-zone buildings: A comparative study with ASHRAE G36 sequences." Energy and Buildings (2025): 116456. https://doi.org/10.1016/j.enbuild.2025.116456.
-
-[20] Wang, Man, and Borong Lin. "MF^2: Model-free reinforcement learning for modeling-free building HVAC control with data-driven environment construction in a residential building." Building and Environment 244 (2023): 110816. https://doi.org/10.1016/j.buildenv.2023.110816.
-
-[21] Zhuang, Dian, et al. "Data-driven predictive control for smart HVAC system in IoT-integrated buildings with time-series forecasting and reinforcement learning." Applied Energy 338 (2023): 120936. https://doi.org/10.1016/j.apenergy.2023.120936.
-
-[22] Manjavacas, Antonio, et al. "An experimental evaluation of deep reinforcement learning algorithms for HVAC control." Artificial Intelligence Review 57.7 (2024): 173. https://doi.org/10.1007/s10462-024-10819-x.
-
-[23] Li, Kai, Wei Ni, and Falko Dressler. "LSTM-characterized deep reinforcement learning for continuous flight control and resource allocation in UAV-assisted sensor network." IEEE Internet of Things Journal 9.6 (2021): 4179-4189. https://doi.org/10.1109/JIOT.2021.3102831.
-
-[24] Al Sayed, Khalil, et al. "Reinforcement learning for HVAC control in intelligent buildings: A technical and conceptual review." Journal of Building Engineering 95 (2024): 110085. https://doi.org/10.1016/j.jobe.2024.110085.
-
-[25] He, Kun, et al. "Predictive control optimization of chiller plants based on deep reinforcement learning." Journal of Building Engineering 76 (2023): 107158. https://doi.org/10.1016/j.jobe.2023.107158.
-
-[26] Liu, Xinghua, et al. "Event-triggered load frequency control of smart grids under deception attacks." IET Control Theory & Applications 15.10 (2021): 1335-1345. https://doi.org/10.1049/cth2.12124.
-
-[27] Liu, Derong, et al. "Adaptive dynamic programming for control: A survey and recent advances." IEEE Transactions on Systems, Man, and Cybernetics: Systems 51.1 (2020): 142-160. https://doi.org/10.1109/TSMC.2020.3042876.
-
-[28] Wang, Yuan, et al. "Dynamic event-triggered control for persistent dwell-time switched nonlinear multiagent systems with random packet loss." IEEE Transactions on Systems, Man, and Cybernetics: Systems 54.4 (2023): 2045-2054. https://doi.org/10.1109/TSMC.2023.3338465.
-
-[29] Liu, Xin, et al. "Building-MoE: A closed-loop routing sparse mixture-of-experts time-series foundation model for building short-term load forecasting." Building Simulation. Beijing: Tsinghua University Press, 2026. https://doi.org/10.1007/s12273-026-1403-6.
