@@ -24,7 +24,7 @@ Driven by the above motivations, we propose a new HVAC control method, event tri
 
 - We establish a predictive RL control algorithm with dynamic event triggering, reducing redundant control updates while maintaining performance during stable periods.
 
-- We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost. The code and data are available at https://github.com/landfallbox/ET-PRL.git.
+- We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost.
 
 # 2. Related Work
 
@@ -41,8 +41,6 @@ Building on these studies, we reformulate HVAC event triggering as an online uns
 Given the thermal inertia and delayed response of building HVAC systems, together with distribution shift caused by seasonal changes in operating conditions, traditional event triggered control methods that rely on offline calibration and static thresholds usually require frequent recalibration when transferred across scenarios, which increases engineering maintenance cost. To address this issue, we propose event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand control method that couples streaming anomaly gating with DRL. The overall architecture of the proposed method is shown in Figure 2.
 
 ![Figure 2 Architecture of the proposed ET-PRL method, comprising offline training and model preparation (Step 1) and online streaming event detection and control (Step 2)](../pics/fig2_plain.svg)
-
-Figure 2 presents the architecture of the proposed ET-PRL method, which comprises two stages: offline training and model preparation (Step 1), and online streaming event detection and control (Step 2).
 
 In Step 1, historical operating data are used to train the load prediction model and the DQN policy offline. The LSTM provides a one-step-ahead cooling load estimate, which is combined with the current cooling load and outdoor wet-bulb temperature to form the compact state used by the controller. After training, both models are kept fixed during online deployment.
 
@@ -221,38 +219,33 @@ Specifically, the streaming gate first computes scale-specific anomaly scores ov
 
 $$a_t = \begin{cases}\pi_{\mathrm{DQN}}(s_t), & \mathrm{Trigger}(s_t) = 1 \\a_{t-1}, & \mathrm{Trigger}(s_t) = 0\end{cases} \tag{23}$$
 
-The complete online execution procedure is summarized below.
+The complete online execution procedure of the proposed ET-PRL method is summarized below.
 
-**Algorithm 1. Event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL) online control procedure**
-
-```text
-Input: Trained DQN policy $\pi_{\mathrm{DQN}}$; gate parameters $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,m_{\mathrm{hys}}\}$ defined in Eqs. (7)-(16); minimum trigger interval $\Delta_{\min}$; total control horizon $T$.
-Output: Control setpoint sequence $\{a_t\}_{t=1}^{T}$.
-
-Initialization:
-    Set the initial control action a_0
-    Set the last trigger time t_last = -∞
-    Initialize the anomaly score sliding window A_t^(W)
-
-for t = 1, ..., T do
-    Collect Q_load^t, T_wb^t, and Q_hat_load^(t+1)
-    Construct the predictive state s_t = [Q_load^t, T_wb^t, Q_hat_load^(t+1)]
-    Compute the scale-specific anomaly scores A_short(s_t), A_medium(s_t), and A_long(s_t)
-    Compute the multi-scale fused anomaly score A(s_t) according to Eq. (8)
-    Compute the candidate threshold, local threshold, and global threshold according to Eqs. (11)-(14)
-    Compute the adaptive triggering threshold tau_t* according to Eq. (15)
-
-    if A(s_t) > tau_t* and t - t_last > Delta_min then
-        Infer a new control setpoint using the trained DQN policy: a_t = pi_DQN(s_t)
-        Update the last trigger time: t_last = t
-    else
-        Hold the previous control setpoint: a_t = a_(t-1)
-    end if
-
-    Execute a_t
-    Append A(s_t) to A_t^(W) for use in the next threshold update
-end for
-```
+\begin{paperalgorithm}{alg:et-prl-online-control}{ET-PRL online control procedure}
+\algline{\textbf{Input:} Trained DQN policy $\pi_{\mathrm{DQN}}$; gate parameters $\Omega$; minimum trigger interval $\Delta_{\min}$; total control horizon $T$.}
+\algline{Here, $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,m_{\mathrm{hys}}\}$ is defined in Eqs. (7)-(16).}
+\algline{\textbf{Output:} Control setpoint sequence $\{a_t\}_{t=1}^{T}$.}
+\algline{\textbf{Initialization:}}
+\algline[\paperalgindent]{Set the initial control action $a_0$.}
+\algline[\paperalgindent]{Set the last trigger time $t_{\mathrm{last}}=-\infty$.}
+\algline[\paperalgindent]{Initialize the anomaly score sliding window $\mathcal{A}_t^{(W)}$.}
+\algline{\textbf{for} $t=1,\ldots,T$ \textbf{do}}
+\algline[\paperalgindent]{Collect $Q_{\mathrm{load}}^t$, $T_{\mathrm{wb}}^t$, and $\hat{Q}_{\mathrm{load}}^{t+1}$.}
+\algline[\paperalgindent]{Construct the predictive state $s_t=[Q_{\mathrm{load}}^t,T_{\mathrm{wb}}^t,\hat{Q}_{\mathrm{load}}^{t+1}]$.}
+\algline[\paperalgindent]{Compute $A_{\mathrm{short}}(s_t)$, $A_{\mathrm{medium}}(s_t)$, and $A_{\mathrm{long}}(s_t)$.}
+\algline[\paperalgindent]{Compute $A(s_t)$ according to Eq. (8).}
+\algline[\paperalgindent]{Compute the candidate, local, and global thresholds according to Eqs. (11)-(14).}
+\algline[\paperalgindent]{Compute $\tau_t^*$ according to Eq. (15).}
+\algline[\paperalgindent]{\textbf{if} $A(s_t)>\tau_t^*$ and $t-t_{\mathrm{last}}>\Delta_{\min}$ \textbf{then}}
+\algline[\paperalgsubindent]{Infer a new control setpoint using the trained DQN policy: $a_t=\pi_{\mathrm{DQN}}(s_t)$.}
+\algline[\paperalgsubindent]{Update the last trigger time: $t_{\mathrm{last}}=t$.}
+\algline[\paperalgindent]{\textbf{else}}
+\algline[\paperalgsubindent]{Hold the previous control setpoint: $a_t=a_{t-1}$.}
+\algline[\paperalgindent]{\textbf{end if}}
+\algline[\paperalgindent]{Execute $a_t$.}
+\algline[\paperalgindent]{Append $A(s_t)$ to $\mathcal{A}_t^{(W)}$ for the next threshold update.}
+\algline{\textbf{end for}}
+\end{paperalgorithm}
 
 # 4. Case System and Simulation Environment
 
@@ -296,11 +289,11 @@ All four RL strategies reuse the same trained DQN policy network and state input
 
 To comprehensively evaluate the performance of the proposed ET-PRL method, we construct four groups of evaluation metrics, namely energy efficiency, temperature control and stability, control sparsity, and execution level statistics, to ensure the completeness and reproducibility of the experimental results.
 
-1. Energy efficiency metrics
+*1. Energy efficiency metrics.*
 
 Energy efficiency is a core optimization objective in building energy management. We use the operating power of the chiller as the primary measurement target.
 
-（1）Average daily energy consumption
+(1) Average daily energy consumption.
 
 Average daily energy consumption characterizes the average daily electricity use over the test period in kWh/day, as defined in Eq. (25):
 
@@ -310,7 +303,7 @@ $$
 
 where $D$ is the number of test days, $T_d$ is the number of time steps on day $d$, $\Delta t$ is the sampling interval in hours, and $P_{\text{chiller}}(t)$ is the chiller operating power at time step $t$ in kW.
 
-（2）Relative energy saving rate
+(2) Relative energy saving rate.
 
 Relative energy saving rate quantifies the energy saving effect of each evaluated method relative to the common baseline, as defined in Eq. (26):
 
@@ -320,7 +313,7 @@ $$
 
 where $E_{\text{base}}$ is the cumulative energy consumption of the common baseline, and $E_i$ is the cumulative energy consumption of the $i$th method.
 
-（3）Average chiller power
+(3) Average chiller power.
 
 Average chiller power reflects the average load level and operating intensity over the whole test period, as defined in Eq. (27):
 
@@ -330,11 +323,11 @@ $$
 
 where $N$ is the total number of test steps. This metric is physically related to $E_{\text{daily}}$, but the two metrics characterize average load intensity and cumulative energy consumption, respectively.
 
-2. Temperature control and stability metrics
+*2. Temperature control and stability metrics.*
 
 We use the chilled water supply temperature as the controlled variable, with the acceptable range set from $15.0^\circ\mathrm{C}$ to $19.0^\circ\mathrm{C}$.
 
-（1）Performance preservation rate
+(1) Performance preservation rate.
 
 Performance preservation rate measures how well the event-driven mechanism preserves the cumulative reward of the fixed-step dense control baseline under sparse actuation, as defined in Eq. (28):
 
@@ -344,7 +337,7 @@ $$
 
 where $R_{\text{event}}$ and $R_{\text{dense}}$ are the cumulative rewards of the event-driven strategy and the fixed-step dense control strategy over the same test period.
 
-（2）Action smoothness
+(2) Action smoothness.
 
 Action smoothness quantifies the impact intensity imposed on the actuator and is defined as the mean absolute change between adjacent control actions, as shown in Eq. (29):
 
@@ -354,11 +347,11 @@ $$
 
 A smaller value indicates smoother control actions and a lower risk of actuator oscillation.
 
-3. Control sparsity metrics
+*3. Control sparsity metrics.*
 
 This group of metrics quantifies how effectively the event-driven mechanism reduces communication load and actuator wear.
 
-（1）Total action updates
+(1) Total action updates.
 
 Total action updates count the number of actual control action changes during the test period, as defined in Eq. (30):
 
@@ -368,7 +361,7 @@ $$
 
 where $\mathbb{I}(\cdot)$ is the indicator function. Under the fixed-step strategy, $N_{\text{update}}$ is typically close to $N$, whereas under the event-driven strategy, $N_{\text{update}}$ is typically much smaller than $N$.
 
-（2）Daily trigger count
+(2) Daily trigger count.
 
 Daily trigger count is a physical measure of control frequency and reflects the average number of control actions executed per day, as defined in Eq. (31):
 
@@ -378,7 +371,7 @@ $$
 
 This metric directly reflects actuator wear risk through the actual number of control actions executed per day.
 
-（3）Actuation compression ratio
+(3) Actuation compression ratio.
 
 Actuation compression ratio measures the ratio of action updates between the fixed-step strategy and the evaluated strategy, as defined in Eq. (32):
 
@@ -388,7 +381,7 @@ $$
 
 where $N_{\text{fixed}}$ and $N_{\text{update}}$ are the total numbers of action updates under the fixed-step strategy and the evaluated strategy, respectively. A larger ACR indicates a stronger sparsification effect of the event-driven mechanism on control actions.
 
-（4）Action reduction rate
+(4) Action reduction rate.
 
 Action reduction rate measures the proportion of action updates reduced by the evaluated strategy relative to the fixed-step strategy, as defined in Eq. (33):
 
@@ -398,11 +391,11 @@ $$
 
 A larger ARR indicates more effective compression of action updates and facilitates engineering interpretation and comparison across methods.
 
-4. Execution level statistics
+*4. Execution level statistics.*
 
 To characterize the operating behavior of the gate mechanism and the execution cost of the strategy, we further report the following execution level statistics.
 
-（1）Cumulative test reward
+(1) Cumulative test reward.
 
 Cumulative test reward measures the overall control benefit accumulated during the test period, as defined in Eq. (34):
 
@@ -410,7 +403,7 @@ $$
 R_{\text{test}} = \sum_{t=1}^{N} r_t \quad \tag{34}
 $$
 
-（2）Average reward per update
+(2) Average reward per update.
 
 Average reward per update measures the average control benefit per unit action update cost, as defined in Eq. (35):
 
@@ -420,7 +413,7 @@ $$
 
 where $N_{\text{update}}$ is the number of actual action updates. Under the fixed-step strategy, $N_{\text{update}} = N$, whereas under the event-driven strategy, $N_{\text{update}}$ is usually much smaller than $N$.
 
-（3）Trigger interval
+(3) Trigger interval.
 
 Trigger interval measures the actual sparsity with which the gating layer releases action updates, as defined in Eq. (36):
 
@@ -430,7 +423,7 @@ $$
 
 where $t_k$ denotes the time step of the $k$th event trigger and $K$ is the total number of triggers in the test trajectory. The trigger interval is an observed statistic from the test trajectory and differs from the minimum trigger interval constraint parameter $\Delta_{\min}$ used in the gating mechanism.
 
-（4）Hold length
+(4) Hold length.
 
 Hold length measures setpoint stability at the execution layer, as defined in Eq. (37):
 
@@ -489,7 +482,7 @@ The above results show that ET-PRL not only reduces the action update frequency 
 
 Table 2 Temporal sparsity and action holding statistics of different control strategies
 
-| **Strategy** | **Mean Trigger Interval (steps)** | **Daily Trigger Count** | **Mean Action Holding Length (steps)** | **95th percentile $P_{95}$ (steps)** |
+| **Strategy** | **Mean Trigger Interval (steps)** | **Daily Trigger Count** | **Mean Holding Length (steps)** | **95th Percentile $P_{95}$ (steps)** |
 | --- | --- | --- | --- | --- |
 | TTC-RL-1 | 1.000 | 275.25 | 7.57 | 42.9 |
 | ST-ETC | 1.249 | 220.31 | 7.89 | 43.3 |
@@ -545,84 +538,144 @@ To further show how streaming gate hyperparameters affect trigger count, reward,
 
 1. Quantile Level $q$
 
-**Table 4** Sensitivity results for quantile level $q$
-
-| Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
-| --- | --- | --- | --- |
-| **$q$** | **$R_{\text{test}}$** | **$N_{\text{daily}}$** | **$E_{\text{daily}}$，kWh/day** |
-| 0.55 | 1284.49 | 0.65 | 6921.91 |
-| 0.60 | 1103.87 | 0.78 | 6095.77 |
-| 0.65 | 1241.99 | 1.05 | 6146.26 |
-| 0.70 | 1325.45 | 1.50 | 6329.57 |
-| 0.75 | 1397.99 | 1.83 | 6632.52 |
-| 0.80 | 1531.77 | 2.29 | 7230.91 |
-| 0.85 | 1560.47 | 3.20 | 7097.17 |
-| 0.90 | 1678.75 | 5.43 | 7513.54 |
+<table>
+    <caption><strong>Table 4</strong> Sensitivity results for quantile level $q$</caption>
+    <thead>
+        <tr>
+            <th>Parameter Value</th>
+            <th colspan="3">Performance Metrics</th>
+        </tr>
+        <tr>
+            <th>$q$</th>
+            <th>$R_{\text{test}}$</th>
+            <th>$N_{\text{daily}}$</th>
+            <th>$E_{\text{daily}}$ (kWh/day)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>0.55</td><td>1284.49</td><td>0.65</td><td>6921.91</td></tr>
+        <tr><td>0.60</td><td>1103.87</td><td>0.78</td><td>6095.77</td></tr>
+        <tr><td>0.65</td><td>1241.99</td><td>1.05</td><td>6146.26</td></tr>
+        <tr><td>0.70</td><td>1325.45</td><td>1.50</td><td>6329.57</td></tr>
+        <tr><td>0.75</td><td>1397.99</td><td>1.83</td><td>6632.52</td></tr>
+        <tr><td>0.80</td><td>1531.77</td><td>2.29</td><td>7230.91</td></tr>
+        <tr><td>0.85</td><td>1560.47</td><td>3.20</td><td>7097.17</td></tr>
+        <tr><td>0.90</td><td>1678.75</td><td>5.43</td><td>7513.54</td></tr>
+    </tbody>
+</table>
 
 The quantile level $q$ mainly changes the trend in trigger frequency associated with the quantile reference. As shown in Table 4, when $q$ increases from 0.60 to 0.90, $N_{\text{daily}}$ increases from 0.78 to 5.43, $R_{\text{test}}$ increases from 1103.87 to 1678.75, and $E_{\text{daily}}$ also increases from 6095.77 kWh/day to 7513.54 kWh/day. Overall, a lower $q$ leads to fewer gate triggers, insufficient action updates, and a lower reward, while energy consumption is also lower. A higher $q$ increases the trigger count and makes the controller update setpoints more often, which improves reward but raises daily energy consumption. Therefore, increasing $q$ mainly produces a simultaneous increase in reward and trigger count at the cost of higher daily energy consumption.
 
 2. Bias Correction Term $b_{\mathrm{bias}}$
 
-**Table 5** Sensitivity results for bias correction term $b_{\mathrm{bias}}$
-
-| Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
-| --- | --- | --- | --- |
-| **$b_{\mathrm{bias}}$** | **$R_{\text{test}}$** | **$N_{\text{daily}}$** | **$E_{\text{daily}}$，kWh/day** |
-| -0.13 | 634.80 | 0.00 | 4144.14 |
-| -0.09 | 634.80 | 0.00 | 4144.14 |
-| -0.05 | 1241.28 | 0.85 | 6884.32 |
-| -0.01 | 1752.93 | 5.89 | 7537.51 |
-| 0.03 | 1819.57 | 7.19 | 7439.78 |
-| 0.07 | 1750.28 | 6.02 | 7638.46 |
+<table>
+    <caption><strong>Table 5</strong> Sensitivity results for bias correction term $b_{\mathrm{bias}}$</caption>
+    <thead>
+        <tr>
+            <th>Parameter Value</th>
+            <th colspan="3">Performance Metrics</th>
+        </tr>
+        <tr>
+            <th>$b_{\mathrm{bias}}$</th>
+            <th>$R_{\text{test}}$</th>
+            <th>$N_{\text{daily}}$</th>
+            <th>$E_{\text{daily}}$ (kWh/day)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>-0.13</td><td>634.80</td><td>0.00</td><td>4144.14</td></tr>
+        <tr><td>-0.09</td><td>634.80</td><td>0.00</td><td>4144.14</td></tr>
+        <tr><td>-0.05</td><td>1241.28</td><td>0.85</td><td>6884.32</td></tr>
+        <tr><td>-0.01</td><td>1752.93</td><td>5.89</td><td>7537.51</td></tr>
+        <tr><td>0.03</td><td>1819.57</td><td>7.19</td><td>7439.78</td></tr>
+        <tr><td>0.07</td><td>1750.28</td><td>6.02</td><td>7638.46</td></tr>
+    </tbody>
+</table>
 
 The bias correction term $b_{\mathrm{bias}}$ markedly changes the gate trigger count. As shown in Table 5, when $b_{\mathrm{bias}}$ is -0.13 or -0.09, the gate does not trigger, $N_{\text{daily}}$ remains 0, $R_{\text{test}}$ stays at 634.80, and $E_{\text{daily}}$ stays at 4144.14 kWh/day. As $b_{\mathrm{bias}}$ increases to -0.05, the gate begins to trigger, and both $R_{\text{test}}$ and $E_{\text{daily}}$ increase. When $b_{\mathrm{bias}}$ further increases to -0.01 and 0.03, $N_{\text{daily}}$ rises to 5.89 and 7.19, and the reward also increases to 1752.93 and 1819.57. Further increases to 0.07 keep the trigger count at a relatively high level, but the reward no longer improves. Overall, increasing $b_{\mathrm{bias}}$ shifts the gate from almost no updates to frequent updates. A moderate increase of $b_{\mathrm{bias}}$ can substantially improve reward, but an overly high value maintains high energy consumption while providing limited additional benefit.
 
 3. Hysteresis Margin $m_{\mathrm{hys}}$
 
-**Table 6** Sensitivity results for hysteresis margin $m_{\mathrm{hys}}$
-
-| Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
-| --- | --- | --- | --- |
-| **$m_{\mathrm{hys}}$** | **$R_{\text{test}}$** | **$N_{\text{daily}}$** | **$E_{\text{daily}}$，kWh/day** |
-| 0.00 | 1565.44 | 9.16 | 7799.43 |
-| 0.02 | 1309.13 | 1.44 | 6516.55 |
-| 0.03 | 1453.35 | 0.78 | 6802.66 |
-| 0.05 | 1284.91 | 0.20 | 6863.50 |
-| 0.07 | 634.80 | 0.00 | 4144.14 |
-| 0.09 | 634.80 | 0.00 | 4144.14 |
+<table>
+    <caption><strong>Table 6</strong> Sensitivity results for hysteresis margin $m_{\mathrm{hys}}$</caption>
+    <thead>
+        <tr>
+            <th>Parameter Value</th>
+            <th colspan="3">Performance Metrics</th>
+        </tr>
+        <tr>
+            <th>$m_{\mathrm{hys}}$</th>
+            <th>$R_{\text{test}}$</th>
+            <th>$N_{\text{daily}}$</th>
+            <th>$E_{\text{daily}}$ (kWh/day)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>0.00</td><td>1565.44</td><td>9.16</td><td>7799.43</td></tr>
+        <tr><td>0.02</td><td>1309.13</td><td>1.44</td><td>6516.55</td></tr>
+        <tr><td>0.03</td><td>1453.35</td><td>0.78</td><td>6802.66</td></tr>
+        <tr><td>0.05</td><td>1284.91</td><td>0.20</td><td>6863.50</td></tr>
+        <tr><td>0.07</td><td>634.80</td><td>0.00</td><td>4144.14</td></tr>
+        <tr><td>0.09</td><td>634.80</td><td>0.00</td><td>4144.14</td></tr>
+    </tbody>
+</table>
 
 When the hysteresis margin $m_{\mathrm{hys}}$ increases, its most direct effect is to suppress triggering. As shown in Table 6, when $m_{\mathrm{hys}}$ is 0, the gate triggers most frequently, $N_{\text{daily}}$ reaches 9.16, and $E_{\text{daily}}$ reaches 7799.43 kWh/day. As $m_{\mathrm{hys}}$ increases to 0.02 and 0.03, the trigger count decreases to 1.44 and 0.78, and energy consumption decreases to 6516.55 and 6802.66 kWh/day. When $m_{\mathrm{hys}}$ further increases to 0.07 and 0.09, the gate no longer triggers and $R_{\text{test}}$ drops to 634.80. Overall, increasing $m_{\mathrm{hys}}$ reduces frequent updates near the threshold and lowers energy consumption, but an overly large margin causes the controller to miss necessary updates and degrades reward to the no trigger state.
 
 4. Local Window Length $W$
 
-**Table 7** Sensitivity results for local window length $W$
-
-| Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
-| --- | --- | --- | --- |
-| **$W$** | **$R_{\text{test}}$** | **$N_{\text{daily}}$** | **$E_{\text{daily}}$，kWh/day** |
-| 60 | 1909.19 | 2.22 | 8410.21 |
-| 90 | 1374.46 | 1.83 | 7053.75 |
-| 120 | 1493.12 | 1.44 | 7115.59 |
-| 150 | 1176.24 | 0.98 | 5971.89 |
-| 180 | 1229.66 | 0.85 | 6157.48 |
+<table>
+    <caption><strong>Table 7</strong> Sensitivity results for local window length $W$</caption>
+    <thead>
+        <tr>
+            <th>Parameter Value</th>
+            <th colspan="3">Performance Metrics</th>
+        </tr>
+        <tr>
+            <th>$W$</th>
+            <th>$R_{\text{test}}$</th>
+            <th>$N_{\text{daily}}$</th>
+            <th>$E_{\text{daily}}$ (kWh/day)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>60</td><td>1909.19</td><td>2.22</td><td>8410.21</td></tr>
+        <tr><td>90</td><td>1374.46</td><td>1.83</td><td>7053.75</td></tr>
+        <tr><td>120</td><td>1493.12</td><td>1.44</td><td>7115.59</td></tr>
+        <tr><td>150</td><td>1176.24</td><td>0.98</td><td>5971.89</td></tr>
+        <tr><td>180</td><td>1229.66</td><td>0.85</td><td>6157.48</td></tr>
+    </tbody>
+</table>
 
 When the local window length $W$ increases, local statistics cover a longer time range and short term fluctuations are further smoothed. As shown in Table 7, under the window setting $W=60$, $N_{\text{daily}}$ is 2.22, $E_{\text{daily}}$ is 8410.21 kWh/day, and $R_{\text{test}}$ remains at a relatively high value of 1909.19. As $W$ increases to the range from 90 to 180, the trigger count generally decreases to 0.85 to 1.83, energy consumption decreases to 5971.89 to 7115.59 kWh/day, and the reward becomes lower than under the short window setting. Overall, a shorter $W$ strengthens the gate response to recent disturbances, yielding a higher reward but higher energy consumption. A longer $W$ reduces triggering and energy consumption, but it may also weaken the response to rapid disturbances and reduce reward.
 
 5. Short Scale Weight $w_s$
 
-**Table 8** Sensitivity results for short scale weight $w_s$
-
-| Parameter Value | Performance Metrics | Performance Metrics | Performance Metrics |
-| --- | --- | --- | --- |
-| **$w_s$** | **$R_{\text{test}}$** | **$N_{\text{daily}}$** | **$E_{\text{daily}}$，kWh/day** |
-| 0.30 | 1066.50 | 0.13 | 6426.31 |
-| 0.36 | 1369.15 | 0.26 | 6872.77 |
-| 0.42 | 1455.66 | 0.52 | 6989.56 |
-| 0.48 | 1462.83 | 0.78 | 6989.91 |
-| 0.54 | 1275.80 | 1.11 | 6269.29 |
-| 0.60 | 1423.38 | 1.57 | 6820.44 |
-| 0.66 | 1542.72 | 1.96 | 7283.76 |
-| 0.72 | 1704.65 | 2.62 | 7806.51 |
+<table>
+    <caption><strong>Table 8</strong> Sensitivity results for short scale weight $w_s$</caption>
+    <thead>
+        <tr>
+            <th>Parameter Value</th>
+            <th colspan="3">Performance Metrics</th>
+        </tr>
+        <tr>
+            <th>$w_s$</th>
+            <th>$R_{\text{test}}$</th>
+            <th>$N_{\text{daily}}$</th>
+            <th>$E_{\text{daily}}$ (kWh/day)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>0.30</td><td>1066.50</td><td>0.13</td><td>6426.31</td></tr>
+        <tr><td>0.36</td><td>1369.15</td><td>0.26</td><td>6872.77</td></tr>
+        <tr><td>0.42</td><td>1455.66</td><td>0.52</td><td>6989.56</td></tr>
+        <tr><td>0.48</td><td>1462.83</td><td>0.78</td><td>6989.91</td></tr>
+        <tr><td>0.54</td><td>1275.80</td><td>1.11</td><td>6269.29</td></tr>
+        <tr><td>0.60</td><td>1423.38</td><td>1.57</td><td>6820.44</td></tr>
+        <tr><td>0.66</td><td>1542.72</td><td>1.96</td><td>7283.76</td></tr>
+        <tr><td>0.72</td><td>1704.65</td><td>2.62</td><td>7806.51</td></tr>
+    </tbody>
+</table>
 
 When the short scale weight $w_s$ increases, short term disturbances account for a larger proportion of the multi-scale score. As shown in Table 8, when $w_s$ increases from 0.30 to 0.72, $N_{\text{daily}}$ rises from 0.13 to 2.62, $R_{\text{test}}$ generally increases from 1066.50 to 1704.65, and $E_{\text{daily}}$ also increases from 6426.31 kWh/day to 7806.51 kWh/day. Overall, a lower $w_s$ makes the gate respond less often to rapid load changes, resulting in fewer triggers and a lower reward. A higher $w_s$ strengthens the capture of short term disturbances and brings more control updates and a higher reward, but it also raises energy consumption. Therefore, the main role of $w_s$ is to adjust the tradeoff among short term response strength, reward improvement, and increased energy consumption.
 
@@ -638,53 +691,113 @@ Future work will focus on extending the event triggering mechanism with uncertai
 
 Table A1 Key design parameters of the HVAC system
 
-| **Equipment** | **Quantity** | **Rated power (kW)** | **Rated cooling capacity (kW)** | **Rated flow rate ($\mathrm{m^3/h}$)** | **Operating characteristics and key parameters** |
-| --- | --- | --- | --- | --- | --- |
-| **Centrifugal chiller** | 3 | 314 | 1760 | - | COP varies with the load ratio and condenser side operating conditions. The design chilled water supply temperature setpoint is $T_{\mathrm{chws,set}}=7\,\mathrm{^{\circ}C}$. The control setpoint range is $[6,15] \,\mathrm{^{\circ}C}$ |
-| **Chilled water pump** | 3 | 15 | - | 252 | Constant speed operation. The rated head is $15\,\mathrm{m}$ |
-| **Cooling water pump** | 3 | 55 | - | 366 | Constant speed operation. The rated head is $33\,\mathrm{m}$ |
-| **Cooling tower** | 3 | 16.5 | - | 392 | Variable condition operation. The performance is affected by the outdoor wet bulb temperature $T_{\mathrm{wb}}$ |
+<table>
+<thead>
+<tr>
+<th>Equipment</th>
+<th>No.</th>
+<th>Rated power (kW)</th>
+<th>Rated cooling capacity (kW)</th>
+<th>Rated flow rate ($\mathrm{m^3/h}$)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Centrifugal chiller</strong></td>
+<td>3</td>
+<td>314</td>
+<td>1760</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>Chilled water pump</strong></td>
+<td>3</td>
+<td>15</td>
+<td>-</td>
+<td>252</td>
+</tr>
+<tr>
+<td><strong>Cooling water pump</strong></td>
+<td>3</td>
+<td>55</td>
+<td>-</td>
+<td>366</td>
+</tr>
+<tr>
+<td><strong>Cooling tower</strong></td>
+<td>3</td>
+<td>16.5</td>
+<td>-</td>
+<td>392</td>
+</tr>
+</tbody>
+</table>
 
 Table A2 Key Hyperparameter Settings
 
-| **Module** | **Parameter Description** | **Symbol** | **Value** |
-| --- | --- | --- | --- |
-| **DQN Agent** | Learning rate | $\alpha$ | $0.0048$ |
-|  | Discount factor | $\gamma$ | $0.9620$ |
-|  | Replay buffer size | $M$ | $20,000$ |
-|  | Mini-batch size | $B$ | $178$ |
-|  | Epsilon schedule | $\epsilon$ | $[0.0045,0.6109]$ |
-|  | Epsilon decay factor | $\lambda_{\epsilon}$ | $0.9947$ |
-|  | Target update frequency | $C$ | $126$ steps |
-|  | Network architecture | - | 256, 128, 64 |
-| **Streaming Anomaly Gate** | Global update rate | $\lambda_{\mathrm{global}}$ | $0.0625$ |
-|  | Local window size | $W$ | $135$ |
-|  | Local update rate | $\lambda_{\mathrm{local}}$ | $0.5957$ |
-|  | Local fusion weight | $\alpha_{\mathrm{local}}$ | $0.6750$ |
-|  | Bias correction term | $b_{\mathrm{bias}}$ | $-0.0431$ |
-|  | Quantile level | $q$ | $0.6675$ |
-|  | MAD scale coefficient | $\kappa$ | $1.1353$ |
-|  | Quantile fusion weight | $\omega_q$ | $0.5750$ |
-|  | Hysteresis margin | $m_{\mathrm{hys}}$ | $0.0218$ |
-|  | Multi-scale fusion weights | $\mathbf{w}$ | $0.5500, 0.2750, 0.1750$ |
+<table>
+<thead>
+<tr>
+<th>Parameter Description</th>
+<th>Symbol</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr><td colspan="3"><strong>DQN Agent</strong></td></tr>
+<tr><td>Learning rate</td><td>$\alpha$</td><td>$0.0048$</td></tr>
+<tr><td>Discount factor</td><td>$\gamma$</td><td>$0.9620$</td></tr>
+<tr><td>Replay buffer size</td><td>$M$</td><td>$20,000$</td></tr>
+<tr><td>Mini-batch size</td><td>$B$</td><td>$178$</td></tr>
+<tr><td>Epsilon schedule</td><td>$\epsilon$</td><td>$[0.0045,0.6109]$</td></tr>
+<tr><td>Epsilon decay factor</td><td>$\lambda_{\epsilon}$</td><td>$0.9947$</td></tr>
+<tr><td>Target update frequency</td><td>$C$</td><td>$126$ steps</td></tr>
+<tr><td>Network architecture</td><td>-</td><td>256, 128, 64</td></tr>
+<tr><td colspan="3"><strong>Streaming Anomaly Gate</strong></td></tr>
+<tr><td>Global update rate</td><td>$\lambda_{\mathrm{global}}$</td><td>$0.0625$</td></tr>
+<tr><td>Local window size</td><td>$W$</td><td>$135$</td></tr>
+<tr><td>Local update rate</td><td>$\lambda_{\mathrm{local}}$</td><td>$0.5957$</td></tr>
+<tr><td>Local fusion weight</td><td>$\alpha_{\mathrm{local}}$</td><td>$0.6750$</td></tr>
+<tr><td>Bias correction term</td><td>$b_{\mathrm{bias}}$</td><td>$-0.0431$</td></tr>
+<tr><td>Quantile level</td><td>$q$</td><td>$0.6675$</td></tr>
+<tr><td>MAD scale coefficient</td><td>$\kappa$</td><td>$1.1353$</td></tr>
+<tr><td>Quantile fusion weight</td><td>$\omega_q$</td><td>$0.5750$</td></tr>
+<tr><td>Hysteresis margin</td><td>$m_{\mathrm{hys}}$</td><td>$0.0218$</td></tr>
+<tr><td>Multi-scale fusion weights</td><td>$\mathbf{w}$</td><td>$0.5500, 0.2750, 0.1750$</td></tr>
+</tbody>
+</table>
 
 Table A3 Evaluation metrics and optimization objectives
 
-| **Category** | **Metric** | **Symbol** | **Unit** | **Goal** |
-| --- | --- | --- | --- | --- |
-| **Energy efficiency** | Average daily energy consumption | $E_{\text{daily}}$ | kWh/day | Minimize |
-|  | Relative energy saving rate | $\eta_{\text{saving}}$ | % | Maximize |
-|  | Average chiller power | $\bar{P}_{\text{chiller}}$ | kW | Minimize |
-| **Temperature control** | Action smoothness | $\bar{\Delta a}$ | - | Minimize |
-|  | Performance preservation rate | PPR | % | Maximize |
-| **Control sparsity** | Daily trigger count | $N_{\text{daily}}$ | count/day | Minimize |
-|  | Total action updates | $N_{\text{update}}$ | count | Minimize |
-|  | Actuation compression ratio | ACR | - | Maximize |
-|  | Action reduction rate | ARR | % | Maximize |
-|  | Trigger interval | $L_{\text{trigger}}$ | step | Maximize |
-|  | Hold length | $L_{\text{hold}}$ | step | Maximize |
-| **Execution efficiency** | Cumulative test reward | $R_{\text{test}}$ | - | Maximize |
-|  | Average reward per update | $\bar{R}_{\text{update}}$ | - | Maximize |
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Symbol</th>
+<th>Unit</th>
+<th>Goal</th>
+</tr>
+</thead>
+<tbody>
+<tr><td colspan="4"><strong>Energy efficiency</strong></td></tr>
+<tr><td>Average daily energy consumption</td><td>$E_{\text{daily}}$</td><td>kWh/day</td><td>Minimize</td></tr>
+<tr><td>Relative energy saving rate</td><td>$\eta_{\text{saving}}$</td><td>%</td><td>Maximize</td></tr>
+<tr><td>Average chiller power</td><td>$\bar{P}_{\text{chiller}}$</td><td>kW</td><td>Minimize</td></tr>
+<tr><td colspan="4"><strong>Temperature control</strong></td></tr>
+<tr><td>Action smoothness</td><td>$\bar{\Delta a}$</td><td>-</td><td>Minimize</td></tr>
+<tr><td>Performance preservation rate</td><td>PPR</td><td>%</td><td>Maximize</td></tr>
+<tr><td colspan="4"><strong>Control sparsity</strong></td></tr>
+<tr><td>Daily trigger count</td><td>$N_{\text{daily}}$</td><td>count/day</td><td>Minimize</td></tr>
+<tr><td>Total action updates</td><td>$N_{\text{update}}$</td><td>count</td><td>Minimize</td></tr>
+<tr><td>Actuation compression ratio</td><td>ACR</td><td>-</td><td>Maximize</td></tr>
+<tr><td>Action reduction rate</td><td>ARR</td><td>%</td><td>Maximize</td></tr>
+<tr><td>Trigger interval</td><td>$L_{\text{trigger}}$</td><td>step</td><td>Maximize</td></tr>
+<tr><td>Hold length</td><td>$L_{\text{hold}}$</td><td>step</td><td>Maximize</td></tr>
+<tr><td colspan="4"><strong>Execution efficiency</strong></td></tr>
+<tr><td>Cumulative test reward</td><td>$R_{\text{test}}$</td><td>-</td><td>Maximize</td></tr>
+<tr><td>Average reward per update</td><td>$\bar{R}_{\text{update}}$</td><td>-</td><td>Maximize</td></tr>
+</tbody>
+</table>
 
 # References
 
