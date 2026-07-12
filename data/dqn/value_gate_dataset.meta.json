@@ -1,0 +1,16 @@
+{
+  "dataset_path": "data/dqn/value_gate_dataset.csv",
+  "samples": 4404,
+  "positive_ratio": 0.07084468664850137,
+  "split_counts": {
+    "train": 3082,
+    "test": 662,
+    "val": 660
+  },
+  "train_experiment_dir": "logs/dqn/train/20260226_101748",
+  "label_formula": {
+    "lambda_v": 0.5,
+    "lambda_e": 0.1,
+    "delta": 0.0
+  }
+}

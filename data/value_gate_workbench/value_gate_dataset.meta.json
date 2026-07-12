@@ -1,0 +1,27 @@
+{
+  "output_path": "data/value_gate_workbench/value_gate_dataset.csv",
+  "run_dir": "logs/value_gate_workbench/dataset_build/20260308_202449",
+  "samples": 4404,
+  "positive_ratio": 0.07084468664850137,
+  "positive_weight": 13.115384615384615,
+  "settings": {
+    "dataset_path": "data/value_gate_workbench/value_gate_dataset.csv",
+    "workbench_log_root": "logs/value_gate_workbench",
+    "dataset_log_subdir": "dataset_build",
+    "train_log_subdir": "train",
+    "model_dir": "logs/value_gate_workbench/models",
+    "model_filename": "value_gate_mlp.pth",
+    "metadata_filename": "value_gate_metadata.json",
+    "gain_reward_weight": 1.0,
+    "gain_violation_weight": 0.5,
+    "gain_energy_weight": 0.1,
+    "gain_threshold": 0.0,
+    "hidden_size": 64,
+    "learning_rate": 0.001,
+    "epochs": 30,
+    "batch_size": 256,
+    "train_ratio": 0.7,
+    "val_ratio": 0.15
+  },
+  "train_experiment_dir": "logs/dqn/train/20260226_101748"
+}
