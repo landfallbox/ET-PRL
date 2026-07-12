@@ -24,7 +24,7 @@ Driven by the above motivations, we propose a new HVAC control method, event tri
 
 - We establish a predictive RL control algorithm with dynamic event triggering, reducing redundant control updates while maintaining performance during stable periods.
 
-- We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost.
+- We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost. The code and data associated with this study are available at https://github.com/landfallbox/ET-PRL.git.
 
 # 2. Related Work
 
