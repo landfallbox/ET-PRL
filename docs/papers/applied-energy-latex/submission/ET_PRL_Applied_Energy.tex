@@ -43,7 +43,6 @@
   #1 & \(R_{\text{test}}\) & \(N_{\text{daily}}\) & \begin{tabular}[c]{@{}c@{}}\(E_{\text{daily}}\)\\(kWh/day)\end{tabular} \\
   \midrule\noalign{}%
 }
-\newcounter{paperalgorithm}
 \newcounter{paperalgline}
 \newlength{\paperalgnumwidth}
 \setlength{\paperalgnumwidth}{1.45em}
@@ -53,15 +52,14 @@
 \setlength{\paperalgindent}{1.8em}
 \newlength{\paperalgsubindent}
 \setlength{\paperalgsubindent}{3.6em}
-\newenvironment{paperalgorithm}[2]{%
-  \refstepcounter{paperalgorithm}\label{#1}%
+\newenvironment{paperalgorithm}[1]{%
   \par\medskip
   \begingroup
   \footnotesize\linespread{0.95}\selectfont\raggedright
   \setlength{\parskip}{0pt}%
   \noindent\hrulefill\par
   \vspace{0.12em}%
-  \noindent\strut Algorithm~\thepaperalgorithm. #2\par\nobreak
+  \noindent\strut Pseudocode: #1\par\nobreak
   \vspace{0.12em}%
   \noindent\hrulefill\par
   \vspace{0.06em}%
@@ -339,9 +337,9 @@ Specifically, the streaming gate first computes scale-specific anomaly scores ov
 
 \[a_t = \begin{cases}\pi_{\mathrm{DQN}}(s_t), & \mathrm{Trigger}(s_t) = 1 \\a_{t-1}, & \mathrm{Trigger}(s_t) = 0\end{cases} \tag{23}\label{eq:online-action}\]
 
-The complete online execution procedure of the proposed ET-PRL method is summarized in Algorithm~\ref{alg:et-prl-online-control}.
+The complete online execution procedure of the proposed ET-PRL method is summarized in the following pseudocode.
 
-\begin{paperalgorithm}{alg:et-prl-online-control}{ET-PRL online control procedure}
+\begin{paperalgorithm}{ET-PRL online control procedure}
 \algline{\textbf{Input:} Trained DQN policy $\pi_{\mathrm{DQN}}$; gate parameters $\Omega$; minimum trigger interval $\Delta_{\min}$; total control horizon $T$.}
 \algline{Here, $\Omega=\{w_{\mathrm{s}},w_{\mathrm{m}},w_{\mathrm{l}},q,\kappa,\omega_q,\lambda_{\mathrm{local}},\lambda_{\mathrm{global}},\alpha_{\mathrm{local}},b_{\mathrm{bias}},W,m_{\mathrm{hys}}\}$ is defined in Eqs.~\eqref{eq:scale-specific-score}--\eqref{eq:trigger-rule}.}
 \algline{\textbf{Output:} Control setpoint sequence $\{a_t\}_{t=1}^{T}$.}
@@ -371,7 +369,7 @@ The complete online execution procedure of the proposed ET-PRL method is summari
 
 \subsection{Building Thermal System Modeling}\label{building-thermal-system-modeling}
 
-We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model was calibrated in previous work using measured operational data and can reproduce the main thermodynamic response of the chilled water system \cite{ref29}. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
+We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model was calibrated in previous work using measured operational data and can reproduce the main thermodynamic response of the chilled water system \cite{ref29}. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A.1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
 
 \subsection{Weather and Load Dataset Characteristics}\label{weather-and-load-dataset-characteristics}
 
@@ -403,7 +401,7 @@ To avoid temporal information leakage and better reflect practical online deploy
 
 \subsubsection{Experimental and Hyperparameter Settings}\label{experimental-and-hyperparameter-settings}
 
-This section describes the experimental settings and hyperparameters. To ensure experimental reproducibility, the key parameters of the DQN-based control policy and the online streaming gate are kept constant across all experimental groups. Unless otherwise stated, the sampling interval is 5 min. All hyperparameters are determined through Bayesian optimization and fixed after validation set screening. Parameters of the DQN-based control policy define the state representation, action space, and training process of the reinforcement learning controller, whereas parameters of the online streaming gate govern the sensitivity and stability of event-driven action updates. The complete hyperparameter settings are reported in Table A2 in Appendix A.
+This section describes the experimental settings and hyperparameters. To ensure experimental reproducibility, the key parameters of the DQN-based control policy and the online streaming gate are kept constant across all experimental groups. Unless otherwise stated, the sampling interval is 5 min. All hyperparameters are determined through Bayesian optimization and fixed after validation set screening. Parameters of the DQN-based control policy define the state representation, action space, and training process of the reinforcement learning controller, whereas parameters of the online streaming gate govern the sensitivity and stability of event-driven action updates. The complete hyperparameter settings are reported in Table A.2 in Appendix A.
 
 \subsubsection{Comparison Methods}\label{comparison-methods}
 
@@ -569,7 +567,7 @@ L_{\text{hold}} = \frac{1}{M}\sum_{m=1}^{M}h_m \quad \tag{37}\label{eq:hold-leng
 
 \noindent where \(h_m\) denotes the length of the \(m\)th constant setpoint segment and \(M\) is the total number of holding segments in the test trajectory.
 
-The evaluation metrics and optimization objectives are summarized in Table A3 in Appendix A.
+The evaluation metrics and optimization objectives are summarized in Table A.3 in Appendix A.
 
 \subsection{Experimental Results Analysis}\label{experimental-results-analysis}
 
@@ -871,6 +869,7 @@ This paper proposes event-triggered predictive reinforcement learning with unsup
 Future work will focus on extending the event triggering mechanism with uncertainty awareness by jointly modeling load prediction uncertainty, sensor noise, and anomaly-score confidence in the trigger decision. We hope to further reduce false triggers and missed triggers under imperfect measurements and operating-condition shifts.
 
 \appendix
+\setcounter{table}{0}
 
 \section{Supplementary Tables}\label{supplementary-tables}
 
