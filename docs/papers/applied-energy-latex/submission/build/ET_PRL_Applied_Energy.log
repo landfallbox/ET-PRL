@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  11 JUL 2026 22:27
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  13 JUL 2026 10:05
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -99,8 +99,8 @@ File: xetex.def 2025/11/01 v5.0p Graphics/color driver for xetex
 \@sep=\skip51
 \@@sep=\skip52
 
-(D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-latex\submission\bui
-ld\ET_PRL_Applied_Energy.spl)
+(D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\submission\build\E
+T_PRL_Applied_Energy.spl)
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/natbib\natbib.sty
 Package: natbib 2010/09/13 8.31b (PWD, AO)
 \bibhang=\skip53
@@ -449,8 +449,8 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 \paperalgindent=\skip70
 \paperalgsubindent=\skip71
 
-(D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-latex\submission\bui
-ld\ET_PRL_Applied_Energy.aux)
+(D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\submission\build\E
+T_PRL_Applied_Energy.aux)
 \openout1 = `ET_PRL_Applied_Energy.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 87.
@@ -475,10 +475,10 @@ LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 87.
 LaTeX Font Info:    ... okay on input line 87.
 Package hyperref Info: Link coloring OFF on input line 87.
 
-(D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-latex\submission\bui
-ld\ET_PRL_Applied_Energy.out)
-(D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-latex\submission\bui
-ld\ET_PRL_Applied_Energy.out)
+(D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\submission\build\E
+T_PRL_Applied_Energy.out)
+(D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\submission\build\E
+T_PRL_Applied_Energy.out)
 \@outlinefile=\write4
 \openout4 = `ET_PRL_Applied_Energy.out'.
 
@@ -616,8 +616,8 @@ Underfull \hbox (badness 2503) in paragraph at lines 1044--1045
  []
 
 [48] [49]
-(D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-latex\submission\bui
-ld\ET_PRL_Applied_Energy.aux)
+(D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\submission\build\E
+T_PRL_Applied_Energy.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
@@ -627,12 +627,12 @@ Package rerunfilecheck Info: File `ET_PRL_Applied_Energy.out' has not changed.
  ) 
 Here is how much of TeX's memory you used:
  11209 strings out of 402987
- 169869 string characters out of 5448732
+ 169837 string characters out of 5448732
  591446 words of memory out of 5000000
  39751 multiletter control sequences out of 15000+600000
  714958 words of font info for 98 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,20n,79p,2078b,585s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on D:\code\projects\Event-DQN-WIP\docs\papers\applied-energy-lat
-ex\submission\build\ET_PRL_Applied_Energy.xdv (50 pages, 188960 bytes).
+Output written on D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\s
+ubmission\build\ET_PRL_Applied_Energy.xdv (50 pages, 188960 bytes).

@@ -801,7 +801,7 @@ Table A3 Evaluation metrics and optimization objectives
 
 # Declaration of generative AI and AI-assisted technologies in the writing process
 
-During the preparation of this work, the authors used GitHub Copilot to assist with language polishing, formatting checks, and reference metadata checking. After using this tool, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+During the preparation of this work, the authors used generative AI-assisted tools for language editing and formatting support. After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
 
 # References
 
