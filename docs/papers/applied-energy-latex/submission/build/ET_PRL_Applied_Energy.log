@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  14 JUL 2026 16:11
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  14 JUL 2026 21:55
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -598,15 +598,17 @@ File: fig6_t_chws_macro_distribution.pdf Graphic file (type pdf)
 [30]
 File: fig7_t_chws_delta_analysis.pdf Graphic file (type pdf)
 <use fig7_t_chws_delta_analysis.pdf>
- [31] [32] [33]
+ [31] [32]
 File: fig8_action_update_interval_distribution.pdf Graphic file (type pdf)
 <use fig8_action_update_interval_distribution.pdf>
 File: fig9_trigger_load_alignment.pdf Graphic file (type pdf)
 <use fig9_trigger_load_alignment.pdf>
- [34] [35]
+ [33] [34] [35]
 File: fig10_ablation_pareto_scatter.pdf Graphic file (type pdf)
 <use fig10_ablation_pareto_scatter.pdf>
- [36] [37] [38] [39] [40] [41] [42] [43]
+ [36] [37] [38] [39]
+ET_PRL_Applied_Energy.tex:810: ignored error: Infinite glue shrinkage found in 
+box being split [40] [41] [42] [43]
 ET_PRL_Applied_Energy.tex:953: ignored error: Infinite glue shrinkage found in 
 box being split [44] [45]
 Underfull \hbox (badness 2837) in paragraph at lines 1032--1033
@@ -639,11 +641,11 @@ Package rerunfilecheck Info: File `ET_PRL_Applied_Energy.out' has not changed.
 Here is how much of TeX's memory you used:
  11204 strings out of 402987
  169683 string characters out of 5448732
- 591343 words of memory out of 5000000
+ 592343 words of memory out of 5000000
  39746 multiletter control sequences out of 15000+600000
  714958 words of font info for 98 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,20n,79p,2078b,593s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\s
-ubmission\build\ET_PRL_Applied_Energy.xdv (50 pages, 189728 bytes).
+ubmission\build\ET_PRL_Applied_Energy.xdv (50 pages, 190012 bytes).
