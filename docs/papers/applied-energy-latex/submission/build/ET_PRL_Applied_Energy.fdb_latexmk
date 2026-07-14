@@ -1,12 +1,12 @@
 # Fdb version 4
-["xdvipdfmx"] 1784015872.58969 "build/ET_PRL_Applied_Energy.xdv" "build/ET_PRL_Applied_Energy.pdf" "build/ET_PRL_Applied_Energy" 1784015873.37406 0
-  "build/ET_PRL_Applied_Energy.xdv" 1784015872 189360 523c5789b98d01328f92d76020f65f5e "xelatex"
+["xdvipdfmx"] 1784016690.94412 "build/ET_PRL_Applied_Energy.xdv" "build/ET_PRL_Applied_Energy.pdf" "build/ET_PRL_Applied_Energy" 1784016691.7195 0
+  "build/ET_PRL_Applied_Energy.xdv" 1784016690 189728 ad551b0858ceec2e855c9cbfdab7cb3a "xelatex"
   "docs/papers/applied-energy-latex/submission/build/ET_PRL_Applied_Energy.xdv" 0 -1 0 ""
   (generated)
   "build/ET_PRL_Applied_Energy.pdf"
   "docs/papers/applied-energy-latex/submission/build/ET_PRL_Applied_Energy.pdf"
   (rewritten before read)
-["xelatex"] 1784015870.88336 "ET_PRL_Applied_Energy.tex" "build/ET_PRL_Applied_Energy.xdv" "ET_PRL_Applied_Energy" 1784015873.35916 0
+["xelatex"] 1784016689.04671 "ET_PRL_Applied_Energy.tex" "build/ET_PRL_Applied_Energy.xdv" "ET_PRL_Applied_Energy" 1784016691.7049 0
   "C:/Users/tang/AppData/Local/MiKTeX/miktex/data/le/xetex/xelatex.fmt" 1783516500 27176256 2ea703981d615ddc2ab7dc6f30ab2d34 ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/fonts/tfm/adobe/zapfding/pzdr.tfm" 1136743454 1528 7e12f4c0fcf5a072cebdcfbfc610f54c ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/symbols/msam10.tfm" 1233951854 916 f87d7c45f9c908e672703b83b72241a3 ""
@@ -113,10 +113,10 @@
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/tools/longtable.sty" 1761901070 16014 dfa4b4d4e04a78a3f05a90c19711737a ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/tools/verbatim.sty" 1761901070 7532 26d26e9d8f2ca784270d5da8ec7d102b ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
-  "ET_PRL_Applied_Energy.tex" 1783928279 123563 5bf116689359d19f2de83a8fa2f0decc ""
-  "build/ET_PRL_Applied_Energy.aux" 1784015872 22110 5e42168d9f68318e7e4ce6c05b36d55f "xelatex"
-  "build/ET_PRL_Applied_Energy.out" 1784015872 3529 72870a589aa17b6ea9db73c606305351 "xelatex"
-  "build/ET_PRL_Applied_Energy.spl" 1784015871 0 d41d8cd98f00b204e9800998ecf8427e "xelatex"
+  "ET_PRL_Applied_Energy.tex" 1784016681 123783 f540bde9067aad1bd82e02996b278ca6 ""
+  "build/ET_PRL_Applied_Energy.aux" 1784016690 22110 5e42168d9f68318e7e4ce6c05b36d55f "xelatex"
+  "build/ET_PRL_Applied_Energy.out" 1784016690 3529 72870a589aa17b6ea9db73c606305351 "xelatex"
+  "build/ET_PRL_Applied_Energy.spl" 1784016689 0 d41d8cd98f00b204e9800998ecf8427e "xelatex"
   "elsarticle.cls" 1783780803 46981 ca3547759f0a31e5940f2dee93cc4c4b ""
   "fig10_ablation_pareto_scatter.pdf" 1783780803 58327 30f9282fc2f30c5e0b75720431e27159 ""
   "fig1_update_strategy_comparison.pdf" 1783780803 28369 a65b8ec83ddb05fa1d5a7c7447272ebf ""

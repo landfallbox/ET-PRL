@@ -34,8 +34,8 @@
   - 已按作者确认内容写入主稿。
 
 - [x] 完成 Declaration of competing interest。
-  - 已确认：主稿 PDF 中不再单列 Declaration of Interest Statement，以保持论文主体简洁。
-  - 已使用 Elsevier declarations tool 生成 Word 声明文件：`declarationStatement.docx`。
+  - 主稿 PDF 中保留 Declaration of competing interest。
+  - 已使用 Elsevier declarations tool 生成 Word 声明文件：`declaration-of-competing-interests.docx`。
   - 文件内容为作者声明无已知 competing financial interests 或 personal relationships。
   - 投稿时在 attach/upload files 步骤上传该 `.docx` 文件。
 

@@ -801,6 +801,10 @@ Table A3 Evaluation metrics and optimization objectives
 </tbody>
 </table>
 
+# Declaration of competing interest
+
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
 # Declaration of generative AI and AI-assisted technologies in the writing process
 
 During the preparation of this work, the authors used generative AI-assisted tools for language editing and formatting support. After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
