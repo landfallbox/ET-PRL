@@ -1,12 +1,12 @@
 # Fdb version 4
-["xdvipdfmx"] 1784037324.59576 "build/ET_PRL_Applied_Energy.xdv" "build/ET_PRL_Applied_Energy.pdf" "build/ET_PRL_Applied_Energy" 1784037325.43123 0
-  "build/ET_PRL_Applied_Energy.xdv" 1784037324 190012 5b6873006db32289d9294a83d65e5e74 "xelatex"
+["xdvipdfmx"] 1784040698.23217 "build/ET_PRL_Applied_Energy.xdv" "build/ET_PRL_Applied_Energy.pdf" "build/ET_PRL_Applied_Energy" 1784040699.10749 0
+  "build/ET_PRL_Applied_Energy.xdv" 1784040697 190512 1e5ed205df99a733116b118784c7baaf "xelatex"
   "docs/papers/applied-energy-latex/submission/build/ET_PRL_Applied_Energy.xdv" 0 -1 0 ""
   (generated)
   "build/ET_PRL_Applied_Energy.pdf"
   "docs/papers/applied-energy-latex/submission/build/ET_PRL_Applied_Energy.pdf"
   (rewritten before read)
-["xelatex"] 1784037322.6492 "ET_PRL_Applied_Energy.tex" "build/ET_PRL_Applied_Energy.xdv" "ET_PRL_Applied_Energy" 1784037325.41852 0
+["xelatex"] 1784040696.07969 "ET_PRL_Applied_Energy.tex" "build/ET_PRL_Applied_Energy.xdv" "ET_PRL_Applied_Energy" 1784040699.09313 0
   "C:/Users/tang/AppData/Local/MiKTeX/miktex/data/le/xetex/xelatex.fmt" 1783516500 27176256 2ea703981d615ddc2ab7dc6f30ab2d34 ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/fonts/tfm/adobe/zapfding/pzdr.tfm" 1136743454 1528 7e12f4c0fcf5a072cebdcfbfc610f54c ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/fonts/tfm/public/amsfonts/symbols/msam10.tfm" 1233951854 916 f87d7c45f9c908e672703b83b72241a3 ""
@@ -80,6 +80,7 @@
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/base/textcomp.sty" 1761900684 2846 e26604d3d895e65d874c07f30c291f3f ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/booktabs/booktabs.sty" 1579093635 6253 f1cb470c9199e7110a27851508ed7a5c ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/etoolbox/etoolbox.sty" 1759409308 46885 8953c67ffba03252c6090aa19568b8ba ""
+  "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/float/float.sty" 1469023953 6916 16d2656a1984957e674b149555f1ea1d ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/graphics-cfg/graphics.cfg" 1465894292 1224 978390e9c2234eab29404bc21b268d1e ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/graphics-def/xetex.def" 1762694372 14788 68cddb076430acc268ef4203b6523355 ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/graphics/graphics.sty" 1749322634 18363 69bb4f5538964bfea50d1e6d89cbe69f ""
@@ -113,10 +114,10 @@
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/tools/longtable.sty" 1761901070 16014 dfa4b4d4e04a78a3f05a90c19711737a ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/tools/verbatim.sty" 1761901070 7532 26d26e9d8f2ca784270d5da8ec7d102b ""
   "C:/Users/tang/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
-  "ET_PRL_Applied_Energy.tex" 1784037308 123794 1d16c072dc87cfb3ba815a721ac3e12a ""
-  "build/ET_PRL_Applied_Energy.aux" 1784037324 22110 c7d9cee4af70dc27e0fd22710b2bacb9 "xelatex"
-  "build/ET_PRL_Applied_Energy.out" 1784037324 3529 72870a589aa17b6ea9db73c606305351 "xelatex"
-  "build/ET_PRL_Applied_Energy.spl" 1784037323 0 d41d8cd98f00b204e9800998ecf8427e "xelatex"
+  "ET_PRL_Applied_Energy.tex" 1784040673 123882 142441606e554ee398a78a51d6060317 ""
+  "build/ET_PRL_Applied_Energy.aux" 1784040697 22110 af77b5a79c0fbbf3c6294987b3c4c13a "xelatex"
+  "build/ET_PRL_Applied_Energy.out" 1784040697 3529 72870a589aa17b6ea9db73c606305351 "xelatex"
+  "build/ET_PRL_Applied_Energy.spl" 1784040696 0 d41d8cd98f00b204e9800998ecf8427e "xelatex"
   "elsarticle.cls" 1783780803 46981 ca3547759f0a31e5940f2dee93cc4c4b ""
   "fig10_ablation_pareto_scatter.pdf" 1783780803 58327 30f9282fc2f30c5e0b75720431e27159 ""
   "fig1_update_strategy_comparison.pdf" 1783780803 28369 a65b8ec83ddb05fa1d5a7c7447272ebf ""

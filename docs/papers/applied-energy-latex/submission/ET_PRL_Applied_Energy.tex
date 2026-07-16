@@ -10,6 +10,7 @@
 \usepackage{url}
 \usepackage{etoolbox}
 \usepackage{footnote}
+\usepackage{float}
 \makesavenoteenv{longtable}
 \usepackage{verbatim}
 \usepackage{hyperref}
@@ -54,6 +55,7 @@
 \setlength{\paperalgsubindent}{3.6em}
 \newenvironment{paperalgorithm}[1]{%
   \par\medskip
+  \noindent\begin{minipage}{\linewidth}%
   \begingroup
   \footnotesize\linespread{0.95}\selectfont\raggedright
   \setlength{\parskip}{0pt}%
@@ -66,6 +68,7 @@
   \setcounter{paperalgline}{0}%
 }{%
   \endgroup
+  \end{minipage}%
   \par\medskip
 }
 \newcommand{\algline}[2][0pt]{%
@@ -719,9 +722,9 @@ Long-scale Only & 2032.01 & 4334 & 283.42 & 7431.26 & 1.0162 & 98.90\% \\
 }
 \end{table}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
-\pandocbounded{\includegraphics[width=\linewidth]{fig10_ablation_pareto_scatter.pdf}}
+\pandocbounded{\includegraphics[width=0.78\linewidth]{fig10_ablation_pareto_scatter.pdf}}
 \caption{Scatter plot of ablation strategies under the trade-off among energy consumption, performance, and sparsity. The x-axis indicates average daily energy consumption, the y-axis indicates PPR, color encodes ACR, and text labels identify each ablation strategy}\label{fig:ablation-tradeoff}
 \end{figure}
 

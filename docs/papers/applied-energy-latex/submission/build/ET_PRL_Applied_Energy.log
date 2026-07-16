@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  14 JUL 2026 21:55
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  14 JUL 2026 22:51
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -312,10 +312,18 @@ Package: footnote 1997/01/28 1.13 Save footnotes around boxes
 \fn@notes=\box68
 \fn@width=\dimen183
 )
+(C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/float\float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count314
+\float@exts=\toks29
+\float@box=\box69
+\@float@everytoks=\toks30
+\@floatcapt=\box70
+)
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/tools\verbatim.sty
 Package: verbatim 2024-01-22 v1.5x LaTeX2e package for verbatim enhancements
-\every@verbatim=\toks29
-\verbatim@line=\toks30
+\every@verbatim=\toks31
+\verbatim@line=\toks32
 \verbatim@in@stream=\read2
 )
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hyperref.sty
@@ -364,7 +372,7 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/kvoptions\kvoptions.sty
 Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
 ))
-\c@section@level=\count314
+\c@section@level=\count315
 )
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/generic/stringenc\stringenc.st
 y
@@ -372,15 +380,15 @@ Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
 )
 )
 \@linkdim=\dimen184
-\Hy@linkcounter=\count315
-\Hy@pagecounter=\count316
+\Hy@linkcounter=\count316
+\Hy@pagecounter=\count317
  (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\pd1enc.def
 File: pd1enc.def 2025-07-12 v7.01o Hyperref: PDFDocEncoding definition (HO)
 )
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/generic/intcalc\intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
-\Hy@SavedSpaceFactor=\count317
+\Hy@SavedSpaceFactor=\count318
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\puenc.def
 File: puenc.def 2025-07-12 v7.01o Hyperref: PDF Unicode definition (HO)
@@ -392,7 +400,7 @@ Package hyperref Info: Plain pages OFF on input line 4210.
 Package hyperref Info: Backreferencing OFF on input line 4215.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4462.
-\c@Hy@tempcnt=\count318
+\c@Hy@tempcnt=\count319
 LaTeX Info: Redefining \url on input line 4801.
 \XeTeXLinkMargin=\dimen185
 
@@ -404,7 +412,7 @@ sty
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
 ))
-\Fld@menulength=\count319
+\Fld@menulength=\count320
 \Field@Width=\dimen186
 \Fld@charsize=\dimen187
 Package hyperref Info: Hyper figures OFF on input line 6078.
@@ -414,19 +422,19 @@ Package hyperref Info: backreferencing OFF on input line 6093.
 Package hyperref Info: Link coloring OFF on input line 6098.
 Package hyperref Info: Link coloring with OCG OFF on input line 6103.
 Package hyperref Info: PDF/A mode OFF on input line 6108.
-\Hy@abspage=\count320
-\c@Item=\count321
-\c@Hfootnote=\count322
+\Hy@abspage=\count321
+\c@Item=\count322
+\c@Hfootnote=\count323
 )
 Package hyperref Info: Driver (autodetected): hxetex.
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hxetex.def
 File: hxetex.def 2025-07-12 v7.01o Hyperref driver for XeTeX
-\pdfm@box=\box69
-\c@Hy@AnnotLevel=\count323
-\HyField@AnnotCount=\count324
-\Fld@listcount=\count325
-\c@bookmark@seq@number=\count326
+\pdfm@box=\box71
+\c@Hy@AnnotLevel=\count324
+\HyField@AnnotCount=\count325
+\Fld@listcount=\count326
+\c@bookmark@seq@number=\count327
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/rerunfilecheck\rerunfile
 check.sty
@@ -441,8 +449,8 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 )
 \Hy@SectionHShift=\skip67
 )
-\pandoc@box=\box70
-\c@paperalgline=\count327
+\pandoc@box=\box72
+\c@paperalgline=\count328
 \paperalgnumwidth=\skip68
 \paperalglabelsep=\skip69
 \paperalgindent=\skip70
@@ -452,27 +460,27 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 T_PRL_Applied_Energy.aux)
 \openout1 = `ET_PRL_Applied_Energy.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 85.
-LaTeX Font Info:    ... okay on input line 85.
-Package hyperref Info: Link coloring OFF on input line 85.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+Package hyperref Info: Link coloring OFF on input line 88.
 
 (D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\submission\build\E
 T_PRL_Applied_Energy.out)
@@ -482,91 +490,91 @@ T_PRL_Applied_Energy.out)
 \openout4 = `ET_PRL_Applied_Energy.out'.
 
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 1
-12.
+15.
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 1
-12.
+15.
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-112.
+115.
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-112.
+115.
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 112.
+(Font)              <10> on input line 115.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 112.
+(Font)              <7> on input line 115.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 112.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 112
+(Font)              <5> on input line 115.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 115
 .
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 112
+LaTeX Font Info:    Trying to load font information for U+msb on input line 115
 .
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-12.
+15.
 
 (C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 112.
+(Font)              <12> on input line 115.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 112.
+(Font)              <8> on input line 115.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 112.
+(Font)              <6> on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 112.
+(hyperref)                removing `\<def>-command' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\cnotenum' on input line 112.
+(hyperref)                removing `\cnotenum' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 112.
+(hyperref)                removing `\<def>-command' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@corref' on input line 112.
+(hyperref)                removing `\@corref' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 112.
+(hyperref)                removing `\<def>-command' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\cnotenum' on input line 112.
+(hyperref)                removing `\cnotenum' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 112.
+(hyperref)                removing `\<def>-command' on input line 115.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@corref' on input line 112.
+(hyperref)                removing `\@corref' on input line 115.
 
 [1
 
@@ -578,7 +586,7 @@ File: fig1_update_strategy_comparison.pdf Graphic file (type pdf)
 File: fig2_plain.pdf Graphic file (type pdf)
 <use fig2_plain.pdf>
  [7] [8] [9] [10] [11] [12] [13] [14]
-Underfull \hbox (badness 1281) in paragraph at lines 284--285
+Underfull \hbox (badness 1281) in paragraph at lines 287--288
 \T1/lmr/m/n/12 anomaly score win-dow main-te-nance and two-layer thresh-old re-
 cur-sive
  []
@@ -590,7 +598,7 @@ File: fig4_dataset_distribution_and_correlation.pdf Graphic file (type pdf)
 <use fig4_dataset_distribution_and_correlation.pdf>
  [21] [22] [23] [24] [25] [26] [27]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 606.
+(Font)              <10.95> on input line 609.
  [28] [29]
 File: fig6_t_chws_macro_distribution.pdf Graphic file (type pdf)
 <use fig6_t_chws_macro_distribution.pdf>
@@ -606,24 +614,26 @@ File: fig9_trigger_load_alignment.pdf Graphic file (type pdf)
  [33] [34] [35]
 File: fig10_ablation_pareto_scatter.pdf Graphic file (type pdf)
 <use fig10_ablation_pareto_scatter.pdf>
- [36] [37] [38] [39]
-ET_PRL_Applied_Energy.tex:810: ignored error: Infinite glue shrinkage found in 
-box being split [40] [41] [42] [43]
-ET_PRL_Applied_Energy.tex:953: ignored error: Infinite glue shrinkage found in 
-box being split [44] [45]
-Underfull \hbox (badness 2837) in paragraph at lines 1032--1033
+ [36] [37]
+ET_PRL_Applied_Energy.tex:765: ignored error: Infinite glue shrinkage found in 
+box being split [38] [39] [40]
+ET_PRL_Applied_Energy.tex:862: ignored error: Infinite glue shrinkage found in 
+box being split [41] [42] [43]
+ET_PRL_Applied_Energy.tex:1007: ignored error: Infinite glue shrinkage found in
+ box being split [44] [45]
+Underfull \hbox (badness 2837) in paragraph at lines 1035--1036
 \T1/lmr/m/n/12 En-vi-ron-ment 282 (2025): 113322. []$\T1/lmtt/m/n/12 https : / 
 / doi . org / 10 . 1016 / j .
  []
 
 [46] [47]
-Underfull \hbox (badness 1264) in paragraph at lines 1045--1046
+Underfull \hbox (badness 1264) in paragraph at lines 1048--1049
 \T1/lmr/m/n/12 build-ing." Build-ings 14.1 (2023): 66. []$\T1/lmtt/m/n/12 https
  : / / doi . org / 10 . 3390 /
  []
 
 [48]
-Underfull \hbox (badness 2503) in paragraph at lines 1053--1054
+Underfull \hbox (badness 2503) in paragraph at lines 1056--1057
 \T1/lmr/m/n/12 tel-li-gence Re-view 57.7 (2024): 173. []$\T1/lmtt/m/n/12 https 
 : / / doi . org / 10 . 1007 /
  []
@@ -639,13 +649,13 @@ Package rerunfilecheck Info: File `ET_PRL_Applied_Energy.out' has not changed.
 (rerunfilecheck)             Checksum: 72870A589AA17B6EA9DB73C606305351;3529.
  ) 
 Here is how much of TeX's memory you used:
- 11204 strings out of 402987
- 169683 string characters out of 5448732
- 592343 words of memory out of 5000000
- 39746 multiletter control sequences out of 15000+600000
+ 11275 strings out of 402987
+ 170728 string characters out of 5448732
+ 596795 words of memory out of 5000000
+ 39814 multiletter control sequences out of 15000+600000
  714958 words of font info for 98 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,20n,79p,2078b,593s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on D:\code\projects\Event-DQN\docs\papers\applied-energy-latex\s
-ubmission\build\ET_PRL_Applied_Energy.xdv (50 pages, 190012 bytes).
+ubmission\build\ET_PRL_Applied_Energy.xdv (50 pages, 190512 bytes).
