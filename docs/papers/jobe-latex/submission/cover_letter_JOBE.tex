@@ -1,0 +1,30 @@
+\documentclass[11pt]{letter}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+
+\signature{Qiming Fu and Jianping Chen\\Corresponding authors}
+\address{School of Electronic and Information Engineering\\
+Suzhou University of Science and Technology\\
+Suzhou 215009, Jiangsu, China}
+
+\begin{document}
+
+\begin{letter}{Editors\\Journal of Building Engineering}
+
+\opening{Dear Editors,}
+
+We submit the manuscript entitled ``Adaptive Event-Triggered Predictive Reinforcement Learning for Chilled Water Temperature Control in Commercial Buildings'' for consideration as a full-length research paper in the \textit{Journal of Building Engineering}.
+
+The manuscript addresses intelligent operation and control of building HVAC systems. Fixed-interval reinforcement learning controllers execute policies uniformly even though building cooling loads evolve at different rates. We propose an event-triggered predictive reinforcement learning method that uses unsupervised multi-scale anomaly scoring and local-global adaptive thresholds to determine when a chilled water supply temperature policy should be executed. The method is evaluated in a calibrated EnergyPlus model of a commercial building HVAC system using measured chiller operation data.
+
+Compared with a fixed-step reinforcement learning controller using the same policy network, the proposed method reduces policy executions by 53.54\% and daily chiller energy use by 2.13\% while retaining 94.41\% of baseline cumulative reward. The trigger rate during high-load-variation periods is 2.02 times that during stable periods. Ablation and sensitivity analyses further identify how the multi-scale gate and adaptive threshold affect energy use and execution frequency. We believe these results fit the journal's Building Energy and Environment theme, particularly HVAC system intelligent operation and control and data-driven building energy modelling.
+
+This manuscript is original, has not been published previously, and is not under consideration elsewhere. All authors have approved the manuscript and agree with its submission to the \textit{Journal of Building Engineering}. The authors declare no competing interests. Code and data are currently available through the repository stated in the manuscript, and the final submission will include the data availability information required by the journal.
+
+Thank you for considering our manuscript.
+
+\closing{Sincerely,}
+
+\end{letter}
+\end{document}
