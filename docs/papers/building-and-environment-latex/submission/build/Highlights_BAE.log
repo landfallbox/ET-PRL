@@ -1,0 +1,74 @@
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.12) (preloaded format=xelatex 2026.7.8)  22 JUL 2026 14:46
+entering extended mode
+ restricted \write18 enabled.
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**./Highlights_BAE.tex
+(Highlights_BAE.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2025-12-24>
+(C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/base\size12.clo
+File: size12.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count271
+\c@section=\count272
+\c@subsection=\count273
+\c@subsubsection=\count274
+\c@paragraph=\count275
+\c@subparagraph=\count276
+\c@figure=\count277
+\c@table=\count278
+\abovecaptionskip=\skip49
+\belowcaptionskip=\skip50
+\bibindent=\dimen148
+)
+(C:\Users\tang\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-xete
+x.def
+File: l3backend-xetex.def 2025-10-09 L3 backend support: XeTeX
+\g__graphics_track_int=\count279
+\g__pdfannot_backend_int=\count280
+\g__pdfannot_backend_link_int=\count281
+)
+(D:\code\projects\Event-DQN\docs\papers\building-and-environment-latex\submissi
+on\build\Highlights_BAE.aux)
+\openout1 = `Highlights_BAE.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 3.
+LaTeX Font Info:    ... okay on input line 3.
+ [1
+
+]
+(D:\code\projects\Event-DQN\docs\papers\building-and-environment-latex\submissi
+on\build\Highlights_BAE.aux)
+ ***********
+LaTeX2e <2025-11-01>
+L3 programming layer <2025-12-24>
+ ***********
+ ) 
+Here is how much of TeX's memory you used:
+ 446 strings out of 402987
+ 9024 string characters out of 5448732
+ 428385 words of memory out of 5000000
+ 29218 multiletter control sequences out of 15000+600000
+ 627745 words of font info for 43 fonts, out of 8000000 for 9000
+ 1348 hyphenation exceptions out of 8191
+ 35i,5n,38p,168b,126s stack positions out of 10000i,1000n,20000p,200000b,200000s
+
+Output written on D:\code\projects\Event-DQN\docs\papers\building-and-environme
+nt-latex\submission\build\Highlights_BAE.xdv (1 page, 4488 bytes).

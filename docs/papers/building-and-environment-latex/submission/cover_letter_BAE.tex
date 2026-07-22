@@ -1,0 +1,52 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+
+\begin{document}
+\thispagestyle{empty}
+
+Editors\\
+\textit{Building and Environment}
+
+Dear Editors,
+
+We submit the manuscript entitled ``Event-Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating for Energy Efficient HVAC Control'' for consideration as an original research article in \textit{Building and Environment}.
+
+Fixed-step reinforcement learning controllers update HVAC setpoints at the same frequency under both stable and rapidly changing building loads, resulting in redundant control updates during stable operation and delayed responses when longer control intervals are used. Static event-triggered methods reduce unnecessary updates, but their manually defined thresholds cannot adapt readily to time-varying building operating conditions. We therefore propose an event-triggered predictive reinforcement learning method that uses unsupervised multi-scale anomaly scoring and local-global adaptive thresholds to determine when a chilled water supply temperature policy should be executed. Experiments on real chiller operation data show that the method reduces action updates while improving energy efficiency.
+
+Compared with existing fixed-step and static event-triggered HVAC control methods, this work makes the following contributions:
+
+\begin{enumerate}
+\setlength{\itemsep}{0.15em}
+\setlength{\parsep}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topsep}{0.25em}
+\item We reformulate event triggering as an online anomaly detection problem, replacing manually defined static rules with an adaptive trigger criterion based on state deviation.
+\item We develop unsupervised dynamic event gating by constructing a multi-scale fused anomaly score and a local-global two-layer adaptive threshold.
+\item We establish a predictive RL control algorithm with dynamic event triggering, reducing redundant control updates while maintaining control performance during stable periods.
+\item We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost.
+\end{enumerate}
+
+These contributions align with the journal's scope in advanced building control technologies, artificial intelligence applied to building systems, and sustainable smart heating and air-conditioning technologies.
+
+This manuscript is original, has not been published previously, and is not under consideration elsewhere. All authors have approved the submission. We have complied with the journal's submission declaration, obtained all necessary permissions, and declared no competing interests. Research data availability is stated in the manuscript.
+
+Thank you for considering our manuscript.
+
+\vspace{0.55\baselineskip}
+
+Sincerely,
+
+\vspace{0.45\baselineskip}
+
+Qiming Fu\\
+Corresponding author\\
+Email: fqm@mail.usts.edu.cn\\
+School of Electronic and Information Engineering\\
+Suzhou University of Science and Technology\\
+Suzhou 215009, Jiangsu, China
+
+\end{document}
