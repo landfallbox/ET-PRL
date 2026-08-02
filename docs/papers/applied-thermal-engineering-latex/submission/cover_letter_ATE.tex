@@ -1,0 +1,29 @@
+\documentclass[11pt]{letter}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{url}
+
+\signature{Qiming Fu\\Corresponding author\\E-mail: fqm\_1@126.com\\Phone: 13914002061\\Address: School of Electronic and Information Engineering, Suzhou University of Science and Technology, Suzhou, Jiangsu 215009, China}
+\begin{document}
+
+\begin{letter}{Editors\\Applied Thermal Engineering}
+
+\opening{Dear Editor,}
+
+On behalf of all coauthors, I am pleased to submit our manuscript entitled ``Event-Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating for Energy Efficient HVAC Control'' for consideration as a Full Length Article in \textit{Applied Thermal Engineering}.
+
+Efficient HVAC control is essential for reducing building energy consumption while maintaining reliable operation. In real buildings, thermal loads alternate between long stable periods and abrupt disturbances caused by weather, occupancy, and equipment-side fluctuations. Existing deep reinforcement learning methods usually update actions at fixed intervals, which can cause redundant policy inference and unnecessary actuator operation during stable periods. Meanwhile, static event-triggered rules are difficult to maintain under nonlinear and drifting operating conditions.
+
+To address this issue, we propose event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand HVAC control method that combines online streaming anomaly detection with predictive deep reinforcement learning. ET-PRL formulates control triggering as state-dependent anomaly detection over predictive operating features and uses a multi-scale fused anomaly score with a local-global adaptive threshold. Experiments on real chiller operation data show that ET-PRL reduces action updates by 53.54\% and energy consumption by 2.13\% compared with the fixed-step reinforcement learning baseline.
+
+We believe that this manuscript fits the scope of \textit{Applied Thermal Engineering} because it directly addresses advanced AI-based control of building energy systems and validates the proposed method using real commercial-building chiller operation data. The work contributes a practical control-update mechanism that adapts decision frequency to operating disturbances, improving energy efficiency while reducing unnecessary controller execution and actuator updates.
+
+This manuscript has not been published previously and is not under consideration for publication elsewhere. All authors have approved the manuscript and its submission to \textit{Applied Thermal Engineering}. The authors declare no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper. The code and data associated with this study are available at \url{https://github.com/landfallbox/ET-PRL.git}.
+
+Thank you for considering our manuscript for publication in \textit{Applied Thermal Engineering}. We appreciate your time and look forward to your evaluation.
+
+\closing{Sincerely,}
+
+\end{letter}
+\end{document}
