@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="458" height="149" viewBox="0 0 916 298" role="img" aria-labelledby="title desc">
+  <title id="title">Dual-static-threshold cooling-load control</title>
+  <desc id="desc">Cooling load over time with upper and lower static thresholds. Red points mark threshold crossings, and vertical dashed lines indicate action triggers.</desc>
+
+  <rect width="916" height="298" fill="#ffffff"/>
+
+  <!-- Axes -->
+  <g fill="none" stroke="#78909c" stroke-width="4" stroke-linecap="round">
+    <line x1="68" y1="30" x2="68" y2="232"/>
+    <line x1="68" y1="232" x2="876" y2="232"/>
+  </g>
+
+  <!-- Two preset static thresholds -->
+  <g fill="none" stroke="#d64f4f" stroke-width="5" stroke-dasharray="24 16" opacity="0.9">
+    <line x1="70" y1="100" x2="876" y2="100"/>
+    <line x1="70" y1="175" x2="876" y2="175"/>
+  </g>
+
+  <!-- Cooling-load trajectory -->
+  <path d="M72 208
+           C100 205 126 192 150 175
+           C195 143 245 134 300 100
+           C320 87 334 69 350 66
+           C380 60 405 83 430 100
+           C468 126 492 153 520 175
+           C548 197 578 202 620 175
+           C652 154 672 123 700 100
+           C728 77 756 76 790 100
+           C816 118 842 137 872 145"
+        fill="none" stroke="#00796b" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Threshold-crossing action triggers -->
+  <g fill="#d64f4f" stroke="#ffffff" stroke-width="4">
+    <circle cx="150" cy="175" r="10"/>
+    <circle cx="300" cy="100" r="10"/>
+    <circle cx="430" cy="100" r="10"/>
+    <circle cx="520" cy="175" r="10"/>
+    <circle cx="620" cy="175" r="10"/>
+    <circle cx="700" cy="100" r="10"/>
+    <circle cx="790" cy="100" r="10"/>
+  </g>
+
+  <!-- Labels -->
+  <g font-family="Arial, sans-serif" fill="#455a64" font-size="32">
+    <text x="88" y="48">Cooling load</text>
+    <text x="900" y="220" text-anchor="end">Time</text>
+  </g>
+  <g font-family="Arial, sans-serif" fill="#a74c48" font-size="22" font-weight="700">
+    <text x="560" y="62" paint-order="stroke" stroke="#ffffff" stroke-width="8">Upper threshold</text>
+    <text x="270" y="214" paint-order="stroke" stroke="#ffffff" stroke-width="8">Lower threshold</text>
+  </g>
+</svg>

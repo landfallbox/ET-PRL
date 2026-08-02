@@ -1,6 +1,6 @@
 {
     "latex-workshop.latex.autoBuild.run": "onSave",
-    "latex-workshop.latex.outDir": "%DIR%/build",
+    "latex-workshop.latex.outDir": "%DIR%",
     "latex-workshop.latex.recipes": [
         {
             "name": "latexmk (xelatex)",
@@ -25,6 +25,8 @@
                 "-file-line-error",
                 "-xelatex",
                 "-outdir=%OUTDIR%",
+                "-auxdir=%DIR%/build",
+                "-emulate-aux-dir",
                 "%DOC%"
             ]
         },
@@ -37,6 +39,8 @@
                 "-file-line-error",
                 "-pdf",
                 "-outdir=%OUTDIR%",
+                "-auxdir=%DIR%/build",
+                "-emulate-aux-dir",
                 "%DOC%"
             ]
         }

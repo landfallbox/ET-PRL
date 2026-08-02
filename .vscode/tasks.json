@@ -10,7 +10,9 @@
                 "-interaction=nonstopmode",
                 "-file-line-error",
                 "-xelatex",
-                "-outdir=${fileDirname}/build",
+                "-outdir=${fileDirname}",
+                "-auxdir=${fileDirname}/build",
+                "-emulate-aux-dir",
                 "${file}"
             ],
             "group": "build",
@@ -22,7 +24,9 @@
             "command": "latexmk",
             "args": [
                 "-C",
-                "-outdir=${fileDirname}/build",
+                "-outdir=${fileDirname}",
+                "-auxdir=${fileDirname}/build",
+                "-emulate-aux-dir",
                 "${file}"
             ],
             "group": "build",

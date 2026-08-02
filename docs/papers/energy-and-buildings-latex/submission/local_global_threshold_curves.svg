@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="184" viewBox="56 88 500 184" role="img" aria-labelledby="title desc" style="background:#ffffff;color:#263238">
+  <title id="title">Local and global dynamic thresholds</title>
+  <desc id="desc">The local threshold responds quickly with large fluctuations. The global threshold follows the same overall changes with a smoother and slightly delayed response.</desc>
+
+  <rect x="56" y="88" width="500" height="184" fill="#ffffff"/>
+
+  <g font-family="Arial, sans-serif" fill="#263238">
+    <!-- Axes -->
+    <g fill="none" stroke="#9aaeb6" stroke-width="2" stroke-linecap="round">
+      <line x1="70" y1="100" x2="70" y2="262"/>
+      <line x1="70" y1="262" x2="540" y2="262"/>
+    </g>
+
+    <!-- Local threshold: fast response and larger fluctuations. -->
+      <path d="M80 184
+       C105 182 122 153 148 148
+       C174 143 194 164 222 166
+       C248 168 267 108 302 101
+       C336 94 353 151 389 156
+       C420 160 438 127 466 123
+       C490 120 504 145 520 143
+       C528 142 533 137 534 133"
+          fill="none" stroke="#d64f4f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Global threshold: smoothed, lower-amplitude, and slightly delayed response to local changes. -->
+      <path d="M80 222
+       C119 220 151 207 184 204
+       C219 201 247 207 279 204
+       C313 201 338 186 368 183
+       C399 180 424 187 452 185
+       C481 183 500 176 516 175
+       C525 174 531 175 534 177"
+          fill="none" stroke="#c88408" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Direct labels sit beside the curve endpoints. -->
+        <text x="526" y="116" text-anchor="end" font-size="22" font-weight="700" fill="#a74c48" paint-order="stroke" stroke="#ffffff" stroke-width="4">Local</text>
+
+        <text x="526" y="210" text-anchor="end" font-size="22" font-weight="700" fill="#9a6508" paint-order="stroke" stroke="#ffffff" stroke-width="4">Global</text>
+
+    <text x="90" y="118" font-size="20" fill="#455a64">Threshold</text>
+    <text x="516" y="248" text-anchor="end" font-size="20" fill="#455a64">Time</text>
+  </g>
+</svg>

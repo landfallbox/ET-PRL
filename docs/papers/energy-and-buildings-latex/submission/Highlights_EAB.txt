@@ -1,0 +1,6 @@
+Highlights
+
+ET-PRL frames HVAC action triggering as online anomaly detection.
+Multi-scale anomaly scores and local-global thresholds enable dynamic event gating.
+Predictive RL couples with event triggering to reduce redundant control updates.
+Real data show 53.54% fewer updates and 2.13% less energy than fixed-step RL.

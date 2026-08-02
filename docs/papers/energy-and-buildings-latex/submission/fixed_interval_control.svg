@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="458" height="149" viewBox="0 0 916 298" role="img" aria-labelledby="title desc">
+  <title id="title">Fixed-interval cooling-load control</title>
+  <desc id="desc">Cooling load over time. Equally spaced vertical dashed lines indicate fixed control intervals, and red points on the curve indicate action triggers.</desc>
+
+  <rect width="916" height="298" fill="#ffffff"/>
+
+  <!-- Fixed control intervals -->
+  <g fill="none" stroke="#d64f4f" stroke-width="4" stroke-dasharray="10 9" opacity="0.68">
+    <line x1="150" y1="204" x2="150" y2="232"/>
+    <line x1="260" y1="174" x2="260" y2="232"/>
+    <line x1="370" y1="194" x2="370" y2="232"/>
+    <line x1="480" y1="104" x2="480" y2="232"/>
+    <line x1="590" y1="146" x2="590" y2="232"/>
+    <line x1="700" y1="90" x2="700" y2="232"/>
+    <line x1="810" y1="118" x2="810" y2="232"/>
+  </g>
+
+  <!-- Axes -->
+  <g fill="none" stroke="#78909c" stroke-width="4" stroke-linecap="round">
+    <line x1="68" y1="30" x2="68" y2="232"/>
+    <line x1="68" y1="232" x2="876" y2="232"/>
+  </g>
+
+  <!-- Cooling-load trajectory -->
+  <path d="M72 214
+           C102 211 126 208 150 204
+           C190 197 225 181 260 174
+           C300 166 334 200 370 194
+           C408 188 444 116 480 104
+           C518 91 550 140 590 146
+           C626 151 662 99 700 90
+           C738 81 774 121 810 118
+           C836 116 854 76 872 54"
+        fill="none" stroke="#00796b" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Action triggers -->
+  <g fill="#d64f4f" stroke="#ffffff" stroke-width="4">
+    <circle cx="150" cy="204" r="10"/>
+    <circle cx="260" cy="174" r="10"/>
+    <circle cx="370" cy="194" r="10"/>
+    <circle cx="480" cy="104" r="10"/>
+    <circle cx="590" cy="146" r="10"/>
+    <circle cx="700" cy="90" r="10"/>
+    <circle cx="810" cy="118" r="10"/>
+  </g>
+
+  <!-- Axis labels -->
+  <g font-family="Arial, sans-serif" fill="#455a64">
+    <text x="88" y="48" font-size="32">Cooling load</text>
+    <text x="900" y="220" text-anchor="end" font-size="32">Time</text>
+  </g>
+</svg>
