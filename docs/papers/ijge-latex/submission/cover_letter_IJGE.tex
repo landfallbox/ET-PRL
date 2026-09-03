@@ -1,0 +1,59 @@
+\documentclass[11pt]{letter}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{array,booktabs}
+
+\address{School of Electronic and Information Engineering\\
+Suzhou University of Science and Technology\\
+Suzhou 215009, Jiangsu, China}
+
+\begin{document}
+
+\begin{letter}{The Editors\\International Journal of Green Energy}
+
+\opening{Dear Editors,}
+
+We are pleased to submit our manuscript entitled ``Event-Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating for Energy Efficient HVAC Control'' for consideration as an original article in the \textit{International Journal of Green Energy}.
+
+\noindent{\bfseries Summary of the work.} 
+The manuscript addresses energy-efficient operation and control of building HVAC systems, which account for a substantial share of building electricity use. Fixed-interval reinforcement learning controllers execute policies uniformly even though building cooling loads evolve at different rates, causing redundant actuation during stable operation and delayed response to load changes. We propose event-triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), which converts fixed-step policy execution into state-dependent action updates by treating control triggering as online anomaly detection over a predictive state. The method is evaluated in a calibrated EnergyPlus model of a commercial building driven by measured chiller operation data. Compared with a fixed-step reinforcement learning controller using the same policy network, ET-PRL reduces policy executions by 53.54\% and daily chiller energy use by 2.13\%, with a 2.02-times higher trigger rate during high-load-variation periods.
+
+\noindent{\bfseries Fit to the journal scope.} 
+We believe this work fits the \textit{International Journal of Green Energy} closely. The journal's aims and scope include energy conservation, energy efficiency, and energy management in buildings and industrial systems. Our study directly targets reducing electricity consumption of commercial-building cooling systems and improving the energy management strategy of the chiller plant through a data-driven, on-demand control mechanism. The reported daily energy reduction, together with the reduced control actuation that lowers supervisory and actuator burden, is a practical contribution to greener, more efficient building energy operation.
+
+\noindent{\bfseries Author information and contributions.} 
+The manuscript has six authors. Their institutional e-mail addresses and CRediT contributions are listed below.
+
+\medskip
+\noindent
+\begin{minipage}{\linewidth}
+\centering\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}p{2.0cm}p{5.4cm}p{6.7cm}@{}}
+\toprule
+\textbf{Author} & \textbf{Institutional e-mail} & \textbf{CRediT contribution} \\
+\midrule
+Xinwei Tang & 2411041015@post.usts.edu.cn & Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data curation, Writing -- original draft, Visualization \\
+Qiming Fu & fqm@mail.usts.edu.cn & Supervision, Project administration, Writing -- review and editing \\
+Jianping Chen & alan@mail.usts.edu.cn & Supervision, Project administration, Writing -- review and editing \\
+You Lu & luyou@usts.edu.cn & Validation, Formal analysis, Writing -- review and editing \\
+Yunzhe Wang & yunzhe1991@mail.usts.edu.cn & Data curation, Investigation, Writing -- review and editing \\
+Ke Liu & lk@mail.usts.edu.cn & Resources, Writing -- review and editing \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\medskip
+
+\noindent{\bfseries Declarations.} 
+This manuscript is original, has not been published previously, and is not under consideration by any other journal. All authors have read and approved the final manuscript and agree with its submission to the \textit{International Journal of Green Energy}. The authors declare no competing interests. Generative AI-assisted tools were used for language editing and formatting support only; the authors reviewed and edited the content and take full responsibility for the publication. Code and data are available at the repository stated in the manuscript.
+
+Thank you for considering our submission.
+
+\vspace{2\baselineskip}
+\noindent Sincerely,\\[2\baselineskip]
+Qiming Fu and Jianping Chen\\
+Corresponding authors
+
+\end{letter}
+\end{document}

@@ -22,3 +22,6 @@ Event-DQN.code-workspace
 
 # Documentation build artifacts
 /docs/papers/_docx_build/generated/
+
+# Local submission credentials (never commit)
+docs/papers/ijge-latex/submission/CREDENTIALS.local.md
