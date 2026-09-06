@@ -389,7 +389,7 @@ The complete online execution procedure of the proposed ET-PRL method is summari
 
 \subsection{Building Thermal System Modeling}\label{building-thermal-system-modeling}
 
-We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model parameters were calibrated using measured operational data to reproduce the main thermodynamic response of the chilled water system. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A.1 in Appendix A, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
+We constructed an EnergyPlus model using data from a commercial building HVAC system in Shanghai as the simulation test platform. The model parameters were calibrated using measured operational data to reproduce the main thermodynamic response of the chilled water system. The cooling source system is a primary pump constant-flow chilled water system, mainly consisting of centrifugal chillers, chilled water pumps, cooling water pumps, and cooling towers. To ensure consistency between component parameters and the simulation model inputs, the rated parameters of the main equipment were configured according to the design specifications and the calibrated model parameters. The key design parameters of the system are listed in Table A.1 in the Supplementary Material, where the coefficient of performance, COP, is defined as the ratio of cooling capacity to input power.
 
 \subsection{Weather and Load Dataset Characteristics}\label{weather-and-load-dataset-characteristics}
 
@@ -421,7 +421,7 @@ To avoid temporal information leakage and better reflect practical online deploy
 
 \subsubsection{Experimental and Hyperparameter Settings}\label{experimental-and-hyperparameter-settings}
 
-This section describes the experimental settings and hyperparameters. To ensure experimental reproducibility, the key parameters of the DQN-based control policy and the online streaming gate are kept constant across all experimental groups. Unless otherwise stated, the sampling interval is 5 min. All hyperparameters are determined through Bayesian optimization and fixed after validation set screening. Parameters of the DQN-based control policy define the state representation, action space, and training process of the reinforcement learning controller, whereas parameters of the online streaming gate govern the sensitivity and stability of event-driven action updates. The complete hyperparameter settings are reported in Table A.2 in Appendix A.
+This section describes the experimental settings and hyperparameters. To ensure experimental reproducibility, the key parameters of the DQN-based control policy and the online streaming gate are kept constant across all experimental groups. Unless otherwise stated, the sampling interval is 5 min. All hyperparameters are determined through Bayesian optimization and fixed after validation set screening. Parameters of the DQN-based control policy define the state representation, action space, and training process of the reinforcement learning controller, whereas parameters of the online streaming gate govern the sensitivity and stability of event-driven action updates. The complete hyperparameter settings are reported in Table A.2 in the Supplementary Material.
 
 \subsubsection{Comparison Methods}\label{comparison-methods}
 
@@ -587,7 +587,7 @@ L_{\text{hold}} = \frac{1}{M}\sum_{m=1}^{M}h_m \quad \tag{37}\label{eq:hold-leng
 
 \noindent where \(h_m\) denotes the length of the \(m\)th constant setpoint segment and \(M\) is the total number of holding segments in the test trajectory.
 
-The evaluation metrics and optimization objectives are summarized in Table A.3 in Appendix A.
+The evaluation metrics and optimization objectives are summarized in Table A.3 in the Supplementary Material.
 
 \subsection{Experimental Results Analysis}\label{experimental-results-analysis}
 
@@ -685,7 +685,7 @@ ST-ETC & 1.249 & 220.31 & 7.89 & 43.3 \\
 }
 \end{table}
 
-Based on these trajectory statistics, the mean interval between setpoint changes under ET-PRL is 2.117 steps, compared with 1.249 steps for ST-ETC and 1.000 step for TTC-RL-1, and the corresponding daily setpoint change counts are 127.88, 220.31, and 275.25, respectively. These counts are lower than the policy execution counts because an invocation can return the currently held setpoint. ET-PRL also achieves a longer mean holding length of 11.56 steps, compared with 7.89 steps for ST-ETC and 7.57 steps for TTC-RL-1. Its distribution exhibits a pronounced long-tail pattern, with the 95th percentile \(P_{95}\) reaching 57.0 steps, or about 4.75 h, whereas the corresponding values for ST-ETC and TTC-RL-1 are only 43.3 and 42.9 steps. These results indicate that the dynamic threshold gating mechanism yields fewer realized setpoint changes and longer holding durations during stable periods.
+Based on trajectory statistics in Table~\ref{tab:temporal-sparsity}, the mean interval between setpoint changes under ET-PRL is 2.117 steps, compared with 1.249 steps for ST-ETC and 1.000 step for TTC-RL-1, and the corresponding daily setpoint change counts are 127.88, 220.31, and 275.25, respectively. These counts are lower than the policy execution counts because an invocation can return the currently held setpoint. ET-PRL also achieves a longer mean holding length of 11.56 steps, compared with 7.89 steps for ST-ETC and 7.57 steps for TTC-RL-1. Its distribution exhibits a pronounced long-tail pattern, with the 95th percentile \(P_{95}\) reaching 57.0 steps, or about 4.75 h, whereas the corresponding values for ST-ETC and TTC-RL-1 are only 43.3 and 42.9 steps. These results indicate that the dynamic threshold gating mechanism yields fewer realized setpoint changes and longer holding durations during stable periods.
 
 To further illustrate the distribution pattern of these trigger interval differences, Figure~\ref{fig:action-update-interval-distribution} shows the distribution of action update intervals under the different control strategies. The main panel reports the proportion in each interval bin for TTC-RL-1, ST-ETC, and ET-PRL, and the inset enlarges the long-tail region for intervals of at least 4 steps. TTC-RL-1 concentrates almost entirely at an interval of 1 step because it updates at a fixed cadence, whereas ST-ETC updates are mainly concentrated in the short-interval range. By contrast, ET-PRL exhibits a much more pronounced long-tail pattern, with a maximum trigger interval of 74 steps, indicating that the dynamic event gating mechanism can keep the setpoint unchanged for longer periods under low-disturbance conditions.
 
