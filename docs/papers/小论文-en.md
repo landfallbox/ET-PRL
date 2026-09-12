@@ -1,5 +1,26 @@
 # Event Triggered Predictive Reinforcement Learning with Unsupervised Dynamic Event Gating for Energy-Efficient HVAC Control
 
+**Authors:**
+
+1. Xinwei Tang (a, b)
+2. Qiming Fu (a, b) *
+3. Jianping Chen (a, b, c) *
+4. You Lu (a, b)
+5. Yunzhe Wang (a, b)
+6. Ke Liu (d)
+
+*Corresponding authors*
+
+- Qiming Fu: fqm@mail.usts.edu.cn
+- Jianping Chen: alan@mail.usts.edu.cn
+
+**Affiliations:**
+
+- a. School of Electronic and Information Engineering, Suzhou University of Science and Technology, Suzhou 215009, Jiangsu, China
+- b. Jiangsu Province Key Laboratory of Intelligent Building Energy Efficiency, Suzhou University of Science and Technology, Suzhou 215009, Jiangsu, China
+- c. Chongqing Industrial Big Data Innovation Center Co., Ltd., Chongqing 400707, China
+- d. School of Architecture and Urban Planning, Suzhou University of Science and Technology, Suzhou 215019, Jiangsu, China
+
 # Abstract
 
 Deep reinforcement learning (DRL) has shown strong potential for HVAC control, yet existing methods generally follow a time triggered control (TTC) paradigm that cannot adapt the decision frequency to the intensity of load disturbances, resulting in an inherent trade-off between response speed and control cost. Event triggered control (ETC) can mitigate this issue through on-demand update mechanisms, but existing schemes rely on static triggering rules that lack dynamic adaptability to long-term operating condition drift. To address this gap, we propose event triggered predictive reinforcement learning with unsupervised dynamic event gating (ET-PRL), an on-demand HVAC control method that turns time triggered policy execution into state-dependent action updates, where the key idea is to treat control triggering as an online anomaly detection problem over the predictive state, so that control action updates are released only when the current state deviates sufficiently from the recent reference distribution. We construct a multi-scale fused anomaly score and a local-global two-layer adaptive threshold, allowing the trigger boundary to remain sensitive to abrupt disturbances while adapting to intraday variation and long-term operating condition drift. Coupled with a predictive DQN controller, ET-PRL preserves timely intervention during abrupt load changes and suppresses unnecessary policy inference and actuator wear during stable operation. Experiments on real chiller operation data show that, compared with the fixed-step reinforcement learning baseline, ET-PRL reduces action updates by 53.54% and achieves a 2.13% reduction in energy consumption, thereby offering a better trade-off between control performance and execution cost for building HVAC control.
@@ -26,7 +47,7 @@ Driven by the above motivations, we propose a new HVAC control method, event tri
 
 - We establish a predictive RL control algorithm with dynamic event triggering, reducing redundant control updates while maintaining performance during stable periods.
 
-- We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost. The code and data associated with this study are available at https://github.com/landfallbox/ET-PRL.git.
+- We validate ET-PRL on real chiller operation data, demonstrating reduced action updates, improved energy efficiency, and a favorable balance between control performance and execution cost.
 
 # 2. Related Work
 
@@ -801,9 +822,31 @@ Table A3 Evaluation metrics and optimization objectives
 </tbody>
 </table>
 
+# CRediT authorship contribution statement
+
+Xinwei Tang: Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data curation, Writing - original draft, Visualization.
+
+Qiming Fu: Supervision, Project administration, Writing - review and editing.
+
+Jianping Chen: Supervision, Project administration, Writing - review and editing.
+
+You Lu: Validation, Formal analysis, Writing - review and editing.
+
+Yunzhe Wang: Data curation, Investigation, Writing - review and editing.
+
+Ke Liu: Resources, Writing - review and editing.
+
 # Declaration of competing interest
 
 The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+# Data availability
+
+The code and data associated with this study are available at https://github.com/landfallbox/ET-PRL.git.
+
+# Acknowledgements
+
+This work was supported by the National Natural Science Foundation of China (No. 62372318).
 
 # Declaration of generative AI and AI-assisted technologies in the writing process
 
