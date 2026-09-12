@@ -16,6 +16,7 @@ env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.playwright-mcp/
 
 # temp ignore
 Event-DQN.code-workspace
@@ -24,7 +25,9 @@ Event-DQN.code-workspace
 /docs/papers/_docx_build/generated/
 
 # Local submission credentials (never commit)
+CREDENTIALS.local.md
 docs/papers/ijge-latex/submission/CREDENTIALS.local.md
+docs/papers/ibe-latex/submission/CREDENTIALS.local.md
 
 # LaTeX build intermediates (keep PDFs)
 docs/papers/ijge-latex/submission/build/*
