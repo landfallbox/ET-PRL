@@ -1,1 +1,0 @@
-"""Cooling load prediction modules."""
