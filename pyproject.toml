@@ -1,16 +1,17 @@
 [project]
-name = "event-dqn"
+name = "et-prl"
 version = "0.1.0"
-description = "Event-driven DQN control project with LSTM prediction and evaluation workflows"
+description = "Event-driven PRL (LSTM prediction + DQN control + anomaly gate) for chiller supply-temperature control"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "matplotlib>=3.10.0",
-    "ml-toolkit",
     "numpy>=2.4.2",
     "optuna>=4.7.0",
     "pandas>=3.0.0",
     "pyyaml>=6.0.3",
+    "scikit-learn>=1.3.0",
+    "tensorboard>=2.16.0",
     "torch>=2.10.0,<2.11",
 ]
 
@@ -18,39 +19,59 @@ dependencies = [
 docs = [
     "python-docx>=1.1.0",
 ]
+dev = [
+    "black>=24.0.0",
+    "pylint>=3.0.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
 
 [project.scripts]
-event-dqn-train-dqn = "src.cli.train:main_dqn"
-event-dqn-test-dqn = "src.cli.test:main_dqn"
-event-dqn-optimize-dqn = "src.cli.optimize:main_dqn"
-event-dqn-train-lstm = "src.cli.train:main_lstm"
-event-dqn-test-lstm = "src.cli.test:main_lstm"
-event-dqn-optimize-lstm = "src.cli.optimize:main_lstm"
-event-dqn-predict-lstm = "src.cli.lstm_predict:main"
-event-dqn-compare-control = "src.cli.control_compare:main"
-event-dqn-test-event-driven = "src.cli.test:main_event_driven"
-event-dqn-prewarm-gate = "src.cli.gate_prewarm:main"
-event-dqn-optimize-gate = "src.cli.optimize:main_gate"
-event-dqn-analyze-gate-sensitivity = "src.cli.optimize:main_gate_sensitivity"
-event-dqn-run-ablation-all = "src.cli.ablation:main_all"
-event-dqn-run-ablation-single-scale-short = "src.cli.ablation:main_single_scale_short"
-event-dqn-run-ablation-single-scale-medium = "src.cli.ablation:main_single_scale_medium"
-event-dqn-run-ablation-single-scale-long = "src.cli.ablation:main_single_scale_long"
-event-dqn-run-ablation-wo-local-threshold = "src.cli.ablation:main_wo_local_threshold"
+etprl-train-dqn = "et_prl.cli.train:main_dqn"
+etprl-test-dqn = "et_prl.cli.test:main_dqn"
+etprl-optimize-dqn = "et_prl.cli.optimize:main_dqn"
+etprl-train-lstm = "et_prl.cli.train:main_lstm"
+etprl-test-lstm = "et_prl.cli.test:main_lstm"
+etprl-optimize-lstm = "et_prl.cli.optimize:main_lstm"
+etprl-predict-lstm = "et_prl.cli.lstm_predict:main"
+etprl-compare-control = "et_prl.cli.control_compare:main"
+etprl-test-event-driven = "et_prl.cli.test:main_event_driven"
+etprl-prewarm-gate = "et_prl.cli.gate_prewarm:main"
+etprl-optimize-gate = "et_prl.cli.optimize:main_gate"
+etprl-analyze-gate-sensitivity = "et_prl.cli.optimize:main_gate_sensitivity"
+etprl-run-ablation-all = "et_prl.cli.ablation:main_all"
+etprl-run-ablation-full = "et_prl.cli.ablation:main_full_et_prl"
+etprl-run-ablation-wo-dual-threshold = "et_prl.cli.ablation:main_wo_dual_threshold"
+etprl-run-ablation-wo-local-threshold = "et_prl.cli.ablation:main_wo_local_threshold"
+etprl-run-ablation-wo-multi-scale = "et_prl.cli.ablation:main_wo_multi_scale"
+etprl-run-ablation-single-scale-short = "et_prl.cli.ablation:main_single_scale_short"
+etprl-run-ablation-single-scale-medium = "et_prl.cli.ablation:main_single_scale_medium"
+etprl-run-ablation-single-scale-long = "et_prl.cli.ablation:main_single_scale_long"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
 [tool.hatch.build.targets.wheel]
-packages = ["src", "config"]
+packages = ["src/et_prl"]
 
 [tool.uv]
 index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
-[tool.uv.sources]
-ml-toolkit = { git = "https://github.com/landfallbox/ml-toolkit.git" }
+# Black 代码格式化配置
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+include = '\.pyi?$'
+
+# Pytest 测试配置
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-v --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+]
 

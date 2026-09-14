@@ -271,24 +271,28 @@ utils/、config/ 可被任意层引用
   拼 CSV，指标结构一变就要改记录器；且 DQN trainer 被迫在 `_save_training_history`
   里手动把 `list[dict]` 重排成这个硬编码结构再传入（`trainer.py:286`）
 
-重构方案（零额外依赖，`torch.utils.tensorboard` 随 torch 自带）：
+重构方案（**已实现**）：
+
+> 实现时两处修正（相对本计划初稿）：
+> ① `tensorboard` 是**独立依赖**（torch 不强制安装），已加入 `pyproject.toml`
+>    （`tensorboard>=2.16.0`）；`MetricsRecorder` 内 SummaryWriter 做 try-import 降级
+>    （TB 缺失时静默跳过，不影响 CSV）双保险。
+> ② 采用**批量写 TB**（`save_training_history` 末尾一次性写）而非逐 epoch `add_epoch`，
+>    使 trainer 训练循环**零改动**，更符合"业务代码保持原样"总原则。
 
 | 产物 | 现状 | 重构后 |
 |---|---|---|
-| `training_history.csv` | 通用记录器硬编码 key 名拼列；DQN trainer 手动重排结构 | **列名逐字不变**（绘图兼容）；记录器改为通用实现：逐 epoch `add_epoch(record: dict)` 缓存，结束时自动推导列一次性 `df.to_csv()`；DQN trainer 的手动重排代码删除 |
-| TB event 文件 | 无 | **新增**：`SummaryWriter.add_scalar` 逐 epoch 实时写，`tensorboard --logdir outputs/runs/` 交互看曲线（调试/论文配图补充，不替代 CSV） |
-| `metrics.json` | 结束时一次性写入（格式正确） | 保持原样（已核实无读取方，但改动无收益） |
+| `training_history.csv` | 通用记录器硬编码 key 名拼列 | **列名逐字不变**（已验证 `epoch/train_loss/train_reward/train_steps/val_reward/val_steps`，绘图兼容）；逻辑保留，末尾追加 TB 写入 |
+| TB event 文件 | 无 | **新增**：`save_training_history` 末尾 `_log_records_to_tb` 批量 `add_scalar`（跳过 NaN/inf），`tensorboard --logdir outputs/runs/` 看曲线 |
+| `metrics.json` | 结束时一次性写入 | 保持原样（已核实无读取方） |
 
-实现要点：
-- `et_prl/utils/metrics.py`：`MetricsRecorder` 保留同名同接口
-  （`save_metrics`/`save_training_history`/`load_metrics`），内部改为：
-  - 新增 `add_epoch(record: dict, step: int)`：内存缓存 + `writer.add_scalar` 逐键写入
-  - `save_training_history()` → 从缓存构建 DataFrame 一次性写 CSV（列自动推导，
-    不再硬编码 key 名）；兼容旧签名（传入 history_dict 时仍可用，过渡期保留）
-  - `save_metrics`/`load_metrics` 接口与行为不变
-- 调用点改动最小化：`lstm_trainer`、`dqn_trainer`、`gate_value_trainer` 在训练循环内
-  增加 `add_epoch` 调用（每 epoch 一行），删除 DQN trainer 的 `_save_training_history`
-  手动重排逻辑；**接口不变，其余调用点无感**
+实现要点（`et_prl/utils/metrics_recorder.py`）：
+- `MetricsRecorder` 保留同名同接口（`save_metrics`/`save_training_history`/`load_metrics`）
+- `__init__` 新增 `_init_tb_writer()`（try-import SummaryWriter，失败返回 None）+ `close()`
+- `save_training_history` 写完 CSV 后调 `_log_records_to_tb(records)` 批量写 TB
+- `ExperimentContext` 新增 `close()` 方法（调 `metrics_recorder.close()`）
+- **trainer 调用点零改动**（DQN trainer 的 `_save_training_history` 手动重排保留，
+  因其产出的 dict 格式正是记录器消费的格式）
 
 #### 2.7.2 Logger 修复（小改动）
 
@@ -338,15 +342,15 @@ utils/、config/ 可被任意层引用
 2. 修正唯一 1 处内部自引用 + 各 `__init__.py` 的 re-export
 3. 合并 `anomaly_detection` 与 `data_processing` 与 Event-DQN 对应模块的命名冲突
    （`streaming_*` 文件归 `detection/`，`dataset_loader` 等归 `data/`）
-4. **基础设施重构**（详见 2.7）：
-   - `MetricsRecorder` → 通用化（`add_epoch` 缓存 + 自动推导列）+ 新增 TB event 实时曲线；
-     `training_history.csv` 列名逐字保持（绘图脚本兼容）；删除 DQN trainer 手动重排逻辑
+4. **基础设施重构**（详见 2.7，**已完成**）：
+   - `MetricsRecorder` → 新增 SummaryWriter（批量写 TB，trainer 零改动）；
+     `training_history.csv` 列名逐字保持（已验证）；`tensorboard` 加入依赖
    - `Logger` → 修复 logger 命名（UUID 替代目录名）、去掉 `handlers.clear()` hack
-   - `ExperimentContext` → 注入 `SummaryWriter`，`close()` 时 flush
+   - `ExperimentContext` → 新增 `close()` 方法
    - `ConfigManager`/`CheckpointManager` → 保持原样（P4 后 ConfigManager 被新 loader 替代）
-- **验收**：`compileall` 通过；逐子包 import 冒烟通过；
-  手动跑一次最小训练确认：TB event 文件生成 + `training_history.csv` 列名与旧版一致
-  + `metrics.json` 正常写入
+- **验收**（**已通过**）：`compileall` 通过；11 个 toolkit 包 import 冒烟通过；
+  功能测试确认：TB event 文件生成 + `training_history.csv` 列名与旧版一致
+  + `metrics.json` 正常写入 + Logger UUID 命名 + `close()` 正常
 
 ### P3 迁移 Event-DQN 业务代码（~3–4 h）
 1. 按映射表复制 `src/dqn`、`src/cl_predict`、`src/online_anomaly_detection`、
@@ -411,8 +415,8 @@ utils/、config/ 可被任意层引用
 | 绘图脚本硬编码路径（读 `logs/`、绝对路径 `d:/code/projects/Event-DQN`、具体实验时间戳 `20260402_222140`） | 换目录/换机器即失败 | P5 逐一替换为 `outputs/runs/` + 项目根相对路径；时间戳默认值改为"自动选最新实验目录"（现有 `--experiment_dir` 机制已支持） |
 | `plot_ablation_pareto.py` 等脚本硬编码论文指标数字 | 结果更新后图不更新，可复现性隐患 | 迁移时保持原样（不阻塞）；迁移后改进为从 `outputs/tables/*.csv` 读数字，列入后续待办 |
 | 两项目异常检测模块文件重名 | 复制覆盖 | P2 先做文件名冲突清单，逐一确认归属 |
-| MetricsRecorder 硬编码 key 名拼 CSV，指标结构变化即断裂 | 新增指标要改记录器代码 | 通用化 `add_epoch` + 自动推导列（见 P2 基础设施重构） |
-| training_history.csv 列名被绘图脚本依赖 | 重构后列名变化导致出图失败 | 列名逐字保持；P2 验收中对比新旧 CSV 列名 |
+| training_history.csv 列名被绘图脚本依赖 | 重构后列名变化导致出图失败 | 列名逐字保持；P2 已验证列名与旧版一致 |
+| tensorboard 是独立依赖（torch 不强制安装） | 未安装时 TB 写入失败 | 已加入 pyproject 依赖；MetricsRecorder 内 try-import 降级（TB 缺失仅跳过 TB，CSV 不受影响） |
 | Logger 用目录名做 logger name | 同名实验共享 logger，日志串流 | 改为 UUID 命名 |
 
 ---
