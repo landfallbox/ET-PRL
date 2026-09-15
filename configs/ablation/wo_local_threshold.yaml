@@ -1,0 +1,5 @@
+# 消融变体 wo_local_threshold。extends: control_compare。
+extends: control_compare
+
+EXPERIMENT_NAME: ablation_wo_local_threshold
+GATE_ALPHA_LOCAL_WEIGHT: 0.0

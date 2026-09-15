@@ -1,0 +1,3 @@
+# 事件驱动 DQN 评估配置。extends: [dqn, gate]。
+extends: [dqn, gate]
+EXPERIMENT_NAME: event_driven_dqn

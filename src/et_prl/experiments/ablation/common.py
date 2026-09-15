@@ -81,7 +81,7 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
 
 def run_ablation_experiment(
     *,
-    config: type[ControlCompareConfig],
+    config: ControlCompareConfig,
     ablation_id: str,
     ablation_name: str,
     ablation_description: str,

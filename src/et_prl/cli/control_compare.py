@@ -1,14 +1,13 @@
 import argparse
 from pathlib import Path
 
-from et_prl.config.control_compare import ControlCompareConfig
-from et_prl.config.dqn import DQNConfig
+from et_prl.config.loader import load_config
 from et_prl.utils import CheckpointManager
 from et_prl.cli.overrides import apply_overrides, load_overrides
 from et_prl.experiments.comparison import compare_control_strategies
 
 
-def _resolve_dqn_model_path(dqn_model_arg: str | None) -> Path:
+def _resolve_dqn_model_path(dqn_model_arg: str | None, config, dqn_config) -> Path:
     if dqn_model_arg:
         explicit_model_path = Path(dqn_model_arg)
         if not explicit_model_path.exists():
@@ -16,20 +15,20 @@ def _resolve_dqn_model_path(dqn_model_arg: str | None) -> Path:
         return explicit_model_path
 
     latest_train_experiment = CheckpointManager.find_latest_experiment(
-        experiment_name=DQNConfig.EXPERIMENT_NAME,
+        experiment_name=dqn_config.EXPERIMENT_NAME,
         mode="train",
-        log_root_dir=ControlCompareConfig.LOG_ROOT_DIR,
+        log_root_dir=config.LOG_ROOT_DIR,
     )
     if latest_train_experiment is None:
         raise FileNotFoundError(
             "未提供 --dqn_model，且未找到任何 DQN 训练实验目录。"
-            f"请检查目录: {ControlCompareConfig.LOG_ROOT_DIR / DQNConfig.EXPERIMENT_NAME / ControlCompareConfig.TRAIN_SUBDIR}"
+            f"请检查目录: {config.LOG_ROOT_DIR / dqn_config.EXPERIMENT_NAME / config.TRAIN_SUBDIR}"
         )
 
     best_model_path = (
         latest_train_experiment
-        / ControlCompareConfig.CHECKPOINT_DIR_NAME
-        / ControlCompareConfig.BEST_MODEL_FILENAME
+        / config.CHECKPOINT_DIR_NAME
+        / config.BEST_MODEL_FILENAME
     )
     if not best_model_path.exists():
         raise FileNotFoundError(
@@ -42,6 +41,9 @@ def _resolve_dqn_model_path(dqn_model_arg: str | None) -> Path:
 
 
 def main() -> None:
+    config = load_config("control_compare")
+    dqn_config = load_config("dqn")
+
     parser = argparse.ArgumentParser(description="控制策略性能对比")
     parser.add_argument("--dqn_model", type=str, default=None, help="DQN 训练模型的 .pth 文件路径")
     parser.add_argument(
@@ -60,7 +62,7 @@ def main() -> None:
     parser.add_argument(
         "--gate_state_path",
         type=str,
-        default=str(ControlCompareConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
+        default=str(config.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
         help="门控状态文件路径",
     )
     parser.add_argument(
@@ -73,13 +75,14 @@ def main() -> None:
     if args.gate_config_path:
         gate_config_path = Path(args.gate_config_path)
         gate_overrides = load_overrides(gate_config_path)
-        apply_overrides(ControlCompareConfig, gate_overrides, source_name="GATE")
+        config = apply_overrides(config, gate_overrides, source_name="GATE")
 
-    resolved_dqn_model_path = _resolve_dqn_model_path(args.dqn_model)
+    resolved_dqn_model_path = _resolve_dqn_model_path(args.dqn_model, config, dqn_config)
     gate_state_path = None if args.no_load_gate_state else (Path(args.gate_state_path) if args.gate_state_path else None)
 
     compare_control_strategies(
         dqn_model_path=resolved_dqn_model_path,
         fixed_intervals=[int(i) for i in args.fixed_interval],
         gate_state_path=gate_state_path,
+        config=config,
     )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +12,6 @@ from et_prl.environments import SequenceEnv
 from et_prl.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
 from et_prl.config.control_compare import ControlCompareConfig
-from et_prl.config.gate import OnlineAnomalyDetectionConfig
 from et_prl.evaluation.control.common import (
     build_test_components,
     create_streaming_gate,
@@ -19,10 +19,11 @@ from et_prl.evaluation.control.common import (
 )
 from et_prl.evaluation.control.strategies.event_driven import test_event_driven
 from et_prl.evaluation.control.strategies.fixed_interval import test_fixed_interval
+from et_prl.config.loader import load_config
 
 
 def _load_prewarm_features(
-    config: type[ControlCompareConfig],
+    config: ControlCompareConfig,
     val_df_override: pd.DataFrame | None = None,
 ) -> np.ndarray:
     feature_columns = list(config.FEATURE_COLUMNS)
@@ -43,7 +44,7 @@ def _load_prewarm_features(
 
 def _get_dynamic_param_range(
     param_name: str,
-    config: type[ControlCompareConfig],
+    config: ControlCompareConfig,
     phase: str,
     previous_best_value: float | None,
     shrink_ratio: float = 0.2,
@@ -196,7 +197,7 @@ def _load_previous_phase_best(
 
 
 def _create_search_space(
-    config: type[ControlCompareConfig],
+    config: ControlCompareConfig,
     phase: str = "phase1",
     previous_best_params: dict | None = None,
     shrink_ratio: float = 0.2,
@@ -260,10 +261,8 @@ def _create_search_space(
     return space
 
 
-def _build_trial_config(base_cls: type[ControlCompareConfig], params: dict) -> type[ControlCompareConfig]:
-    class TrialConfig(base_cls):
-        pass
-
+def _build_trial_config(base_config, params: dict):
+    """基于 base 配置实例生成 trial 配置（frozen dataclass 用 replace）。"""
     # 参数映射：参数名 -> (config属性名, 类型)
     param_config_mapping = {
         "global_ema_decay": ("GATE_GLOBAL_EMA_DECAY", float),
@@ -280,33 +279,33 @@ def _build_trial_config(base_cls: type[ControlCompareConfig], params: dict) -> t
         "score_medium_weight": ("GATE_SCORE_MEDIUM_WEIGHT", float),
         "trigger_hysteresis_margin": ("GATE_TRIGGER_HYSTERESIS_MARGIN", float),
     }
-    
+
     # 针对score_weight需要特别处理
     has_score_short = "score_short_weight" in params
     has_score_medium = "score_medium_weight" in params
-    
+
+    updates: dict = {}
     for param_name, (config_attr, param_type) in param_config_mapping.items():
         if param_name in params:
             # 使用优化进来的值
             value = param_type(params[param_name])
         else:
             # 使用base_config的默认值
-            value = param_type(getattr(base_cls, config_attr))
-        
-        setattr(TrialConfig, config_attr, value)
-    
+            value = param_type(getattr(base_config, config_attr))
+        updates[config_attr] = value
+
     # 计算score_long_weight
     if has_score_short and has_score_medium:
         score_short_weight = float(params["score_short_weight"])
         score_medium_weight = float(params["score_medium_weight"])
     else:
-        score_short_weight = float(getattr(base_cls, "GATE_SCORE_SHORT_WEIGHT"))
-        score_medium_weight = float(getattr(base_cls, "GATE_SCORE_MEDIUM_WEIGHT"))
-    
-    score_long_weight = max(0.01, 1.0 - score_short_weight - score_medium_weight)
-    setattr(TrialConfig, "GATE_SCORE_LONG_WEIGHT", float(score_long_weight))
+        score_short_weight = float(getattr(base_config, "GATE_SCORE_SHORT_WEIGHT"))
+        score_medium_weight = float(getattr(base_config, "GATE_SCORE_MEDIUM_WEIGHT"))
 
-    return TrialConfig
+    score_long_weight = max(0.01, 1.0 - score_short_weight - score_medium_weight)
+    updates["GATE_SCORE_LONG_WEIGHT"] = float(score_long_weight)
+
+    return replace(base_config, **updates)
 
 
 def _calculate_recall_metrics(step_results: pd.DataFrame) -> dict:
@@ -370,8 +369,7 @@ def optimize_gate_hyperparameters(
     n_jobs: int | None = None,
     previous_phase_result_dir: Path | None = None,
 ) -> dict:
-    base_config = ControlCompareConfig
-    
+    base_config = load_config("control_compare")
     # 多阶段优化配置
     current_phase = getattr(base_config, "GATE_OPTIMIZATION_PHASE", "phase1")
     phase_cfg = _get_phase_params(current_phase)
@@ -385,7 +383,7 @@ def optimize_gate_hyperparameters(
         n_jobs = int(base_config.GATE_OPTIMIZATION_DEFAULT_N_JOBS)
 
     # 为每个phase创建独立目录
-    base_output_dir = OnlineAnomalyDetectionConfig.get_optimization_dir() / OnlineAnomalyDetectionConfig.TIMESTAMP
+    base_output_dir = base_config.get_optimization_dir() / base_config.TIMESTAMP
     output_dir = base_output_dir / current_phase / "gate"
     output_dir.mkdir(parents=True, exist_ok=True)
 

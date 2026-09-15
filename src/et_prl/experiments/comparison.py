@@ -6,7 +6,6 @@ import numpy as np
 from et_prl.environments import SequenceEnv
 from et_prl.utils import create_experiment_context
 
-from et_prl.config.control_compare import ControlCompareConfig
 from et_prl.evaluation.control.common import (
     build_test_components,
     copy_train_config,
@@ -18,6 +17,7 @@ from et_prl.evaluation.control.strategies.fixed_interval import test_fixed_inter
 from et_prl.evaluation.control.strategies.event_triggered_etc import test_event_triggered_etc
 from et_prl.evaluation.control.strategies.pid import test_pid
 from et_prl.evaluation.control.strategies.rbc import test_rule_based_control
+from et_prl.config.loader import load_config
 
 
 def _get_paper_symbol_field_mapping() -> dict[str, str]:
@@ -98,7 +98,7 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
     }
 
 
-def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | None:
+def _resolve_train_dir_from_model_path(dqn_model_path: Path | None, config) -> Path | None:
     if dqn_model_path is None:
         return None
 
@@ -107,7 +107,7 @@ def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | No
         raise FileNotFoundError(f"指定的 DQN 模型文件不存在: {resolved_model_path}")
 
     checkpoint_dir = resolved_model_path.parent
-    if checkpoint_dir.name != ControlCompareConfig.CHECKPOINT_DIR_NAME:
+    if checkpoint_dir.name != config.CHECKPOINT_DIR_NAME:
         raise ValueError(
             "dqn_model_path 的父目录应为 checkpoints 目录。"
             f"当前路径: {resolved_model_path}"
@@ -116,7 +116,7 @@ def _resolve_train_dir_from_model_path(dqn_model_path: Path | None) -> Path | No
     return checkpoint_dir.parent
 
 
-def _resolve_event_thresholds(config: type[ControlCompareConfig], test_data) -> tuple[float, float, float]:
+def _resolve_event_thresholds(config, test_data) -> tuple[float, float, float]:
     def _attr_or_std(column: str, attr_name: str, fallback: float) -> float:
         config_value = getattr(config, attr_name, None)
         if config_value is not None:
@@ -137,8 +137,10 @@ def compare_control_strategies(
     fixed_intervals: list[int] | None = None,
     gate_state_path: Path | None = None,
     dqn_model_path: Path | None = None,
+    config=None,
 ) -> None:
-    config = ControlCompareConfig
+    if config is None:
+        config = load_config("control_compare")
     test_experiment_dir = config.get_eval_experiment_dir()
 
     context = create_experiment_context(
@@ -166,7 +168,7 @@ def compare_control_strategies(
         if interval <= 0:
             raise ValueError(f"fixed_interval 必须大于 0，当前: {interval}")
 
-    model_train_dir = _resolve_train_dir_from_model_path(dqn_model_path)
+    model_train_dir = _resolve_train_dir_from_model_path(dqn_model_path, config)
     resolved_train_dir = resolve_train_experiment_dir(model_train_dir or train_experiment_dir)
     logger.info(f"使用训练实验目录: {resolved_train_dir}")
 

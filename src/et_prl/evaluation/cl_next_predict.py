@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import torch
 
-from et_prl.config.lstm import LSTMConfig
+from et_prl.config.loader import load_config
 from et_prl.data import tensor_loader
 from et_prl.models import LSTM
 from et_prl.utils import CheckpointManager, ConfigManager
@@ -62,7 +62,7 @@ def predict_cl_next(
 
     输出 CSV 列: CL, Twb, CL_next
     """
-    base_config = LSTMConfig()
+    base_config = load_config("lstm")
 
     if train_experiment_dir is None:
         train_experiment_dir = CheckpointManager.find_latest_experiment("lstm", mode="train")

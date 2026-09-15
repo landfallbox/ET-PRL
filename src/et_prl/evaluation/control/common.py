@@ -11,6 +11,7 @@ import yaml
 from et_prl.utils import CheckpointManager, ConfigManager, Logger, resolve_experiment_dir
 
 from et_prl.config.dqn import DQNConfig
+from et_prl.config.loader import get_default
 from et_prl.agents.dqn.agent import DQNAgent
 from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.training.dqn_trainer import DQNTrainer
@@ -21,18 +22,19 @@ TestDataSplit = Literal["test", "val", "train"]
 
 
 def resolve_train_experiment_dir(train_experiment_dir: Path | None) -> Path:
+    dqn_config = get_default("dqn")
     return resolve_experiment_dir(
         explicit_dir=train_experiment_dir,
-        experiment_name=DQNConfig.EXPERIMENT_NAME,
+        experiment_name=dqn_config.EXPERIMENT_NAME,
         mode="train",
-        log_root_dir=DQNConfig.LOG_ROOT_DIR,
+        log_root_dir=dqn_config.LOG_ROOT_DIR,
     )
 
 
 def copy_train_config(
     resolved_train_dir: Path,
     test_experiment_dir: Path,
-    config: type[DQNConfig],
+    config: DQNConfig,
     logger: Logger,
 ) -> None:
     train_config_manager = ConfigManager(resolved_train_dir, config_filename=config.CONFIG_FILENAME)
@@ -68,7 +70,7 @@ def copy_train_config(
     logger.info(f"已写入合并配置快照: {test_experiment_dir / config.CONFIG_FILENAME}")
 
 
-def _create_agent(config: type[DQNConfig], action_space: np.ndarray, device: torch.device) -> DQNAgent:
+def _create_agent(config: DQNConfig, action_space: np.ndarray, device: torch.device) -> DQNAgent:
     return DQNAgent(
         state_size=config.STATE_SIZE,
         action_space=action_space,
@@ -86,7 +88,7 @@ def _create_agent(config: type[DQNConfig], action_space: np.ndarray, device: tor
 
 
 def _create_reward_calculator(
-    config: type[DQNConfig],
+    config: DQNConfig,
     test_data: pd.DataFrame,
     action_space: np.ndarray,
 ) -> RewardCalculator:
@@ -114,7 +116,7 @@ def _create_reward_calculator(
 
 
 def build_test_components(
-    config: type[DQNConfig],
+    config: DQNConfig,
     resolved_train_dir: Path,
     data_split: TestDataSplit = "test",
 ) -> tuple[pd.DataFrame, np.ndarray, DQNAgent, dict, RewardCalculator]:

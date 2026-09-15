@@ -4,7 +4,7 @@
 @description: lstm 训练脚本
 """
 
-from et_prl.config.lstm import LSTMConfig
+from et_prl.config.loader import load_config
 from et_prl.data import DatasetLoader
 from et_prl.evaluation import LSTMEvaluator
 from et_prl.models import LSTM
@@ -15,7 +15,7 @@ from et_prl.utils import create_experiment_context, create_loss_fn, create_optim
 def train_lstm():
     """LSTM训练主函数"""
     # 1. 初始化配置
-    config = LSTMConfig()
+    config = load_config("lstm")
 
     experiment_dir = config.get_train_experiment_dir()
     context = create_experiment_context(

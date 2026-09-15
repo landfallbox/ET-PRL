@@ -6,7 +6,7 @@
 import json
 from pathlib import Path
 
-from et_prl.config.lstm import LSTMConfig
+from et_prl.config.loader import load_config
 from et_prl.data import DatasetLoader
 from et_prl.evaluation import LSTMEvaluator
 from et_prl.evaluation import calculate_mae, calculate_rmse, calculate_mape, calculate_r2_score
@@ -30,7 +30,7 @@ def test_lstm(train_experiment_dir: Path = None):
         train_experiment_dir: 指定训练实验目录，如果为 None 则自动加载最新训练实验
     """
     # 1. 初始化配置并创建评估专用实验目录
-    config = LSTMConfig()
+    config = load_config("lstm")
     test_experiment_dir = config.get_eval_experiment_dir()
     context = create_experiment_context(
         experiment_dir=test_experiment_dir,
@@ -68,7 +68,7 @@ def test_lstm(train_experiment_dir: Path = None):
     )
 
     # 重建配置对象（用于数据加载）
-    config = LSTMConfig()
+    config = load_config("lstm")
     logger.info("配置加载完成")
     logger.info(f"实验名称: {config.EXPERIMENT_NAME}")
     logger.info(f"设备: {config.DEVICE}")

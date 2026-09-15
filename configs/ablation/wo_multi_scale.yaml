@@ -1,0 +1,7 @@
+# 消融变体 wo_multi_scale。extends: control_compare。
+extends: control_compare
+
+EXPERIMENT_NAME: ablation_wo_multi_scale
+GATE_SCORE_SHORT_WEIGHT: 0.0
+GATE_SCORE_MEDIUM_WEIGHT: 0.0
+GATE_SCORE_LONG_WEIGHT: 1.0

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from et_prl.config.event_driven_dqn import EventDrivenDQNConfig
+from et_prl.config.loader import get_default
 from et_prl.evaluation.lstm_test import test_lstm
 from et_prl.evaluation.dqn_evaluator import test_dqn
 from et_prl.evaluation.event_driven_eval import test_event_driven
@@ -32,7 +32,7 @@ def main_event_driven() -> None:
     parser.add_argument(
         "--gate_state_path",
         type=str,
-        default=str(EventDrivenDQNConfig.get_data_dir() / "streaming_anomaly_gate_state.pkl"),
+        default=str(get_default("event_driven").get_data_dir() / "streaming_anomaly_gate_state.pkl"),
     )
     args = parser.parse_args()
 

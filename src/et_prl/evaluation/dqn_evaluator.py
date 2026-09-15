@@ -13,10 +13,11 @@ from et_prl.evaluation.control.common import (
     resolve_train_experiment_dir,
 )
 from et_prl.evaluation.control.strategies import test_fixed_interval
+from et_prl.config.loader import load_config
 
 
 def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) -> None:
-    config = DQNConfig
+    config = load_config("dqn")
     test_experiment_dir = config.get_eval_experiment_dir()
 
     context = create_experiment_context(

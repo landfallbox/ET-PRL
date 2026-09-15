@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import fields, replace
 from pathlib import Path
 from typing import Any
 
@@ -56,16 +57,26 @@ def load_overrides(config_path: Path) -> dict[str, Any]:
     return payload
 
 
-def apply_overrides(config_cls: type[Any], overrides: dict[str, Any], source_name: str) -> None:
+def apply_overrides(config: Any, overrides: dict[str, Any], source_name: str) -> Any:
+    """将覆盖项应用到 frozen dataclass 配置实例，返回新实例。
+
+    旧实现是对配置类 setattr（全局改类属性）；frozen dataclass 不可变，
+    故改为基于 dataclasses.replace 生成新实例并显式返回，由调用方传递。
+    """
+    if not hasattr(config, "__dataclass_fields__"):
+        raise TypeError("apply_overrides 需要 dataclass 配置实例")
+
+    valid_keys = {f.name for f in fields(config)}
+    updates: dict[str, Any] = {}
     unknown_keys: list[str] = []
     applied_keys: list[str] = []
 
     for key, value in overrides.items():
-        if not hasattr(config_cls, key):
+        if key not in valid_keys:
             unknown_keys.append(str(key))
             continue
 
-        existing_value = getattr(config_cls, key)
+        existing_value = getattr(config, key)
         try:
             coerced_value = coerce_to_existing_type(existing_value, value)
         except ValueError as exc:
@@ -74,9 +85,11 @@ def apply_overrides(config_cls: type[Any], overrides: dict[str, Any], source_nam
                 f"当前类型={type(existing_value).__name__}, 输入值={value!r}。{exc}"
             ) from exc
 
-        setattr(config_cls, key, coerced_value)
+        updates[key] = coerced_value
         applied_keys.append(str(key))
 
     if unknown_keys:
         print(f"[{source_name}] 忽略未知配置键: {unknown_keys}")
     print(f"[{source_name}] 已应用配置键数量: {len(applied_keys)}")
+
+    return replace(config, **updates) if updates else config

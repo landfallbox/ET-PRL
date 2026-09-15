@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,7 @@ from et_prl.agents.dqn.agent import DQNAgent
 from et_prl.utils.reproducibility_dqn import configure_reproducibility
 from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.training.dqn_trainer import DQNTrainer
+from et_prl.config.loader import load_config
 
 
 def _parse_hidden_layout(layout: str) -> list[int]:
@@ -49,33 +51,30 @@ def _create_search_space() -> HyperparameterSpace:
     return space
 
 
-def _build_trial_config(base_cls: type[DQNConfig], params: dict, max_episodes: int) -> type[DQNConfig]:
-    class TrialConfig(base_cls):
-        pass
-
-    setattr(TrialConfig, "LEARNING_RATE", float(params["learning_rate"]))
-    setattr(TrialConfig, "GAMMA", float(params["gamma"]))
-    setattr(TrialConfig, "EPSILON_START", float(params["epsilon_start"]))
-    setattr(TrialConfig, "EPSILON_MIN", float(params["epsilon_min"]))
-    setattr(TrialConfig, "BATCH_SIZE", int(params["batch_size"]))
-    setattr(TrialConfig, "EPSILON_DECAY", float(params["epsilon_decay"]))
-    setattr(TrialConfig, "TARGET_UPDATE_FREQ", int(params["target_update_freq"]))
-    setattr(TrialConfig, "MEMORY_CAPACITY", int(params["memory_capacity"]))
-    setattr(TrialConfig, "HIDDEN_SIZES", _parse_hidden_layout(params["hidden_layout"]))
-    setattr(TrialConfig, "COMFORT_SIGMA", float(params["comfort_sigma"]))
-
+def _build_trial_config(base_config, params: dict, max_episodes: int):
+    """基于 base 配置实例生成 trial 配置（frozen dataclass 用 replace）。"""
     weight_efficiency = float(params["weight_efficiency"])
-    setattr(TrialConfig, "REWARD_WEIGHT_EFFICIENCY", weight_efficiency)
-    setattr(TrialConfig, "REWARD_WEIGHT_COMFORT", 1.0 - weight_efficiency)
+    updates = {
+        "LEARNING_RATE": float(params["learning_rate"]),
+        "GAMMA": float(params["gamma"]),
+        "EPSILON_START": float(params["epsilon_start"]),
+        "EPSILON_MIN": float(params["epsilon_min"]),
+        "BATCH_SIZE": int(params["batch_size"]),
+        "EPSILON_DECAY": float(params["epsilon_decay"]),
+        "TARGET_UPDATE_FREQ": int(params["target_update_freq"]),
+        "MEMORY_CAPACITY": int(params["memory_capacity"]),
+        "HIDDEN_SIZES": _parse_hidden_layout(params["hidden_layout"]),
+        "COMFORT_SIGMA": float(params["comfort_sigma"]),
+        "REWARD_WEIGHT_EFFICIENCY": weight_efficiency,
+        "REWARD_WEIGHT_COMFORT": 1.0 - weight_efficiency,
+        "NUM_EPISODES": int(max_episodes),
+        "VAL_INTERVAL": max(1, min(base_config.VAL_INTERVAL, max_episodes)),
+        "EARLY_STOPPING_PATIENCE": max(2, min(base_config.EARLY_STOPPING_PATIENCE, max_episodes // 3 or 2)),
+    }
+    return replace(base_config, **updates)
 
-    setattr(TrialConfig, "NUM_EPISODES", int(max_episodes))
-    setattr(TrialConfig, "VAL_INTERVAL", max(1, min(base_cls.VAL_INTERVAL, max_episodes)))
-    setattr(TrialConfig, "EARLY_STOPPING_PATIENCE", max(2, min(base_cls.EARLY_STOPPING_PATIENCE, max_episodes // 3 or 2)))
 
-    return TrialConfig
-
-
-def _create_reward_calculator(config: type[DQNConfig], data: pd.DataFrame, action_space) -> RewardCalculator:
+def _create_reward_calculator(config: DQNConfig, data: pd.DataFrame, action_space) -> RewardCalculator:
     return RewardCalculator(
         data,
         action_space,
@@ -103,7 +102,7 @@ def _create_objective(
     train_data: pd.DataFrame,
     val_data: pd.DataFrame,
     action_space,
-    base_config: type[DQNConfig],
+    base_config: DQNConfig,
     max_episodes: int,
     output_dir: Path,
     logger: Logger,
@@ -200,7 +199,7 @@ def _create_objective(
 
 
 def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_jobs: int = 1) -> dict:
-    base_config = DQNConfig
+    base_config = load_config("dqn")
     output_dir = base_config.get_optimization_dir() / base_config.TIMESTAMP
     output_dir.mkdir(parents=True, exist_ok=True)
 

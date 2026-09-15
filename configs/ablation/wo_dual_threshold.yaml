@@ -1,0 +1,6 @@
+# 消融变体 wo_dual_threshold。extends: control_compare。
+extends: control_compare
+
+EXPERIMENT_NAME: ablation_wo_dual_threshold
+GATE_ALPHA_LOCAL_WEIGHT: 1.0
+GATE_GLOBAL_EMA_DECAY: 1.0

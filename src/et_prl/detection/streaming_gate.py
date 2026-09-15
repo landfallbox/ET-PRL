@@ -7,11 +7,11 @@ from typing import Optional, Dict
 from dataclasses import dataclass
 from pathlib import Path
 
-from et_prl.config.gate import OnlineAnomalyDetectionConfig
 from et_prl.detection import MultiScaleDistributionTracker
 from et_prl.detection import StreamingIsolationDepth
 from et_prl.detection import StreamingStats
 from et_prl.detection import StreamingThresholdOptimizer
+from et_prl.config.loader import get_default
 
 
 @dataclass
@@ -84,37 +84,37 @@ class StreamingAnomalyGate:
         self.sample_count = 0
 
         if local_window_size is None:
-            local_window_size = OnlineAnomalyDetectionConfig.GATE_LOCAL_WINDOW_SIZE
+            local_window_size = get_default("gate").GATE_LOCAL_WINDOW_SIZE
         if global_ema_decay is None:
-            global_ema_decay = OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY
+            global_ema_decay = get_default("gate").GATE_GLOBAL_EMA_DECAY
         if reference_samples is None:
-            reference_samples = OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES
+            reference_samples = get_default("gate").GATE_REFERENCE_SAMPLES
         if alpha_local_weight is None:
-            alpha_local_weight = OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT
+            alpha_local_weight = get_default("gate").GATE_ALPHA_LOCAL_WEIGHT
         if threshold_bias is None:
-            threshold_bias = OnlineAnomalyDetectionConfig.GATE_THRESHOLD_BIAS
+            threshold_bias = get_default("gate").GATE_THRESHOLD_BIAS
         if threshold_quantile is None:
-            threshold_quantile = OnlineAnomalyDetectionConfig.THRESHOLD_QUANTILE
+            threshold_quantile = get_default("gate").THRESHOLD_QUANTILE
         if threshold_mad_scale is None:
-            threshold_mad_scale = OnlineAnomalyDetectionConfig.THRESHOLD_MAD_SCALE
+            threshold_mad_scale = get_default("gate").THRESHOLD_MAD_SCALE
         if threshold_local_update_rate is None:
-            threshold_local_update_rate = OnlineAnomalyDetectionConfig.THRESHOLD_LOCAL_UPDATE_RATE
+            threshold_local_update_rate = get_default("gate").THRESHOLD_LOCAL_UPDATE_RATE
         if threshold_quantile_weight is None:
-            threshold_quantile_weight = OnlineAnomalyDetectionConfig.THRESHOLD_QUANTILE_WEIGHT
+            threshold_quantile_weight = get_default("gate").THRESHOLD_QUANTILE_WEIGHT
         if threshold_min_samples_for_optimization is None:
             threshold_min_samples_for_optimization = (
-                OnlineAnomalyDetectionConfig.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION
+                get_default("gate").THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION
             )
         if score_short_weight is None:
-            score_short_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_SHORT_WEIGHT
+            score_short_weight = get_default("gate").GATE_SCORE_SHORT_WEIGHT
         if score_medium_weight is None:
-            score_medium_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_MEDIUM_WEIGHT
+            score_medium_weight = get_default("gate").GATE_SCORE_MEDIUM_WEIGHT
         if score_long_weight is None:
-            score_long_weight = OnlineAnomalyDetectionConfig.GATE_SCORE_LONG_WEIGHT
+            score_long_weight = get_default("gate").GATE_SCORE_LONG_WEIGHT
         if trigger_hysteresis_margin is None:
-            trigger_hysteresis_margin = OnlineAnomalyDetectionConfig.GATE_TRIGGER_HYSTERESIS_MARGIN
+            trigger_hysteresis_margin = get_default("gate").GATE_TRIGGER_HYSTERESIS_MARGIN
         if min_trigger_interval is None:
-            min_trigger_interval = getattr(OnlineAnomalyDetectionConfig, "GATE_MIN_TRIGGER_INTERVAL", 1)
+            min_trigger_interval = getattr(get_default("gate"), "\1", 1)
 
         score_weight_sum = float(score_short_weight + score_medium_weight + score_long_weight)
         if score_weight_sum <= 0.0:
@@ -130,14 +130,14 @@ class StreamingAnomalyGate:
         # 1. 流式特征统计维护器
         self.feature_stats = StreamingStats(
             feature_dim=feature_dim,
-            ema_decay=OnlineAnomalyDetectionConfig.STATS_EMA_DECAY,
-            window_size=OnlineAnomalyDetectionConfig.STATS_WINDOW_SIZE,
+            ema_decay=get_default("gate").STATS_EMA_DECAY,
+            window_size=get_default("gate").STATS_WINDOW_SIZE,
         )
 
         # 2. 流式异常检测器（替代IsolationForest）
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
-            update_freq=OnlineAnomalyDetectionConfig.ISOLATION_UPDATE_FREQ,
+            update_freq=get_default("gate").ISOLATION_UPDATE_FREQ,
         )
 
         # 3. 双层阈值优化器

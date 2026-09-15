@@ -3,7 +3,9 @@
 @date: 2026/02/07 星期六
 @description: LSTM 超参优化脚本
 """
-from et_prl.config.lstm import LSTMConfig
+from dataclasses import replace
+
+from et_prl.config.loader import load_config
 from et_prl.data import DatasetLoader
 from et_prl.evaluation import LSTMEvaluator
 from et_prl.models import LSTM
@@ -81,20 +83,22 @@ def create_objective_fn(train_loader, val_loader, logger):
             验证损失（单个浮点数）
         """
         try:
-            config = LSTMConfig()
+            config = load_config("lstm")
 
             adjusted_params = adjust_hyperparams_by_correlation(params)
 
-            config.LEARNING_RATE = adjusted_params.get("learning_rate", config.LEARNING_RATE)
-            config.BATCH_SIZE = adjusted_params.get("batch_size", config.BATCH_SIZE)
-            config.EPOCHS = adjusted_params.get("epochs", config.EPOCHS)
-            config.DROPOUT = adjusted_params.get("dropout", config.DROPOUT)
-            config.OPTIMIZER = adjusted_params.get("optimizer", config.OPTIMIZER)
-
-            config.HIDDEN_SIZES = [
-                adjusted_params.get("hidden_size_1", config.HIDDEN_SIZES[0]),
-                adjusted_params.get("hidden_size_2", config.HIDDEN_SIZES[1])
-            ]
+            config = replace(
+                config,
+                LEARNING_RATE=adjusted_params.get("learning_rate", config.LEARNING_RATE),
+                BATCH_SIZE=adjusted_params.get("batch_size", config.BATCH_SIZE),
+                EPOCHS=adjusted_params.get("epochs", config.EPOCHS),
+                DROPOUT=adjusted_params.get("dropout", config.DROPOUT),
+                OPTIMIZER=adjusted_params.get("optimizer", config.OPTIMIZER),
+                HIDDEN_SIZES=[
+                    adjusted_params.get("hidden_size_1", config.HIDDEN_SIZES[0]),
+                    adjusted_params.get("hidden_size_2", config.HIDDEN_SIZES[1]),
+                ],
+            )
 
             logger.info(
                 f"Trial {trial.number}: 原始超参 - LR={params.get('learning_rate', 0.001):.2e}, "
@@ -145,7 +149,7 @@ def create_objective_fn(train_loader, val_loader, logger):
 
 def optimize_lstm_hyperparameters():
     """超参优化主函数"""
-    config = LSTMConfig()
+    config = load_config("lstm")
     output_dir = config.get_optimization_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -15,13 +15,14 @@ from et_prl.evaluation.control.common import (
     resolve_train_experiment_dir,
 )
 from et_prl.evaluation.control.strategies import test_event_driven as test_event_driven_strategy
+from et_prl.config.loader import load_config
 
 
 def test_event_driven(
     train_experiment_dir: Path | None = None,
     gate_state_path: Path | None = None,
 ) -> None:
-    config = EventDrivenDQNConfig
+    config = load_config("event_driven")
     test_experiment_dir = config.get_eval_experiment_dir()
 
     context = create_experiment_context(

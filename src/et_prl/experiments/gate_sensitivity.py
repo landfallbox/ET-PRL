@@ -21,6 +21,7 @@ from et_prl.evaluation.control.common import (
 )
 from et_prl.evaluation.control.strategies.event_driven import test_event_driven
 from et_prl.evaluation.control.strategies.fixed_interval import test_fixed_interval
+from et_prl.config.loader import load_config
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -570,7 +571,7 @@ def run_gate_mixed_sensitivity_analysis(
     bootstrap_block_size: int | None = None,
     bootstrap_seed: int | None = None,
 ) -> dict[str, Any]:
-    cfg = ControlCompareConfig
+    cfg = load_config("control_compare")
     train_dir = resolve_train_experiment_dir(train_experiment_dir)
     bs_samp = int(bootstrap_samples if bootstrap_samples is not None else getattr(cfg, "GATE_SENSITIVITY_BOOTSTRAP_SAMPLES", 500))
     bs_blk = int(bootstrap_block_size if bootstrap_block_size is not None else getattr(cfg, "GATE_SENSITIVITY_BOOTSTRAP_BLOCK_SIZE", 48))

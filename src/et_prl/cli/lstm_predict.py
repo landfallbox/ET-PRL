@@ -1,13 +1,13 @@
 import argparse
 from pathlib import Path
 
-from et_prl.config.lstm import LSTMConfig
+from et_prl.config.loader import get_default
 from et_prl.evaluation.cl_next_predict import predict_cl_next
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="使用最新 LSTM 模型预测 raw_data.csv 的 CL_next")
-    parser.add_argument("--raw_data_path", type=str, default=str(LSTMConfig.RAW_DATA_PATH))
+    parser.add_argument("--raw_data_path", type=str, default=str(get_default("lstm").RAW_DATA_PATH))
     parser.add_argument(
         "--output_csv_path",
         type=str,

@@ -1,23 +1,21 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 
-from et_prl.config.dqn import DQNConfig
+from et_prl.config.loader import load_config
 from et_prl.utils import create_experiment_context
 
 from et_prl.utils.reproducibility_dqn import configure_reproducibility
 from et_prl.training.dqn_trainer import DQNTrainer
 
 
-def _build_run_config(base_config: type[DQNConfig], run_index: int, total_runs: int) -> type[DQNConfig]:
-    class RunConfig(base_config):
-        pass
-
+def _build_run_config(base_config, run_index: int, total_runs: int):
+    """基于 base 配置生成带独立 TIMESTAMP 的运行配置（frozen dataclass 用 replace）。"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     if total_runs > 1:
         timestamp = f"{timestamp}_run{run_index:02d}"
-    setattr(RunConfig, "TIMESTAMP", timestamp)
-    return RunConfig
+    return replace(base_config, TIMESTAMP=timestamp)
 
 
 def train_dqn(runs: int = 1) -> None:
@@ -25,7 +23,7 @@ def train_dqn(runs: int = 1) -> None:
         raise ValueError(f"runs 必须为正整数，当前值: {runs}")
 
     for run_index in range(1, runs + 1):
-        config = _build_run_config(DQNConfig, run_index, runs)
+        config = _build_run_config(load_config("dqn"), run_index, runs)
         experiment_dir = config.get_train_experiment_dir()
         context = create_experiment_context(experiment_dir=experiment_dir, config=config)
 

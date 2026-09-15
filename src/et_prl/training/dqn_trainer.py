@@ -14,7 +14,7 @@ from et_prl.agents.dqn.rewards import RewardCalculator
 
 
 class DQNTrainer:
-    def __init__(self, config: type[DQNConfig], experiment_dir: Path) -> None:
+    def __init__(self, config: DQNConfig, experiment_dir: Path) -> None:
         self.config = config
         self.experiment_dir = experiment_dir
 

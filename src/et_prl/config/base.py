@@ -1,240 +1,174 @@
 """
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 通用配置基类，供所有模型配置继承
+配置基类（frozen dataclass schema）。
+
+设计要点（见 MIGRATION_PLAN.md 2.4）：
+- YAML 是单一事实来源；dataclass 仅作 schema 校验，字段本身不承载默认值。
+- 字段名与旧类属性名一致（大写），键与 YAML 一一对应。
+- 路径字段（DATA_ROOT / LOG_ROOT_DIR）为 Path，loader 将 YAML 相对路径解析为
+  项目根绝对路径；to_dict() 再序列化为相对路径，保证快照与输入 YAML 一致。
+- 派生值（DEVICE / RAW_DATA_PATH / 各实验目录）改为 property / 实例方法。
+- TIMESTAMP 为字段：由 loader 注入当前时间戳，运行期用 dataclasses.replace 覆盖。
 """
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, fields
 from pathlib import Path
-from datetime import datetime
 
 
-class CommonConfig:
-    """通用配置基类，包含所有模型共用的配置"""
+def project_root() -> Path:
+    """项目根目录。优先取环境变量 ET_PRL_ROOT，否则按本文件位置推导。"""
+    env = os.environ.get("ET_PRL_ROOT")
+    if env:
+        return Path(env).resolve()
+    # src/et_prl/config/base.py -> parents[3] == 项目根
+    return Path(__file__).resolve().parents[3]
+
+
+def _to_relative_str(value: Path, root: Path) -> str:
+    """将 Path 序列化为相对项目根的字符串（无法相对化时退回绝对路径）。"""
+    try:
+        return value.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return value.as_posix()
+
+
+@dataclass(frozen=True)
+class BaseConfig:
+    """通用配置基类，包含所有模型共用的配置（schema）。"""
 
     # ==================== 数据配置 ====================
-    # 数据根目录
-    DATA_ROOT = Path("data")
+    DATA_ROOT: Path
+    DATA_SUBDIR: str
+    SHUFFLE_DATA: bool
+    RANDOM_STATE: int
+    CUDNN_DETERMINISTIC: bool
+    TRAIN_RATIO: float
+    VAL_RATIO: float
+    TEST_RATIO: float
 
     # ==================== 温度舒适范围 ====================
-    # 供水温度舒适范围，用于评估指标计算（非硬控制约束）
-    # 范围调整历史：
-    #   [15.0, 19.0]: 原始定义（±2°C)，导致baseline 40.19%违约
-    #   [13.0, 21.0]: 扩大范围（±4°C)，降低baseline违约率到<10%，更符合系统实际
-    COMFORT_LOWER_BOUND = 13.0  # 供水温度下界 (°C)
-    COMFORT_UPPER_BOUND = 21.0  # 供水温度上界 (°C)
+    COMFORT_LOWER_BOUND: float
+    COMFORT_UPPER_BOUND: float
 
-    # 原始数据路径
-    RAW_DATA_PATH = DATA_ROOT / "raw_data.csv"
-    # 模型特定的数据子目录名（子类可覆盖）
-    # 如果为空，则使用 DATA_ROOT；否则使用 DATA_ROOT / DATA_SUBDIR
-    DATA_SUBDIR = ""
-    # 是否打乱数据
-    SHUFFLE_DATA = False
-    # 随机种子
-    RANDOM_STATE = 42
-    # 是否启用 cuDNN 确定性（开启后可复现性更好，但可能降低性能）
-    CUDNN_DETERMINISTIC = False
+    # ==================== 设备与运行 ====================
+    USE_GPU: bool
+    TIMESTAMP: str
 
-    # 数据划分比例（默认值，可由子类覆盖）
-    TRAIN_RATIO = 0.7
-    VAL_RATIO = 0.15
-    TEST_RATIO = 0.15
+    # ==================== 实验目录 ====================
+    LOG_ROOT_DIR: Path
+    TRAIN_SUBDIR: str
+    EVAL_SUBDIR: str
+    OPTIMIZATION_SUBDIR: str
+    EXPERIMENT_NAME: str
 
-    # 是否使用 GPU
-    USE_GPU = True
-    # 设备
-    DEVICE = "cuda" if USE_GPU else "cpu"
+    # ==================== 数据文件名 ====================
+    TRAIN_FILENAME: str
+    VAL_FILENAME: str
+    TEST_FILENAME: str
+    NORMALIZER_FILENAME: str
 
-    # 时间戳（用于区分不同的实验运行）
-    TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # 日志根目录
-    LOG_ROOT_DIR = Path("logs")
-    # 训练实验子目录名
-    TRAIN_SUBDIR = "train"
-    # 评估实验子目录名
-    EVAL_SUBDIR = "eval"
-    # 超参优化实验子目录名
-    OPTIMIZATION_SUBDIR = "optimization"
+    # ==================== 实验输出文件名 ====================
+    CONFIG_FILENAME: str
+    EXPERIMENT_LOG_FILENAME: str
+    METRICS_FILENAME: str
+    TRAINING_HISTORY_FILENAME: str
+    CHECKPOINT_DIR_NAME: str
+    BEST_MODEL_FILENAME: str
+    FINAL_MODEL_FILENAME: str
 
-    # 训练、验证、测试数据的文件名
-    TRAIN_FILENAME = "train.csv"
-    VAL_FILENAME = "val.csv"
-    TEST_FILENAME = "test.csv"
-    # 归一化参数文件名
-    NORMALIZER_FILENAME = "normalizer.json"
-
-    # ==================== 实验输出文件配置 ====================
-    # 配置文件名
-    CONFIG_FILENAME = "config.yaml"
-    # 实验日志文件名
-    EXPERIMENT_LOG_FILENAME = "experiment.log"
-    # 指标文件名
-    METRICS_FILENAME = "metrics.json"
-    # 训练历史文件名
-    TRAINING_HISTORY_FILENAME = "training_history.csv"
-    # 检查点目录名
-    CHECKPOINT_DIR_NAME = "checkpoints"
-    # 最佳模型文件名
-    BEST_MODEL_FILENAME = "best_model.pth"
-    # 最终模型文件名
-    FINAL_MODEL_FILENAME = "final_model.pth"
-
-    # ==================== 评估输出文件配置 ====================
-    # 评估日志文件名
-    EVALUATION_LOG_FILENAME = "evaluation.log"
-    # 评估指标文件名
-    EVALUATION_METRICS_FILENAME = "metrics.json"
-    # 预测对比图文件名
-    PREDICTION_COMPARISON_PLOT_FILENAME = "predictions_comparison.png"
-    # 误差分布图文件名
-    ERROR_DISTRIBUTION_PLOT_FILENAME = "error_distribution.png"
-    # 预测散点图文件名
-    PREDICTION_SCATTER_PLOT_FILENAME = "predictions_scatter.png"
+    # ==================== 评估输出文件名 ====================
+    EVALUATION_LOG_FILENAME: str
+    EVALUATION_METRICS_FILENAME: str
+    PREDICTION_COMPARISON_PLOT_FILENAME: str
+    ERROR_DISTRIBUTION_PLOT_FILENAME: str
+    PREDICTION_SCATTER_PLOT_FILENAME: str
 
     # ==================== 可视化配置 ====================
-    # 图表输出分辨率（DPI）
-    PLOT_DPI = 300
-    # 预测对比图尺寸（宽, 高）
-    PREDICTION_COMPARISON_FIGSIZE = (15, 6)
-    # 误差分布图尺寸（宽, 高）
-    ERROR_DISTRIBUTION_FIGSIZE = (10, 6)
-    # 预测散点图尺寸（宽, 高）
-    PREDICTION_SCATTER_FIGSIZE = (8, 8)
-    # 训练历史图尺寸（宽, 高）
-    TRAINING_HISTORY_FIGSIZE = (10, 6)
-    # 预测对比图最大显示样本数
-    MAX_PLOT_SAMPLES = 500
-    # 误差分布图直方图柱数
-    ERROR_HIST_BINS = 50
+    PLOT_DPI: int
+    PREDICTION_COMPARISON_FIGSIZE: tuple
+    ERROR_DISTRIBUTION_FIGSIZE: tuple
+    PREDICTION_SCATTER_FIGSIZE: tuple
+    TRAINING_HISTORY_FIGSIZE: tuple
+    MAX_PLOT_SAMPLES: int
+    ERROR_HIST_BINS: int
 
-    @classmethod
-    def get_data_dir(cls) -> Path:
-        """
-        获取数据目录路径
+    # ==================== 派生值（property） ====================
+    @property
+    def root(self) -> Path:
+        """项目根目录（绝对路径）。"""
+        return project_root()
 
-        返回：
-            数据目录的完整路径
-            如果 DATA_SUBDIR 为空，则返回 DATA_ROOT
-            否则返回 DATA_ROOT / DATA_SUBDIR
-        """
-        if cls.DATA_SUBDIR:
-            return cls.DATA_ROOT / cls.DATA_SUBDIR
-        else:
-            return cls.DATA_ROOT
+    @property
+    def DEVICE(self) -> str:
+        """计算设备，由 USE_GPU 派生。"""
+        return "cuda" if self.USE_GPU else "cpu"
 
-    @classmethod
-    def get_train_data_path(cls) -> Path:
-        """获取训练数据路径"""
-        return cls.get_data_dir() / cls.TRAIN_FILENAME
+    @property
+    def RAW_DATA_PATH(self) -> Path:
+        """原始数据路径，由 DATA_ROOT 派生。"""
+        return self.DATA_ROOT / "raw_data.csv"
 
-    @classmethod
-    def get_val_data_path(cls) -> Path:
-        """获取验证数据路径"""
-        return cls.get_data_dir() / cls.VAL_FILENAME
+    # ==================== 路径方法 ====================
+    def get_data_dir(self) -> Path:
+        """数据目录：DATA_ROOT 或 DATA_ROOT/DATA_SUBDIR。"""
+        if self.DATA_SUBDIR:
+            return self.DATA_ROOT / self.DATA_SUBDIR
+        return self.DATA_ROOT
 
-    @classmethod
-    def get_test_data_path(cls) -> Path:
-        """获取测试数据路径"""
-        return cls.get_data_dir() / cls.TEST_FILENAME
+    def get_train_data_path(self) -> Path:
+        return self.get_data_dir() / self.TRAIN_FILENAME
 
-    @classmethod
-    def get_normalizer_path(cls) -> Path:
-        """获取归一化参数路径"""
-        return cls.get_data_dir() / cls.NORMALIZER_FILENAME
+    def get_val_data_path(self) -> Path:
+        return self.get_data_dir() / self.VAL_FILENAME
 
-    @classmethod
-    def _require_experiment_name(cls) -> str:
-        """
-        获取并校验实验名称
+    def get_test_data_path(self) -> Path:
+        return self.get_data_dir() / self.TEST_FILENAME
 
-        返回：
-            非空实验名称
-        """
-        experiment_name = getattr(cls, "EXPERIMENT_NAME", "")
-        if not isinstance(experiment_name, str) or not experiment_name.strip():
-            raise ValueError("EXPERIMENT_NAME 必须在子类中设置为非空字符串")
-        return experiment_name.strip()
+    def get_normalizer_path(self) -> Path:
+        return self.get_data_dir() / self.NORMALIZER_FILENAME
 
-    @classmethod
-    def get_experiment_dir(cls, mode: str = "train") -> Path:
-        """
-        获取实验目录路径
-
-        参数：
-            mode: 实验模式，"train" 或 "eval"；为空时不添加子目录
-
-        返回：
-            实验目录的完整路径
-            - 带子目录: logs/<experiment_name>/<mode>/<timestamp>/
-            - 不带子目录: logs/<experiment_name>/<timestamp>/
-        """
-        experiment_name = cls._require_experiment_name()
-
+    def get_experiment_dir(self, mode: str = "train") -> Path:
+        """实验目录：LOG_ROOT_DIR/EXPERIMENT_NAME/[subdir]/TIMESTAMP。"""
+        if not self.EXPERIMENT_NAME.strip():
+            raise ValueError("EXPERIMENT_NAME 必须为非空字符串")
         subdir = None
         if mode:
             mode_key = str(mode).lower()
             if mode_key == "train":
-                subdir = cls.TRAIN_SUBDIR
+                subdir = self.TRAIN_SUBDIR
             elif mode_key == "eval":
-                subdir = cls.EVAL_SUBDIR
+                subdir = self.EVAL_SUBDIR
             else:
                 subdir = str(mode)
-
-        parts = [cls.LOG_ROOT_DIR, experiment_name]
+        parts = [self.LOG_ROOT_DIR, self.EXPERIMENT_NAME]
         if subdir:
             parts.append(subdir)
-        parts.append(cls.TIMESTAMP)
-
+        parts.append(self.TIMESTAMP)
         return Path(*parts)
 
-    @classmethod
-    def get_train_experiment_dir(cls) -> Path:
-        """获取训练实验目录路径"""
-        return cls.get_experiment_dir(mode="train")
+    def get_train_experiment_dir(self) -> Path:
+        return self.get_experiment_dir(mode="train")
 
-    @classmethod
-    def get_eval_experiment_dir(cls) -> Path:
-        """获取评估实验目录路径"""
-        return cls.get_experiment_dir(mode="eval")
+    def get_eval_experiment_dir(self) -> Path:
+        return self.get_experiment_dir(mode="eval")
 
-    @classmethod
-    def get_optimization_dir(cls) -> Path:
-        """
-        获取超参优化目录路径
+    def get_optimization_dir(self) -> Path:
+        return self.LOG_ROOT_DIR / self.EXPERIMENT_NAME / self.OPTIMIZATION_SUBDIR
 
-        返回：
-            超参优化目录的完整路径，格式为 logs/<experiment_name>/optimization/
+    # ==================== 校验与序列化 ====================
+    def validate(self) -> None:
+        """配置一致性校验钩子，子类可覆盖。基类默认无约束。"""
+        return None
 
-        说明：
-            experiment_name 需要在子类中定义
-        """
-        experiment_name = cls._require_experiment_name()
-        opt_dir = (
-            cls.LOG_ROOT_DIR
-            / experiment_name
-            / cls.OPTIMIZATION_SUBDIR
-        )
-        return opt_dir
-
-    @classmethod
-    def to_dict(cls) -> dict:
-        """
-        将配置转换为字典
-
-        返回：
-            包含所有配置参数的字典
-        """
-        config_dict = {}
-        for key in dir(cls):
-            # 跳过私有属性、方法和内置属性
-            if key.startswith('_'):
-                continue
-            value = getattr(cls, key)
-            # 只保留配置值（非方法、非类）
-            if not callable(value) and not isinstance(value, type):
-                # 将Path对象转换为字符串，便于序列化
-                if isinstance(value, Path):
-                    config_dict[key] = str(value)
-                else:
-                    config_dict[key] = value
-        return config_dict
-
+    def to_dict(self) -> dict:
+        """导出全量生效字段为可序列化 dict（Path 转相对项目根字符串）。"""
+        root = self.root
+        out: dict = {}
+        for f in fields(self):
+            value = getattr(self, f.name)
+            if isinstance(value, Path):
+                out[f.name] = _to_relative_str(value, root)
+            else:
+                out[f.name] = value
+        return out

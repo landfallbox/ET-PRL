@@ -1,0 +1,4 @@
+# 消融变体 full_et_prl。extends: control_compare。
+extends: control_compare
+
+EXPERIMENT_NAME: ablation_full_et_prl

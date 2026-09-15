@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from et_prl.config.dqn import DQNConfig
 from et_prl.data import split_data
+from et_prl.config.loader import get_default, load_config
 
 
 def _validate_split_ratios(train_ratio: float, val_ratio: float, test_ratio: float) -> None:
@@ -34,7 +34,7 @@ def _prepare_columns(df: pd.DataFrame) -> pd.DataFrame:
         else:
             raise ValueError("输入数据缺少预测列，需要 CL_predict 或 CL_next")
 
-    output_columns = DQNConfig.STATE_COLUMNS
+    output_columns = get_default("dqn").STATE_COLUMNS
     missing_output_cols = [col for col in output_columns if col not in df.columns]
     if missing_output_cols:
         raise ValueError(f"处理后数据仍缺少状态列: {missing_output_cols}")
@@ -43,7 +43,7 @@ def _prepare_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def split_dqn_dataset() -> None:
-    config = DQNConfig
+    config = load_config("dqn")
     input_path = config.get_data_dir() / "cl_next_predictions.csv"
 
     if not input_path.exists():

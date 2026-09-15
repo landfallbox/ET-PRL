@@ -9,14 +9,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from et_prl.config.dqn import DQNConfig
-from et_prl.config.gate import OnlineAnomalyDetectionConfig
 from et_prl.detection.streaming_gate import StreamingAnomalyGate
+from et_prl.config.loader import get_default
 
 
 def _load_prewarm_data(columns: list[str]) -> np.ndarray:
-    train_path = DQNConfig.get_train_data_path()
-    val_path = DQNConfig.get_val_data_path()
+    train_path = get_default("dqn").get_train_data_path()
+    val_path = get_default("dqn").get_val_data_path()
 
     if not train_path.exists():
         raise FileNotFoundError(f"训练集不存在: {train_path}")
@@ -37,16 +36,18 @@ def _load_prewarm_data(columns: list[str]) -> np.ndarray:
     return merged_df.to_numpy(dtype=np.float32)
 
 
-def prewarm_gate(output_path: Path) -> Path:
-    columns = OnlineAnomalyDetectionConfig.FEATURE_COLUMNS
+def prewarm_gate(output_path: Path, gate_config=None) -> Path:
+    if gate_config is None:
+        gate_config = get_default("gate")
+    columns = gate_config.FEATURE_COLUMNS
     prewarm_data = _load_prewarm_data(columns)
 
     gate = StreamingAnomalyGate(
         feature_dim=len(columns),
-        local_window_size=OnlineAnomalyDetectionConfig.GATE_LOCAL_WINDOW_SIZE,
-        global_ema_decay=OnlineAnomalyDetectionConfig.GATE_GLOBAL_EMA_DECAY,
-        reference_samples=OnlineAnomalyDetectionConfig.GATE_REFERENCE_SAMPLES,
-        alpha_local_weight=OnlineAnomalyDetectionConfig.GATE_ALPHA_LOCAL_WEIGHT,
+        local_window_size=gate_config.GATE_LOCAL_WINDOW_SIZE,
+        global_ema_decay=gate_config.GATE_GLOBAL_EMA_DECAY,
+        reference_samples=gate_config.GATE_REFERENCE_SAMPLES,
+        alpha_local_weight=gate_config.GATE_ALPHA_LOCAL_WEIGHT,
     )
 
     print(f"开始纯在线预热，样本数: {len(prewarm_data)}")

@@ -5,7 +5,7 @@
 """
 import pandas as pd
 
-from et_prl.config.lstm import LSTMConfig
+from et_prl.config.loader import load_config
 from et_prl.data import select_columns, split_data, build_temporal_features
 from et_prl.data import Normalizer
 
@@ -58,7 +58,7 @@ def preprocess_data():
     8. 保存划分后的数据到指定目录
     """
     # 获取配置
-    config = LSTMConfig()
+    config = load_config("lstm")
 
     # 1. 加载原始数据
     print(f"加载原始数据：{config.RAW_DATA_PATH}")
