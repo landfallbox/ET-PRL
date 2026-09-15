@@ -1,5 +1,6 @@
 /data/
-/outputs/
+/outputs/*
+!/outputs/README.md
 /.idea/
 
 # Python cache / bytecode
