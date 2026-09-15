@@ -1,5 +1,5 @@
-# 控制策略对比配置。extends: [dqn, gate]（多重继承）。
-extends: [dqn, gate]
+# 控制策略对比配置。extends: [gate, dqn]（dqn 最后=最高优先级，匹配旧 MRO 的 DQN 优先语义）。
+extends: [gate, dqn]
 
 EVAL_SUBDIR: ""
 EXPERIMENT_NAME: "control_compare"

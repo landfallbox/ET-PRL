@@ -1,3 +1,3 @@
-# 事件驱动 DQN 评估配置。extends: [dqn, gate]。
-extends: [dqn, gate]
+# 事件驱动 DQN 评估配置。extends: [gate, dqn]（dqn 最后=最高优先级，匹配旧 MRO 的 DQN 优先语义）。
+extends: [gate, dqn]
 EXPERIMENT_NAME: event_driven_dqn
