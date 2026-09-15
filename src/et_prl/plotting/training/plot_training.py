@@ -9,6 +9,8 @@ import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 
+from et_prl.config.base import project_root
+
 
 # ─────────────────────────── 样式常量 ───────────────────────────
 _COLORS = {
@@ -27,12 +29,12 @@ _FONT_SIZE_TITLE = 12
 _FONT_SIZE_LEGEND = 9
 
 
-_DOCS_PICS_DIR = Path("docs") / "pics"
+_FIGURES_DIR = project_root() / "outputs" / "figures"
 
 
 def _latest_train_dir(log_root: Path | None = None) -> Path:
-    """在 logs/dqn/train/ 下找最新的实验目录（按目录名时间戳排序）。"""
-    root = (log_root or Path("logs")) / "dqn" / "train"
+    """在 outputs/runs/dqn/train/ 下找最新的实验目录（按目录名时间戳排序）。"""
+    root = (log_root or project_root() / "outputs" / "runs") / "dqn" / "train"
     dirs = sorted([d for d in root.iterdir() if d.is_dir()])
     if not dirs:
         raise FileNotFoundError(f"在 {root} 下找不到任何训练实验目录")
@@ -182,7 +184,7 @@ def plot_dqn_training_curves(
     # ── 图总标题 & 保存 ──────────────────────────────────────────
     save_path: Path | None = None
     if save:
-        out_dir = output_dir or _DOCS_PICS_DIR
+        out_dir = output_dir or _FIGURES_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
         filename = _build_output_filename(exp_dir)
         save_path = out_dir / filename
@@ -268,7 +270,7 @@ def plot_dqn_validation_reward_curve(
 
     save_path: Path | None = None
     if save:
-        out_dir = output_dir or _DOCS_PICS_DIR
+        out_dir = output_dir or _FIGURES_DIR
         out_dir.mkdir(parents=True, exist_ok=True)
         filename = _build_val_output_filename(exp_dir)
         save_path = out_dir / filename

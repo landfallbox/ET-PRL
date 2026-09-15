@@ -5,6 +5,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from et_prl.config.base import project_root
+
 
 def _running_best(values: pd.Series, minimize: bool) -> pd.Series:
     return values.cummin() if minimize else values.cummax()
@@ -45,20 +47,24 @@ def _plot_gate(trials: pd.DataFrame, out_path: Path) -> None:
     plt.close()
 
 
-def main() -> None:
-    project_root = Path(__file__).resolve().parents[2]
-
-    gate_trials_file = (
-        project_root
-        / "logs"
-        / "online_anomaly_detection"
-        / "optimization"
-        / "20260304_095858"
-        / "gate"
-        / "gate_trials.csv"
+def _latest_gate_trials_file() -> Path:
+    """在 outputs/runs/online_anomaly_detection/optimization/<ts>/gate/ 下找最新的 gate_trials.csv。"""
+    opt_root = project_root() / "outputs" / "runs" / "online_anomaly_detection" / "optimization"
+    if not opt_root.exists():
+        raise FileNotFoundError(f"未找到门控优化目录: {opt_root}")
+    candidates = sorted(
+        (p for p in opt_root.glob("*/gate/gate_trials.csv") if p.is_file()),
+        key=lambda p: p.parent.parent.name,
     )
+    if not candidates:
+        raise FileNotFoundError(f"在 {opt_root} 下未找到 gate_trials.csv")
+    return candidates[-1]
 
-    pics_dir = project_root / "docs" / "pics"
+
+def main() -> None:
+    gate_trials_file = _latest_gate_trials_file()
+
+    pics_dir = project_root() / "outputs" / "figures"
     pics_dir.mkdir(parents=True, exist_ok=True)
 
     gate_trials = _load_gate_trials(gate_trials_file)

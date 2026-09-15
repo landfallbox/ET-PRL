@@ -7,7 +7,7 @@ It directly draws:
 - One shared legend placed on the right side of the full canvas
 
 Output:
-- docs/pics/fig_combined_figure1_figure2.svg
+- outputs/figures/fig_combined_figure1_figure2.svg
 """
 
 from __future__ import annotations
@@ -15,6 +15,8 @@ from __future__ import annotations
 import argparse
 import math
 from pathlib import Path
+
+from et_prl.config.base import project_root
 
 
 def _svg_escape(text: str) -> str:
@@ -360,7 +362,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("docs/pics/fig_combined_figure1_figure2.svg"),
+        default=project_root() / "outputs" / "figures" / "fig_combined_figure1_figure2.svg",
         help="Output combined SVG path.",
     )
     parser.add_argument("--gap", type=float, default=210.0, help="Gap between two sub-figures.")

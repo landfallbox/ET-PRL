@@ -101,8 +101,15 @@ class BaseConfig:
 
     @property
     def DEVICE(self) -> str:
-        """计算设备，由 USE_GPU 派生。"""
-        return "cuda" if self.USE_GPU else "cpu"
+        """计算设备：USE_GPU 为真且 CUDA 可用时返回 cuda，否则 cpu（fail-safe）。"""
+        if not self.USE_GPU:
+            return "cpu"
+        try:
+            import torch
+
+            return "cuda" if torch.cuda.is_available() else "cpu"
+        except Exception:
+            return "cpu"
 
     @property
     def RAW_DATA_PATH(self) -> Path:

@@ -28,6 +28,7 @@ import pandas as pd
 from matplotlib.patches import ConnectionPatch, Rectangle
 from matplotlib.ticker import LogLocator, MultipleLocator
 
+from et_prl.config.base import project_root
 
 plt.rcParams.update(
     {
@@ -380,9 +381,9 @@ def main() -> None:
     parser.add_argument('--sampling-interval-min', type=float, default=5.0)
     args = parser.parse_args()
 
-    root = Path(__file__).parent.parent.parent
-    results_dir = args.results_dir or (root / 'logs' / 'control_compare' / '20260402_222140')
-    output_path = args.output_path or (root / 'docs' / 'pics' / 'fig8_action_update_interval_distribution.svg')
+    root = project_root()
+    results_dir = args.results_dir or (root / 'outputs' / 'runs' / 'control_compare' / '20260402_222140')
+    output_path = args.output_path or (root / 'outputs' / 'figures' / 'fig8_action_update_interval_distribution.svg')
 
     generate_interval_distribution_figure(
         results_dir=results_dir,

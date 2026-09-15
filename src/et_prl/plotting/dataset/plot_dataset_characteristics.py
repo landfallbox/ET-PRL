@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from et_prl.config.base import project_root
+
 plt.rcParams.update(
     {
         'font.family': 'sans-serif',
@@ -170,9 +172,9 @@ def plot_distribution_and_joint_pattern(df: pd.DataFrame, output_path: Path) -> 
 
 
 def main() -> None:
-    root = Path("d:/code/projects/Event-DQN")
+    root = project_root()
     data_path = root / "data" / "raw_data.csv"
-    output_dir = root / "docs" / "pics"
+    output_dir = root / "outputs" / "figures"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     df = _load_data(data_path)

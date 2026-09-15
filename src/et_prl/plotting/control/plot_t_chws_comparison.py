@@ -14,6 +14,7 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
+from et_prl.config.base import project_root
 from et_prl.plotting.control.plot_t_chws_macro_distribution import (
     generate_macro_figure,
     load_control_results as load_macro_results,
@@ -26,9 +27,9 @@ from et_prl.plotting.control.plot_t_chws_delta_analysis import (
 
 def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) -> None:
     if results_dir is None:
-        results_dir = Path(__file__).parent.parent.parent / 'logs' / 'control_compare' / '20260402_222140'
+        results_dir = project_root() / 'outputs' / 'runs' / 'control_compare' / '20260402_222140'
     if output_dir is None:
-        output_dir = Path(__file__).parent.parent.parent / 'docs' / 'pics'
+        output_dir = project_root() / 'outputs' / 'figures'
 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')

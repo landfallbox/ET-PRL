@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib import colors as mcolors
+
+from et_prl.config.base import project_root
 from matplotlib.lines import Line2D
 from matplotlib.patches import ConnectionPatch, Patch
 
@@ -316,7 +318,7 @@ def generate_delta_figure(
     et_df = results['ET-PRL']
 
     if env_data_path is None:
-        env_data_path = Path(__file__).parent.parent.parent / 'data' / 'dqn' / 'test_data.csv'
+        env_data_path = project_root() / 'data' / 'dqn' / 'test_data.csv'
 
     disturbance_values, disturbance_label = _load_disturbance_series(env_data_path, len(time_hours))
     common_length = min(len(time_hours), len(disturbance_values), len(et_df))
@@ -536,11 +538,11 @@ def main(
     micro_x_max: Optional[float] = None,
 ) -> None:
     if results_dir is None:
-        results_dir = Path(__file__).parent.parent.parent / 'logs' / 'control_compare' / '20260402_222140'
+        results_dir = project_root() / 'outputs' / 'runs' / 'control_compare' / '20260402_222140'
     if output_dir is None:
-        output_dir = Path(__file__).parent.parent.parent / 'docs' / 'pics'
+        output_dir = project_root() / 'outputs' / 'figures'
     if env_data_path is None:
-        env_data_path = Path(__file__).parent.parent.parent / 'data' / 'dqn' / 'test_data.csv'
+        env_data_path = project_root() / 'data' / 'dqn' / 'test_data.csv'
 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f'Loading control results from {results_dir}...')

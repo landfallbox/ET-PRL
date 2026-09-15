@@ -13,6 +13,8 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from et_prl.config.base import project_root
 from matplotlib.lines import Line2D
 
 
@@ -198,8 +200,8 @@ def main() -> None:
     parser.add_argument("--output-path", type=Path, default=None)
     args = parser.parse_args()
 
-    root = Path(__file__).parent.parent.parent
-    output_path = args.output_path or (root / "docs" / "pics" / "fig10_ablation_pareto_scatter.svg")
+    root = project_root()
+    output_path = args.output_path or (root / "outputs" / "figures" / "fig10_ablation_pareto_scatter.svg")
     generate_figure(output_path=output_path)
 
 

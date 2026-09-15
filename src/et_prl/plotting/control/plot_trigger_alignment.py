@@ -11,6 +11,8 @@ import pandas as pd
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.patches import Patch
 
+from et_prl.config.base import project_root
+
 
 def _resolve_experiment_dir(experiment_dir: str | None) -> Path:
     if experiment_dir:
@@ -19,7 +21,7 @@ def _resolve_experiment_dir(experiment_dir: str | None) -> Path:
             raise FileNotFoundError(f"实验目录不存在: {path}")
         return path
 
-    root = Path("logs") / "compare_dqn"
+    root = project_root() / "outputs" / "runs" / "control_compare"
     if not root.exists():
         raise FileNotFoundError(f"未找到对比实验目录: {root}")
 
@@ -339,8 +341,8 @@ def main() -> None:
     parser.add_argument(
         "--output_prefix",
         type=str,
-        default="docs/pics/trigger_alignment",
-        help="输出图片名前缀（默认 docs/pics/trigger_alignment，将生成 *_criterion.png / *_logic.png）",
+        default="outputs/figures/trigger_alignment",
+        help="输出图片名前缀（默认 outputs/figures/trigger_alignment，将生成 *_criterion.png / *_logic.png）",
     )
     parser.add_argument(
         "--high_change_quantile",

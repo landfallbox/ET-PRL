@@ -18,7 +18,7 @@ def main() -> None:
         "--output_dir",
         type=str,
         default=None,
-        help="图片输出目录；默认为 docs/pics/",
+        help="图片输出目录；默认为 outputs/figures/",
     )
     parser.add_argument(
         "--smooth_window",

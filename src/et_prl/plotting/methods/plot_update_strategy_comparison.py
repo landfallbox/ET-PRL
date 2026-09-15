@@ -8,6 +8,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from et_prl.config.base import project_root
+
 
 def _build_signal(time_axis: np.ndarray) -> np.ndarray:
     base = 0.42 * np.sin(1.35 * time_axis - 0.7)
@@ -225,7 +227,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("docs") / "pics" / "fig1_update_strategy_comparison.svg",
+        default=project_root() / "outputs" / "figures" / "fig1_update_strategy_comparison.svg",
         help="输出图片路径",
     )
     parser.add_argument("--dpi", type=int, default=220, help="导出图片 DPI")
