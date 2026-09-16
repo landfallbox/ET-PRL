@@ -147,8 +147,12 @@ def create_objective_fn(train_loader, val_loader, logger):
     return objective
 
 
-def optimize_lstm_hyperparameters():
-    """超参优化主函数"""
+def optimize_lstm_hyperparameters(n_trials: int = 80):
+    """超参优化主函数
+
+    参数：
+        n_trials: 贝叶斯优化试验次数
+    """
     config = load_config("lstm")
     output_dir = config.get_optimization_dir() / config.TIMESTAMP
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -196,7 +200,7 @@ def optimize_lstm_hyperparameters():
     logger.info("开始优化...")
     result = optimizer.optimize(
         objective_fn=objective_fn,
-        n_trials=80
+        n_trials=int(n_trials)
     )
 
     logger.info("优化完成！")

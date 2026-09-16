@@ -22,7 +22,11 @@ def main_dqn() -> None:
 
 
 def main_lstm() -> None:
-    optimize_lstm_hyperparameters()
+    parser = argparse.ArgumentParser(description="LSTM 超参贝叶斯优化")
+    parser.add_argument("--n_trials", type=int, default=80)
+    args = parser.parse_args()
+
+    optimize_lstm_hyperparameters(n_trials=int(args.n_trials))
 
 
 def main_gate() -> None:
