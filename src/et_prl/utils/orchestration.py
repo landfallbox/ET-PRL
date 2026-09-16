@@ -20,10 +20,13 @@ class ExperimentContext:
     checkpoint_manager: CheckpointManager | None = None
 
     def close(self) -> None:
-        """释放实验上下文资源（关闭 TensorBoard writer 等）。"""
+        """释放实验上下文资源（关闭 TensorBoard writer、日志文件句柄等）。"""
         close = getattr(self.metrics_recorder, "close", None)
         if callable(close):
             close()
+        close_logger = getattr(self.logger, "close", None)
+        if callable(close_logger):
+            close_logger()
 
 
 class ConfigLike(Protocol):
@@ -48,17 +51,24 @@ def create_experiment_context(
     config: ConfigLike | object | None = None,
     config_dict: dict[str, Any] | None = None,
     save_config: bool = True,
-    log_filename: str = "experiment.log",
+    log_filename: str = "run.log",
     metrics_filename: str = "metrics.json",
     config_filename: str = "config.yaml",
     with_checkpoint_manager: bool = False,
     checkpoint_dir_name: str = "checkpoints",
+    results_dir: Path | None = None,
+    tb_dir: Path | None = None,
 ) -> ExperimentContext:
     context = ExperimentContext(
         experiment_dir=Path(experiment_dir),
         logger=Logger(experiment_dir, log_filename=log_filename),
         config_manager=ConfigManager(experiment_dir, config_filename=config_filename),
-        metrics_recorder=MetricsRecorder(experiment_dir, metrics_filename=metrics_filename),
+        metrics_recorder=MetricsRecorder(
+            experiment_dir,
+            metrics_filename=metrics_filename,
+            results_dir=results_dir,
+            tb_dir=tb_dir,
+        ),
         checkpoint_manager=CheckpointManager(experiment_dir, checkpoint_dir_name=checkpoint_dir_name)
         if with_checkpoint_manager
         else None,

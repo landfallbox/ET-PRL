@@ -53,8 +53,13 @@ def _latest_gate_trials_file() -> Path:
     if not opt_root.exists():
         raise FileNotFoundError(f"未找到门控优化目录: {opt_root}")
     candidates = sorted(
-        (p for p in opt_root.glob("*/gate/gate_trials.csv") if p.is_file()),
-        key=lambda p: p.parent.parent.name,
+        (
+            p
+            for pattern in ("*/gate/gate_trials.csv", "*/gate/results/gate_trials.csv")
+            for p in opt_root.glob(pattern)
+            if p.is_file()
+        ),
+        key=lambda p: p.parents[2].name,
     )
     if not candidates:
         raise FileNotFoundError(f"在 {opt_root} 下未找到 gate_trials.csv")

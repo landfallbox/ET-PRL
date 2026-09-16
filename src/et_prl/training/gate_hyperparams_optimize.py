@@ -151,14 +151,18 @@ def _load_previous_phase_best(
         # 1) .../phase1
         # 2) .../phase1/gate
         candidate_paths = [
+            previous_phase_result_dir / "results" / "best_params.json",
             previous_phase_result_dir / "best_params.json",
+            previous_phase_result_dir / "gate" / "results" / "best_params.json",
             previous_phase_result_dir / "gate" / "best_params.json",
         ]
         source_hint = f"(显式指定: {previous_phase_result_dir})"
     else:
         # 回退：自动检测（相同timestamp）下的标准gate目录
         candidate_paths = [
+            output_dir.parent / prev_phase / "gate" / "results" / "best_params.json",
             output_dir.parent / prev_phase / "gate" / "best_params.json",
+            output_dir.parent / prev_phase / "results" / "best_params.json",
             output_dir.parent / prev_phase / "best_params.json",
         ]
         source_hint = f"(自动检测: {output_dir.parent})"
@@ -387,7 +391,7 @@ def optimize_gate_hyperparameters(
     output_dir = base_output_dir / current_phase / "gate"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger = Logger(output_dir)
+    logger = Logger(output_dir, log_filename="run.log")
     
     # 设置清晰的日志头
     logger.info("" + "="*70)
@@ -476,6 +480,7 @@ def optimize_gate_hyperparameters(
     optimizer = BayesianOptimizer(
         space=space,
         output_dir=output_dir,
+        results_dir=output_dir / "results",
         sampler=str(base_config.GATE_OPTIMIZATION_SAMPLER),
         seed=int(base_config.GATE_OPTIMIZATION_SEED),
     )
@@ -642,7 +647,7 @@ def optimize_gate_hyperparameters(
                 merged_best_params[param] = default_val
     
     # 保存本阶段best_params为JSON，供下一阶段加载
-    best_params_json_path = output_dir / "best_params.json"
+    best_params_json_path = output_dir / "results" / "best_params.json"
     with open(best_params_json_path, "w", encoding="utf-8") as f:
         json.dump(best_params, f, indent=2, ensure_ascii=False)
     logger.info(f"已保存 {current_phase} 最优参数到: {best_params_json_path}")
@@ -794,7 +799,7 @@ def optimize_gate_hyperparameters(
         "holdout_evaluation": holdout_test_result,
     }
 
-    summary_path = output_dir / "best_gate_config.json"
+    summary_path = output_dir / "results" / "best_gate_config.json"
     with open(summary_path, "w", encoding="utf-8") as file:
         json.dump(summary, file, indent=2, ensure_ascii=False)
 
@@ -821,7 +826,7 @@ def optimize_gate_hyperparameters(
                     **trial.params,
                 }
             )
-        pd.DataFrame(records).to_csv(output_dir / "gate_trials.csv", index=False)
+        pd.DataFrame(records).to_csv(output_dir / "results" / "gate_trials.csv", index=False)
 
     logger.info(
         f"优化完成，最优 objective={best_objective_score:.6f}, action_rate={best_action_rate:.6f}, "

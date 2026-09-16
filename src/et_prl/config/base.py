@@ -70,16 +70,17 @@ class BaseConfig:
 
     # ==================== 实验输出文件名 ====================
     CONFIG_FILENAME: str
-    EXPERIMENT_LOG_FILENAME: str
+    RUN_LOG_FILENAME: str
     METRICS_FILENAME: str
     TRAINING_HISTORY_FILENAME: str
     CHECKPOINT_DIR_NAME: str
     BEST_MODEL_FILENAME: str
     FINAL_MODEL_FILENAME: str
+    RESULTS_DIR_NAME: str
+    FIGURES_DIR_NAME: str
+    TB_DIR_NAME: str
 
     # ==================== 评估输出文件名 ====================
-    EVALUATION_LOG_FILENAME: str
-    EVALUATION_METRICS_FILENAME: str
     PREDICTION_COMPARISON_PLOT_FILENAME: str
     ERROR_DISTRIBUTION_PLOT_FILENAME: str
     PREDICTION_SCATTER_PLOT_FILENAME: str
@@ -115,6 +116,19 @@ class BaseConfig:
     def RAW_DATA_PATH(self) -> Path:
         """原始数据路径，由 DATA_ROOT 派生。"""
         return self.DATA_ROOT / "raw_data.csv"
+
+    # ==================== 运行目录子目录（方法） ====================
+    def get_run_results_dir(self, mode: str = "train") -> Path:
+        """运行目录下的结果数据子目录（step_results、训练历史、报告等）。"""
+        return self.get_experiment_dir(mode) / self.RESULTS_DIR_NAME
+
+    def get_run_figures_dir(self, mode: str = "train") -> Path:
+        """运行目录下的图表子目录。"""
+        return self.get_experiment_dir(mode) / self.FIGURES_DIR_NAME
+
+    def get_run_tb_dir(self, mode: str = "train") -> Path:
+        """运行目录下的 TensorBoard 事件子目录。"""
+        return self.get_experiment_dir(mode) / self.TB_DIR_NAME
 
     # ==================== 路径方法 ====================
     def get_data_dir(self) -> Path:

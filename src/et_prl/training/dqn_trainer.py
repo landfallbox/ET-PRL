@@ -310,7 +310,7 @@ class DQNTrainer:
             "val_metrics": val_metrics,
         }
         self.metrics_recorder.save_training_history(history_dict)
-        output_path = self.experiment_dir / self.config.TRAINING_HISTORY_FILENAME
+        output_path = self.config.get_run_results_dir() / self.config.TRAINING_HISTORY_FILENAME
         self.logger.info(f"训练历史已保存: {output_path}")
 
 

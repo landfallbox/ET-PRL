@@ -23,6 +23,9 @@ def train_lstm():
         config_dict=config.to_dict(),
         with_checkpoint_manager=True,
         checkpoint_dir_name=config.CHECKPOINT_DIR_NAME,
+        log_filename=config.RUN_LOG_FILENAME,
+        results_dir=config.get_run_results_dir(),
+        tb_dir=config.get_run_tb_dir(),
     )
     logger = context.logger
     metrics_recorder = context.metrics_recorder

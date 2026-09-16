@@ -203,7 +203,7 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
     output_dir = base_config.get_optimization_dir() / base_config.TIMESTAMP
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger = Logger(output_dir)
+    logger = Logger(output_dir, log_filename="run.log")
     reproducibility = configure_reproducibility(
         seed=int(base_config.RANDOM_STATE),
         deterministic_cudnn=bool(base_config.CUDNN_DETERMINISTIC),
@@ -226,6 +226,7 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
     optimizer = BayesianOptimizer(
         space=space,
         output_dir=output_dir,
+        results_dir=output_dir / "results",
         sampler="tpe",
         seed=int(base_config.RANDOM_STATE),
     )
@@ -266,7 +267,7 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
         "best_config_overrides": best_config,
     }
 
-    summary_path = output_dir / "best_config.json"
+    summary_path = output_dir / "results" / "best_config.json"
     with open(summary_path, "w", encoding="utf-8") as file:
         json.dump(summary, file, indent=2, ensure_ascii=False)
 
@@ -282,7 +283,7 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
                     **trial.params,
                 }
             )
-        pd.DataFrame(trial_records).to_csv(output_dir / "trials.csv", index=False)
+        pd.DataFrame(trial_records).to_csv(output_dir / "results" / "trials.csv", index=False)
 
     logger.info(f"优化完成，最优验证奖励: {best_val_reward:.6f}")
     logger.info(f"最优配置已保存: {summary_path}")

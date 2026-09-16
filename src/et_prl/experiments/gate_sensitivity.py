@@ -583,9 +583,10 @@ def run_gate_mixed_sensitivity_analysis(
     root = Path(output_dir or (cfg.LOG_ROOT_DIR / "online_anomaly_detection" / "sensitivity")) / cfg.TIMESTAMP
     root.mkdir(parents=True, exist_ok=True)
     ctx = create_experiment_context(experiment_dir=root, config=cfg, save_config=False,
-                                    log_filename=cfg.EVALUATION_LOG_FILENAME,
-                                    metrics_filename=cfg.EVALUATION_METRICS_FILENAME,
-                                    config_filename=cfg.CONFIG_FILENAME)
+                                    log_filename=cfg.RUN_LOG_FILENAME,
+                                    config_filename=cfg.CONFIG_FILENAME,
+                                    results_dir=root / cfg.RESULTS_DIR_NAME,
+                                    tb_dir=root / cfg.TB_DIR_NAME)
     log = ctx.logger
     log.info("Gate mixed sensitivity analysis")
     log.info(f"  train_dir={train_dir}  data_split={data_split}  output={root}")
@@ -695,10 +696,11 @@ def run_gate_mixed_sensitivity_analysis(
     round_df = pd.DataFrame(round_rows)
     summary_df = pd.DataFrame(summary_rows)
 
-    all_path = root / "gate_mixed_sensitivity_results.csv"
-    round_path = root / "gate_mixed_sensitivity_round_results.csv"
-    summary_path = root / "gate_mixed_sensitivity_summary.csv"
-    baseline_path = root / "gate_mixed_sensitivity_baseline.json"
+    results_dir = root / cfg.RESULTS_DIR_NAME
+    all_path = results_dir / "gate_mixed_sensitivity_results.csv"
+    round_path = results_dir / "gate_mixed_sensitivity_round_results.csv"
+    summary_path = results_dir / "gate_mixed_sensitivity_summary.csv"
+    baseline_path = results_dir / "gate_mixed_sensitivity_baseline.json"
 
     all_df.to_csv(all_path, index=False)
     round_df.to_csv(round_path, index=False)

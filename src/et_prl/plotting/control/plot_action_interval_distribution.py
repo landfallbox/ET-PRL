@@ -68,6 +68,9 @@ BASE_BINS: list[tuple[int, int]] = [
 
 
 def _load_results(results_dir: Path) -> dict[str, pd.DataFrame]:
+    from et_prl.plotting.control.results_path import resolve_results_dir
+
+    results_dir = resolve_results_dir(results_dir)
     results: dict[str, pd.DataFrame] = {}
     for strategy, file_name in STRATEGY_FILES.items():
         path = results_dir / file_name

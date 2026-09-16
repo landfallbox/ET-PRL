@@ -79,13 +79,14 @@
 
 ## 实验产物说明
 
-每次实验写入 `outputs/runs/<experiment>/<mode>/<timestamp>/`：
+每次实验写入 `outputs/runs/<experiment>/[<grouping>/]<timestamp>/`（`<grouping>` 为可选分组层，如 train / eval）：
 - `config.yaml`：实验配置快照
-- `experiment.log` / `evaluation.log`：执行日志
+- `run.log`：执行日志（训练/评估统一）
 - `metrics.json`：指标摘要
-- `training_history.csv`：训练过程明细（训练任务）
 - `checkpoints/`：`best_model.pth` 与 `final_model.pth`
-- `events.out.tfevents.*`：TensorBoard 事件（`tensorboard --logdir outputs/runs/` 查看曲线）
+- `results/`：`training_history.csv`（训练）、`*_step_results.csv`（评估/对比）、优化 trials 等结果文件
+- `figures/`：本次运行生成的图表
+- `tb/`：TensorBoard 事件（`tensorboard --logdir outputs/runs/` 查看曲线）
 
 ## 导入与工程规范
 

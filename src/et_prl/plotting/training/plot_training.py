@@ -41,6 +41,14 @@ def _latest_train_dir(log_root: Path | None = None) -> Path:
     return dirs[-1]
 
 
+def _resolve_training_history(exp_dir: Path) -> Path:
+    """定位 training_history.csv：新布局在 results/ 子目录，旧布局在实验目录根。"""
+    for candidate in (exp_dir / "results" / "training_history.csv", exp_dir / "training_history.csv"):
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(f"训练历史文件不存在: {exp_dir / 'results' / 'training_history.csv'}")
+
+
 def _build_output_filename(exp_dir: Path, suffix: str = "") -> str:
     """根据实验目录名（时间戳）构造含信息量的文件名。
 
@@ -111,9 +119,7 @@ def plot_dqn_training_curves(
     """
     # ── 确定实验目录与数据路径 ──────────────────────────────────
     exp_dir = train_experiment_dir or _latest_train_dir()
-    history_path = exp_dir / "training_history.csv"
-    if not history_path.exists():
-        raise FileNotFoundError(f"训练历史文件不存在: {history_path}")
+    history_path = _resolve_training_history(exp_dir)
 
     df = pd.read_csv(history_path)
     episodes = df["epoch"].to_numpy()
@@ -207,9 +213,7 @@ def plot_dqn_validation_reward_curve(
 ) -> Path | None:
     """绘制 Fixed-step DQN 验证奖励曲线并保存。"""
     exp_dir = train_experiment_dir or _latest_train_dir()
-    history_path = exp_dir / "training_history.csv"
-    if not history_path.exists():
-        raise FileNotFoundError(f"训练历史文件不存在: {history_path}")
+    history_path = _resolve_training_history(exp_dir)
 
     df = pd.read_csv(history_path)
     episodes = df["epoch"].to_numpy()

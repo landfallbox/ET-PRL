@@ -9,6 +9,8 @@ from typing import Any, Dict, Optional
 
 import torch
 
+from et_prl.config.base import project_root
+
 
 class CheckpointManager:
     """
@@ -121,7 +123,7 @@ class CheckpointManager:
             最新实验目录路径，如果不存在则返回 None
         """
         if log_root_dir is None:
-            log_root_dir = Path("logs")
+            log_root_dir = project_root() / "outputs" / "runs"
 
         if mode == "train":
             subdir = "train"

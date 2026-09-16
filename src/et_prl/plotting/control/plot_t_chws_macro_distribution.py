@@ -40,6 +40,9 @@ REQUIRED_STRATEGY_FILES = {
 
 def load_control_results(results_dir: Path) -> dict[str, pd.DataFrame]:
     """Load required strategy CSVs for macro distribution plotting."""
+    from et_prl.plotting.control.results_path import resolve_results_dir
+
+    results_dir = resolve_results_dir(results_dir)
     results: dict[str, pd.DataFrame] = {}
     for name, filename in REQUIRED_STRATEGY_FILES.items():
         file_path = results_dir / filename

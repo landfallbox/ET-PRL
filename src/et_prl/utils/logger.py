@@ -18,13 +18,13 @@ class Logger:
     - 提供不同级别的日志记录方法（info, debug, warning, error）
     """
 
-    def __init__(self, experiment_dir: Path, log_filename: str = "experiment.log"):
+    def __init__(self, experiment_dir: Path, log_filename: str = "run.log"):
         """
         初始化日志器
 
         参数：
             experiment_dir: 实验目录
-            log_filename: 日志文件名（可选，默认为 'experiment.log'）
+            log_filename: 日志文件名（可选，默认为 'run.log'）
         """
         self.experiment_dir = Path(experiment_dir)
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
@@ -76,3 +76,13 @@ class Logger:
     def error(self, msg: str):
         """ERROR 级别日志"""
         self.logger.error(msg, stacklevel=2)
+
+    def close(self) -> None:
+        """刷新并释放日志文件句柄。"""
+        for handler in list(self.logger.handlers):
+            try:
+                handler.flush()
+                handler.close()
+            except Exception:
+                pass
+            self.logger.removeHandler(handler)

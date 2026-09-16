@@ -424,7 +424,9 @@ def main() -> None:
         raise ValueError("--logic_event_min_ratio 必须在 [0,1] 区间")
 
     experiment_dir = _resolve_experiment_dir(args.experiment_dir)
-    event_csv = experiment_dir / "event_driven_step_results.csv"
+    from et_prl.plotting.control.results_path import resolve_results_dir
+
+    event_csv = resolve_results_dir(experiment_dir) / "event_driven_step_results.csv"
     if not event_csv.exists():
         raise FileNotFoundError(f"缺少必要文件: {event_csv}")
 

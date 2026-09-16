@@ -35,9 +35,10 @@ def test_lstm(train_experiment_dir: Path = None):
     context = create_experiment_context(
         experiment_dir=test_experiment_dir,
         save_config=False,
-        log_filename=config.EVALUATION_LOG_FILENAME,
-        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        log_filename=config.RUN_LOG_FILENAME,
         config_filename=config.CONFIG_FILENAME,
+        results_dir=config.get_run_results_dir(mode="eval"),
+        tb_dir=config.get_run_tb_dir(mode="eval"),
     )
     logger = context.logger
 
@@ -145,7 +146,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info("生成可视化图表...")
 
     # 预测对比折线图
-    plot_save_path = test_experiment_dir / config.PREDICTION_COMPARISON_PLOT_FILENAME
+    plot_save_path = config.get_run_figures_dir(mode="eval") / config.PREDICTION_COMPARISON_PLOT_FILENAME
     Visualizer.plot_prediction_comparison(
         predictions_np, targets_np, plot_save_path,
         max_samples=config.MAX_PLOT_SAMPLES,
@@ -156,7 +157,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info(f"预测对比图已保存: {plot_save_path}")
 
     # 误差分布直方图
-    error_dist_path = test_experiment_dir / config.ERROR_DISTRIBUTION_PLOT_FILENAME
+    error_dist_path = config.get_run_figures_dir(mode="eval") / config.ERROR_DISTRIBUTION_PLOT_FILENAME
     Visualizer.plot_error_distribution(
         predictions_np, targets_np, error_dist_path,
         bins=config.ERROR_HIST_BINS,
@@ -166,7 +167,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info(f"误差分布图已保存: {error_dist_path}")
 
     # 预测散点图
-    scatter_path = test_experiment_dir / config.PREDICTION_SCATTER_PLOT_FILENAME
+    scatter_path = config.get_run_figures_dir(mode="eval") / config.PREDICTION_SCATTER_PLOT_FILENAME
     Visualizer.plot_scatter_comparison(
         predictions_np, targets_np, scatter_path,
         figsize=config.PREDICTION_SCATTER_FIGSIZE,
@@ -178,7 +179,7 @@ def test_lstm(train_experiment_dir: Path = None):
     logger.info("保存测试结果...")
 
     # 保存评估结果到评估实验目录
-    metrics_file = test_experiment_dir / config.EVALUATION_METRICS_FILENAME
+    metrics_file = test_experiment_dir / config.METRICS_FILENAME
     test_results = {
         "train_experiment_dir": str(train_experiment_dir),
         "test_metrics": test_metrics,

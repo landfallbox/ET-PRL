@@ -147,9 +147,10 @@ def compare_control_strategies(
         experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
-        log_filename=config.EVALUATION_LOG_FILENAME,
-        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        log_filename=config.RUN_LOG_FILENAME,
         config_filename=config.CONFIG_FILENAME,
+        results_dir=config.get_run_results_dir(mode="eval"),
+        tb_dir=config.get_run_tb_dir(mode="eval"),
     )
     logger = context.logger
     metrics_recorder = context.metrics_recorder
@@ -209,7 +210,9 @@ def compare_control_strategies(
             comfort_upper_bound=config.COMFORT_UPPER_BOUND,
         )
         summaries[fixed_key] = fixed_summary
-        fixed_step_results.to_csv(test_experiment_dir / f"{fixed_key}_step_results.csv", index=False)
+        fixed_step_results.to_csv(
+            config.get_run_results_dir(mode="eval") / f"{fixed_key}_step_results.csv", index=False
+        )
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
@@ -225,7 +228,9 @@ def compare_control_strategies(
         comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
     summaries["event_driven"] = event_summary
-    event_step_results.to_csv(test_experiment_dir / "event_driven_step_results.csv", index=False)
+    event_step_results.to_csv(
+        config.get_run_results_dir(mode="eval") / "event_driven_step_results.csv", index=False
+    )
 
     pid_kp = float(getattr(config, "PID_KP", 0.6))
     pid_ki = float(getattr(config, "PID_KI", 0.05))
@@ -251,7 +256,9 @@ def compare_control_strategies(
         max_action_step=pid_max_action_step,
     )
     summaries["pid"] = pid_summary
-    pid_step_results.to_csv(test_experiment_dir / "pid_step_results.csv", index=False)
+    pid_step_results.to_csv(
+        config.get_run_results_dir(mode="eval") / "pid_step_results.csv", index=False
+    )
 
     rbc_fixed_setpoint = float(config.RBC_FIXED_SETPOINT)
     rbc_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
@@ -261,7 +268,9 @@ def compare_control_strategies(
         fixed_setpoint=rbc_fixed_setpoint,
     )
     summaries["rbc"] = rbc_summary
-    rbc_step_results.to_csv(test_experiment_dir / "rbc_step_results.csv", index=False)
+    rbc_step_results.to_csv(
+        config.get_run_results_dir(mode="eval") / "rbc_step_results.csv", index=False
+    )
 
     cl_threshold, twb_threshold, cl_predict_threshold = _resolve_event_thresholds(config, test_data)
     event_trigger_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
@@ -282,7 +291,9 @@ def compare_control_strategies(
         trigger_score_threshold=float(getattr(config, "EVENT_TRIGGER_SCORE_THRESHOLD", 0.6)),
     )
     summaries["event_triggered_etc"] = event_trigger_summary
-    event_trigger_step_results.to_csv(test_experiment_dir / "event_triggered_etc_step_results.csv", index=False)
+    event_trigger_step_results.to_csv(
+        config.get_run_results_dir(mode="eval") / "event_triggered_etc_step_results.csv", index=False
+    )
 
     metrics_recorder.save_metrics(
         {

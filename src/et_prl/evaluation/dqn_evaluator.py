@@ -24,9 +24,10 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
         experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
-        log_filename=config.EVALUATION_LOG_FILENAME,
-        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        log_filename=config.RUN_LOG_FILENAME,
         config_filename=config.CONFIG_FILENAME,
+        results_dir=config.get_run_results_dir(mode="eval"),
+        tb_dir=config.get_run_tb_dir(mode="eval"),
     )
     logger = context.logger
     metrics_recorder = context.metrics_recorder
@@ -77,7 +78,7 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
     }
     metrics_recorder.save_metrics(output_payload)
 
-    step_results_path = test_experiment_dir / "test_step_results.csv"
+    step_results_path = config.get_run_results_dir(mode="eval") / "test_step_results.csv"
     step_results.to_csv(step_results_path, index=False)
 
     logger.info(f"评估完成: steps={summary['steps']}, total_reward={summary['total_reward']:.4f}")
@@ -90,5 +91,5 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
         f"action_count={summary['action_count']}, "
         f"action_frequency={summary['action_frequency']:.4f}"
     )
-    logger.info(f"评估指标已保存: {test_experiment_dir / config.EVALUATION_METRICS_FILENAME}")
+    logger.info(f"评估指标已保存: {test_experiment_dir / config.METRICS_FILENAME}")
     logger.info(f"逐步结果已保存: {step_results_path}")

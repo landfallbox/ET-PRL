@@ -99,9 +99,10 @@ def run_ablation_experiment(
         experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
-        log_filename=config.EVALUATION_LOG_FILENAME,
-        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        log_filename=config.RUN_LOG_FILENAME,
         config_filename=config.CONFIG_FILENAME,
+        results_dir=test_experiment_dir / config.RESULTS_DIR_NAME,
+        tb_dir=test_experiment_dir / config.TB_DIR_NAME,
     )
     logger = context.logger
     metrics_recorder = context.metrics_recorder
@@ -166,8 +167,9 @@ def run_ablation_experiment(
         }
     )
 
-    fixed_step_results_path = test_experiment_dir / "fixed_interval_step_results.csv"
-    event_step_results_path = test_experiment_dir / "event_driven_step_results.csv"
+    results_dir = test_experiment_dir / config.RESULTS_DIR_NAME
+    fixed_step_results_path = results_dir / "fixed_interval_step_results.csv"
+    event_step_results_path = results_dir / "event_driven_step_results.csv"
     fixed_step_results.to_csv(fixed_step_results_path, index=False)
     event_step_results.to_csv(event_step_results_path, index=False)
 

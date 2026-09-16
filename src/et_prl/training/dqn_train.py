@@ -25,7 +25,13 @@ def train_dqn(runs: int = 1) -> None:
     for run_index in range(1, runs + 1):
         config = _build_run_config(load_config("dqn"), run_index, runs)
         experiment_dir = config.get_train_experiment_dir()
-        context = create_experiment_context(experiment_dir=experiment_dir, config=config)
+        context = create_experiment_context(
+            experiment_dir=experiment_dir,
+            config=config,
+            log_filename=config.RUN_LOG_FILENAME,
+            results_dir=config.get_run_results_dir(),
+            tb_dir=config.get_run_tb_dir(),
+        )
 
         reproducibility = configure_reproducibility(
             seed=int(config.RANDOM_STATE),

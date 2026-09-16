@@ -29,9 +29,10 @@ def test_event_driven(
         experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
-        log_filename=config.EVALUATION_LOG_FILENAME,
-        metrics_filename=config.EVALUATION_METRICS_FILENAME,
+        log_filename=config.RUN_LOG_FILENAME,
         config_filename=config.CONFIG_FILENAME,
+        results_dir=config.get_run_results_dir(mode="eval"),
+        tb_dir=config.get_run_tb_dir(mode="eval"),
     )
     logger = context.logger
     metrics_recorder = context.metrics_recorder
@@ -74,7 +75,7 @@ def test_event_driven(
     }
     metrics_recorder.save_metrics(output_payload)
 
-    step_results_path = test_experiment_dir / "event_driven_step_results.csv"
+    step_results_path = config.get_run_results_dir(mode="eval") / "event_driven_step_results.csv"
     step_results.to_csv(step_results_path, index=False)
 
     logger.info(

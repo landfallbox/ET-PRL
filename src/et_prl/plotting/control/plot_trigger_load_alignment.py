@@ -44,6 +44,9 @@ LOAD_ALPHA = 0.90
 
 
 def _load_results(results_dir: Path) -> dict[str, pd.DataFrame]:
+    from et_prl.plotting.control.results_path import resolve_results_dir
+
+    results_dir = resolve_results_dir(results_dir)
     mapping = {
         'ET-PRL': 'event_driven_step_results.csv',
         'ST-ETC': 'event_triggered_etc_step_results.csv',

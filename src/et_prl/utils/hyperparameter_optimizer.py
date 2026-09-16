@@ -72,6 +72,7 @@ class BayesianOptimizer:
         self,
         space: HyperparameterSpace,
         output_dir: Path,
+        results_dir: Optional[Path] = None,
         sampler: str = "tpe",
         seed: Optional[int] = None,
     ):
@@ -80,13 +81,16 @@ class BayesianOptimizer:
 
         参数：
             space: 超参搜索空间
-            output_dir: 结果保存目录
+            output_dir: 实验目录
+            results_dir: optimization_results.json 所在目录（可选，默认与 output_dir 相同）
             sampler: 采样器类型（tpe, random）
             seed: 随机种子
         """
         self.space = space
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.results_dir = Path(results_dir) if results_dir is not None else self.output_dir
+        self.results_dir.mkdir(parents=True, exist_ok=True)
         self.sampler = sampler
         self.seed = seed
         self.best_params: Optional[Dict[str, Any]] = None
@@ -230,7 +234,7 @@ class BayesianOptimizer:
             results["trials"].append(trial_record)
 
         # 保存为 JSON
-        output_file = self.output_dir / "optimization_results.json"
+        output_file = self.results_dir / "optimization_results.json"
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
 

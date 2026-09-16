@@ -28,6 +28,8 @@ class MetricsRecorder:
         experiment_dir: Path,
         metrics_filename: Optional[str] = None,
         history_filename: Optional[str] = None,
+        results_dir: Optional[Path] = None,
+        tb_dir: Optional[Path] = None,
     ):
         """
         初始化指标记录器
@@ -36,6 +38,8 @@ class MetricsRecorder:
             experiment_dir: 实验目录
             metrics_filename: 指标文件名（可选，如果不提供则使用默认值）
             history_filename: 训练历史文件名（可选，如果不提供则使用默认值）
+            results_dir: 训练历史 CSV 所在目录（可选，默认与 experiment_dir 相同）
+            tb_dir: TensorBoard 事件文件所在目录（可选，默认与 experiment_dir 相同）
         """
         self.experiment_dir = Path(experiment_dir)
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
@@ -45,6 +49,10 @@ class MetricsRecorder:
             metrics_filename = "metrics.json"
         if history_filename is None:
             history_filename = "training_history.csv"
+
+        self.results_dir = Path(results_dir) if results_dir is not None else self.experiment_dir
+        self.results_dir.mkdir(parents=True, exist_ok=True)
+        self.tb_dir = Path(tb_dir) if tb_dir is not None else self.experiment_dir
 
         self.metrics_filename = metrics_filename
         self.history_filename = history_filename
@@ -57,7 +65,7 @@ class MetricsRecorder:
             from torch.utils.tensorboard import SummaryWriter
         except Exception:
             return None
-        return SummaryWriter(log_dir=str(self.experiment_dir))
+        return SummaryWriter(log_dir=str(self.tb_dir))
 
     def close(self):
         """关闭 TensorBoard writer（flush 事件文件）。"""
@@ -144,7 +152,7 @@ class MetricsRecorder:
             records.append(record)
 
         df = pd.DataFrame(records)
-        history_file = self.experiment_dir / self.history_filename
+        history_file = self.results_dir / self.history_filename
         df.to_csv(history_file, index=False)
 
         # 批量写入 TensorBoard 事件文件（训练结束时一次性生成曲线）
