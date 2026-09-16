@@ -150,7 +150,7 @@ def create_objective_fn(train_loader, val_loader, logger):
 def optimize_lstm_hyperparameters():
     """超参优化主函数"""
     config = load_config("lstm")
-    output_dir = config.get_optimization_dir()
+    output_dir = config.get_optimization_dir() / config.TIMESTAMP
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = Logger(output_dir)
@@ -182,6 +182,7 @@ def optimize_lstm_hyperparameters():
     optimizer = BayesianOptimizer(
         space=space,
         output_dir=output_dir,
+        results_dir=output_dir / "results",
         sampler="tpe",
         seed=42
     )
@@ -205,7 +206,7 @@ def optimize_lstm_hyperparameters():
     for param_name, param_value in result["best_params"].items():
         logger.info(f"  {param_name}: {param_value}")
 
-    logger.info(f"优化结果已保存到: {output_dir / 'optimization_results.json'}")
+    logger.info(f"优化结果已保存到: {output_dir / 'results' / 'optimization_results.json'}")
 
     return result
 
