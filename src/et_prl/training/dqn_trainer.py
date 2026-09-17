@@ -6,21 +6,36 @@ import numpy as np
 import pandas as pd
 import torch
 from et_prl.environments import SequenceEnv
-from et_prl.utils import CheckpointManager, Logger, MetricsRecorder
+from et_prl.utils import CheckpointManager, ExperimentContext, Logger, MetricsRecorder
 
 from et_prl.config.dqn import DQNConfig
-from et_prl.agents.dqn.agent import DQNAgent
-from et_prl.agents.dqn.rewards import RewardCalculator
+from et_prl.agents.dqn import DQNAgent
+from et_prl.agents.dqn.rewards import RewardCalculator as _RewardCalculator
 
 
 class DQNTrainer:
-    def __init__(self, config: DQNConfig, experiment_dir: Path) -> None:
+    def __init__(
+        self,
+        config: DQNConfig,
+        experiment_dir: Path,
+        context: ExperimentContext | None = None,
+    ) -> None:
         self.config = config
         self.experiment_dir = experiment_dir
 
-        self.logger = Logger(experiment_dir)
-        self.metrics_recorder = MetricsRecorder(experiment_dir)
-        self.checkpoint_manager = CheckpointManager(experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME)
+        # 复用实验上下文的 logger/metrics_recorder，避免同一 run.log 双文件句柄与重复 TB writer；
+        # 未注入 context 时（如超参优化 trial）回退为自建。
+        if context is not None:
+            self.logger = context.logger
+            self.metrics_recorder = context.metrics_recorder
+            self.checkpoint_manager = (
+                context.checkpoint_manager
+                or CheckpointManager(experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME)
+            )
+        else:
+            self.logger = Logger(experiment_dir)
+            self.metrics_recorder = MetricsRecorder(experiment_dir)
+            self.checkpoint_manager = CheckpointManager(experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME)
 
     def train(self) -> None:
         self.config.validate()
@@ -51,49 +66,9 @@ class DQNTrainer:
             device=device,
         )
 
-        reward_calc = RewardCalculator(
-            train_data,
-            action_space,
-            self.config.REWARD_WEIGHT_EFFICIENCY,
-            self.config.REWARD_WEIGHT_COMFORT,
-            self.config.TARGET_SUPPLY_TEMP,
-            self.config.COEFF_DATE_PATH,
-            self.config.CHILLER_CAPACITY,
-            self.config.CHILLER_REF_POWER,
-            self.config.CHILLER_SUPPLY_TEMP_REF,
-            self.config.COMFORT_SIGMA,
-            self.config.CHILLER_HIGH_THRESHOLD,
-            self.config.CHILLER_MEDIUM_THRESHOLD,
-            self.config.CHILLER_LOW_THRESHOLD,
-            self.config.CHILLER_F_NOMINAL,
-            self.config.CHILLER_F_CW,
-            self.config.CHILLER_F_TOWER,
-            self.config.CHILLER_F_CHW,
-            self.config.CHILLER_CP,
-            self.config.CHILLER_WATER_DENSITY,
-        )
+        reward_calc = _RewardCalculator.from_config(config=self.config, data=train_data, action_space=action_space)
         train_env = SequenceEnv(train_data, self.config.STATE_COLUMNS, reward_calc)
-        val_reward_calc = RewardCalculator(
-            val_data,
-            action_space,
-            self.config.REWARD_WEIGHT_EFFICIENCY,
-            self.config.REWARD_WEIGHT_COMFORT,
-            self.config.TARGET_SUPPLY_TEMP,
-            self.config.COEFF_DATE_PATH,
-            self.config.CHILLER_CAPACITY,
-            self.config.CHILLER_REF_POWER,
-            self.config.CHILLER_SUPPLY_TEMP_REF,
-            self.config.COMFORT_SIGMA,
-            self.config.CHILLER_HIGH_THRESHOLD,
-            self.config.CHILLER_MEDIUM_THRESHOLD,
-            self.config.CHILLER_LOW_THRESHOLD,
-            self.config.CHILLER_F_NOMINAL,
-            self.config.CHILLER_F_CW,
-            self.config.CHILLER_F_TOWER,
-            self.config.CHILLER_F_CHW,
-            self.config.CHILLER_CP,
-            self.config.CHILLER_WATER_DENSITY,
-        )
+        val_reward_calc = _RewardCalculator.from_config(config=self.config, data=val_data, action_space=action_space)
         val_env = SequenceEnv(val_data, self.config.STATE_COLUMNS, val_reward_calc)
 
         self.logger.info("开始训练")
@@ -229,18 +204,18 @@ class DQNTrainer:
         steps = 0
         epsilon_backup = agent.epsilon
         agent.epsilon = 0.0
-
-        while True:
-            steps += 1
-            action_idx = agent.select_action(state, training=False)
-            action_value = agent.get_action_value(action_idx)
-            next_state, reward, terminated, _, _ = env.step(action_value)
-            total_reward += float(reward)
-            state = next_state
-            if terminated:
-                break
-
-        agent.epsilon = epsilon_backup
+        try:
+            while True:
+                steps += 1
+                action_idx = agent.select_action(state, training=False)
+                action_value = agent.get_action_value(action_idx)
+                next_state, reward, terminated, _, _ = env.step(action_value)
+                total_reward += float(reward)
+                state = next_state
+                if terminated:
+                    break
+        finally:
+            agent.epsilon = epsilon_backup
         return {"total_reward": total_reward, "steps": steps}
 
     @staticmethod

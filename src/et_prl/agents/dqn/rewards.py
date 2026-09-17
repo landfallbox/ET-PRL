@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from et_prl.environments import RewardCalculator as BaseRewardCalculator
+from et_prl.config.dqn import DQNConfig
 
 
 class RewardCalculator(BaseRewardCalculator):
@@ -73,6 +74,31 @@ class RewardCalculator(BaseRewardCalculator):
             raise ValueError("c_p 必须大于 0")
         if self.density_water <= 0:
             raise ValueError("density_water 必须大于 0")
+
+    @classmethod
+    def from_config(cls, config: DQNConfig, data: pd.DataFrame, action_space: np.ndarray) -> "RewardCalculator":
+        """从 DQNConfig 构造奖励计算器，收敛各调用点重复的 19 参数构造。"""
+        return cls(
+            data=data,
+            action_space=action_space,
+            weight_efficiency=config.REWARD_WEIGHT_EFFICIENCY,
+            weight_comfort=config.REWARD_WEIGHT_COMFORT,
+            target_supply_temp=config.TARGET_SUPPLY_TEMP,
+            coeff_path=config.COEFF_DATE_PATH,
+            chiller_capacity=config.CHILLER_CAPACITY,
+            chiller_ref_power=config.CHILLER_REF_POWER,
+            supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+            comfort_sigma=config.COMFORT_SIGMA,
+            chiller_high_threshold=config.CHILLER_HIGH_THRESHOLD,
+            chiller_medium_threshold=config.CHILLER_MEDIUM_THRESHOLD,
+            chiller_low_threshold=config.CHILLER_LOW_THRESHOLD,
+            f_nominal=config.CHILLER_F_NOMINAL,
+            f_cw=config.CHILLER_F_CW,
+            f_tower=config.CHILLER_F_TOWER,
+            f_chw=config.CHILLER_F_CHW,
+            c_p=config.CHILLER_CP,
+            density_water=config.CHILLER_WATER_DENSITY,
+        )
 
     def _get_chiller_state(self, cooling_load: float) -> list[int]:
         if cooling_load <= 0:

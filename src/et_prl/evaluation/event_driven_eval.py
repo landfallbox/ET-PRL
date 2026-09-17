@@ -14,11 +14,11 @@ from et_prl.evaluation.control.common import (
     get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
-from et_prl.evaluation.control.strategies import test_event_driven as test_event_driven_strategy
+from et_prl.evaluation.control.strategies import run_event_driven as run_event_driven_strategy
 from et_prl.config.loader import load_config
 
 
-def test_event_driven(
+def run_event_driven(
     train_experiment_dir: Path | None = None,
     gate_state_path: Path | None = None,
 ) -> None:
@@ -54,7 +54,7 @@ def test_event_driven(
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
-    summary, step_results = test_event_driven_strategy(
+    summary, step_results = run_event_driven_strategy(
         agent=agent,
         env=event_env,
         data=test_data,

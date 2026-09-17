@@ -10,22 +10,6 @@ from typing import Any, Dict, Optional
 import yaml
 
 
-class _TupleCompatibleSafeLoader(yaml.SafeLoader):
-    """Safe loader with legacy tuple-tag compatibility."""
-
-
-def _construct_python_tuple(
-    loader: _TupleCompatibleSafeLoader, node: yaml.nodes.SequenceNode
-) -> tuple[Any, ...]:
-    """Construct ``!!python/tuple`` as a regular Python tuple."""
-    return tuple(loader.construct_sequence(node))
-
-
-_TupleCompatibleSafeLoader.add_constructor(
-    "tag:yaml.org,2002:python/tuple", _construct_python_tuple
-)
-
-
 class ConfigManager:
     """
     配置管理器
@@ -77,5 +61,5 @@ class ConfigManager:
         if not config_file.exists():
             raise FileNotFoundError(f"配置文件不存在: {config_file}")
         with open(config_file, "r", encoding="utf-8") as f:
-            config = yaml.load(f, Loader=_TupleCompatibleSafeLoader)
+            config = yaml.safe_load(f)
         return config

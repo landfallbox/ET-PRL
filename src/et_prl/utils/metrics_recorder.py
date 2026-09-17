@@ -88,32 +88,6 @@ class MetricsRecorder:
         with open(metrics_file, "w", encoding="utf-8") as f:
             json.dump(self.metrics, f, indent=2, ensure_ascii=False)
 
-    def load_metrics(self) -> Dict[str, Any]:
-        """
-        从 metrics.json 加载指标
-
-        返回：
-            指标字典
-
-        异常：
-            FileNotFoundError: 当文件不存在时抛出
-        """
-        metrics_file = self.experiment_dir / self.metrics_filename
-
-        if not metrics_file.exists():
-            raise FileNotFoundError(f"指标文件不存在: {metrics_file}")
-
-        with open(metrics_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        # 如果是列表格式，返回最后一项；如果是字典，直接返回
-        if isinstance(data, list) and len(data) > 0:
-            return data[-1]
-        elif isinstance(data, dict):
-            return data
-        else:
-            return {}
-
     def save_training_history(self, history: Dict[str, Any]):
         """
         保存训练历史到 CSV 文件

@@ -6,27 +6,12 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Tuple
 
 import numpy as np
 
 
 class Agent(ABC):
     """强化学习智能体基类"""
-
-    @abstractmethod
-    def act(self, state: np.ndarray, training: bool = True) -> float:
-        """
-        选择动作
-
-        Args:
-            state: 当前状态
-            training: 是否处于训练模式
-
-        Returns:
-            动作值
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def learn(self) -> float:
@@ -53,38 +38,4 @@ class Agent(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def save_checkpoint(self, filepath: str, episode: int = 0, **kwargs) -> None:
-        """
-        保存检查点
 
-        Args:
-            filepath: 保存路径
-            episode: 当前轮数
-            **kwargs: 其他元数据
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def load_checkpoint(
-        filepath: str,
-        device,
-        action_space: np.ndarray | None = None,
-        policy_net_class: type | None = None,
-        policy_net_kwargs: dict | None = None,
-    ) -> Tuple["Agent", dict]:
-        """
-        加载检查点
-
-        Args:
-            filepath: 检查点文件路径
-            device: 设备对象
-            action_space: 动作空间数组（可选）
-            policy_net_class: 自定义网络类（可选）
-            policy_net_kwargs: 自定义网络参数（可选）
-
-        Returns:
-            (智能体实例, 检查点字典)
-        """
-        raise NotImplementedError

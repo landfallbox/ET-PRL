@@ -12,11 +12,11 @@ from et_prl.evaluation.control.common import (
     get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
-from et_prl.evaluation.control.strategies import test_fixed_interval
+from et_prl.evaluation.control.strategies import run_fixed_interval
 from et_prl.config.loader import load_config
 
 
-def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) -> None:
+def run_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) -> None:
     config = load_config("dqn")
     test_experiment_dir = config.get_eval_experiment_dir()
 
@@ -51,7 +51,7 @@ def test_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) 
     )
     test_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
 
-    summary, step_results = test_fixed_interval(
+    summary, step_results = run_fixed_interval(
         agent=agent,
         env=test_env,
         action_space=action_space,

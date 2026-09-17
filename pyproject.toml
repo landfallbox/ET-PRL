@@ -22,20 +22,18 @@ docs = [
 dev = [
     "black>=24.0.0",
     "pylint>=3.0.0",
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
 ]
 
 [project.scripts]
 etprl-train-dqn = "et_prl.cli.train:main_dqn"
-etprl-test-dqn = "et_prl.cli.test:main_dqn"
+etprl-test-dqn = "et_prl.cli.evaluate:main_dqn"
 etprl-optimize-dqn = "et_prl.cli.optimize:main_dqn"
 etprl-train-lstm = "et_prl.cli.train:main_lstm"
-etprl-test-lstm = "et_prl.cli.test:main_lstm"
+etprl-test-lstm = "et_prl.cli.evaluate:main_lstm"
 etprl-optimize-lstm = "et_prl.cli.optimize:main_lstm"
 etprl-predict-lstm = "et_prl.cli.lstm_predict:main"
 etprl-compare-control = "et_prl.cli.control_compare:main"
-etprl-test-event-driven = "et_prl.cli.test:main_event_driven"
+etprl-test-event-driven = "et_prl.cli.evaluate:main_event_driven"
 etprl-prewarm-gate = "et_prl.cli.gate_prewarm:main"
 etprl-optimize-gate = "et_prl.cli.optimize:main_gate"
 etprl-analyze-gate-sensitivity = "et_prl.cli.optimize:main_gate_sensitivity"
@@ -63,15 +61,4 @@ index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 line-length = 100
 target-version = ["py313"]
 include = '\.pyi?$'
-
-# Pytest 测试配置
-[tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-v --strict-markers"
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-markers = [
-    "unit: Unit tests",
-    "integration: Integration tests",
-]
 

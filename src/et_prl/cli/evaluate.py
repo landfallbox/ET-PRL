@@ -2,9 +2,9 @@ import argparse
 from pathlib import Path
 
 from et_prl.config.loader import get_default
-from et_prl.evaluation.lstm_test import test_lstm
-from et_prl.evaluation.dqn_evaluator import test_dqn
-from et_prl.evaluation.event_driven_eval import test_event_driven
+from et_prl.evaluation.lstm_eval import run_lstm
+from et_prl.evaluation.dqn_evaluator import run_dqn
+from et_prl.evaluation.event_driven_eval import run_event_driven
 
 
 def main_dqn() -> None:
@@ -13,7 +13,7 @@ def main_dqn() -> None:
     parser.add_argument("--fixed_interval", type=int, default=4)
     args = parser.parse_args()
 
-    test_dqn(
+    run_dqn(
         train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
         fixed_interval=int(args.fixed_interval),
     )
@@ -23,7 +23,7 @@ def main_lstm() -> None:
     parser = argparse.ArgumentParser(description="LSTM 模型测试")
     parser.add_argument("--experiment_dir", type=str, default=None)
     args = parser.parse_args()
-    test_lstm(train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None)
+    run_lstm(train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None)
 
 
 def main_event_driven() -> None:
@@ -36,7 +36,7 @@ def main_event_driven() -> None:
     )
     args = parser.parse_args()
 
-    test_event_driven(
+    run_event_driven(
         train_experiment_dir=Path(args.experiment_dir) if args.experiment_dir else None,
         gate_state_path=Path(args.gate_state_path) if args.gate_state_path else None,
     )

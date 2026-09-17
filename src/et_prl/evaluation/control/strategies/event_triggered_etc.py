@@ -7,7 +7,7 @@ import pandas as pd
 from et_prl.environments import SequenceEnv
 
 from et_prl.evaluation.control.common import compute_extended_test_metrics, find_nearest_action_index
-from et_prl.agents.dqn.agent import DQNAgent
+from et_prl.agents.dqn import DQNAgent
 
 
 def _robust_threshold(values: deque[float], fallback: float, mad_scale: float = 1.0) -> float:
@@ -53,7 +53,7 @@ def _initial_feature_thresholds(
     return thresholds
 
 
-def test_event_triggered_etc(
+def run_event_triggered_etc(
     agent: DQNAgent,
     env: SequenceEnv,
     data: pd.DataFrame,

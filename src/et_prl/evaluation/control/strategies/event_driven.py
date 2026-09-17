@@ -8,11 +8,11 @@ from et_prl.evaluation.control.common import (
     compute_extended_test_metrics,
     find_nearest_action_index,
 )
-from et_prl.agents.dqn.agent import DQNAgent
+from et_prl.agents.dqn import DQNAgent
 from et_prl.detection.streaming_gate import StreamingAnomalyGate
 
 
-def test_event_driven(
+def run_event_driven(
     agent: DQNAgent,
     env: SequenceEnv,
     data: pd.DataFrame,

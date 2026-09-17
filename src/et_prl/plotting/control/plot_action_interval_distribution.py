@@ -385,7 +385,11 @@ def main() -> None:
     args = parser.parse_args()
 
     root = project_root()
-    results_dir = args.results_dir or (root / 'outputs' / 'runs' / 'control_compare' / '20260402_222140')
+    if args.results_dir is None:
+        from et_prl.plotting.control.results_path import default_control_compare_results_dir
+
+        args.results_dir = default_control_compare_results_dir()
+    results_dir = args.results_dir
     output_path = args.output_path or (root / 'outputs' / 'figures' / 'fig8_action_update_interval_distribution.svg')
 
     generate_interval_distribution_figure(

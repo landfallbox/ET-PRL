@@ -183,9 +183,6 @@ class BayesianOptimizer:
         # 保存优化历史
         self._save_results()
 
-        if self.study is None:
-            raise RuntimeError("优化未成功创建 study，无法返回结果")
-
         return {
             "best_params": self.best_params,
             "best_value": self.best_value,
@@ -215,7 +212,6 @@ class BayesianOptimizer:
         results = {
             "best_params": self._round_params(self.best_params),
             "best_params_raw": self.best_params,
-            "best_params_rounded": self._round_params(self.best_params),
             "best_value": self.best_value,
             "n_trials": len(study.trials),
             "trials": [],

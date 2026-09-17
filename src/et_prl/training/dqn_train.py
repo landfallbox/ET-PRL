@@ -6,7 +6,7 @@ from datetime import datetime
 from et_prl.config.loader import load_config
 from et_prl.utils import create_experiment_context
 
-from et_prl.utils.reproducibility_dqn import configure_reproducibility
+from et_prl.utils import configure_reproducibility
 from et_prl.training.dqn_trainer import DQNTrainer
 
 
@@ -46,6 +46,9 @@ def train_dqn(runs: int = 1) -> None:
             f"cuda_available={reproducibility['cuda_available']}"
         )
 
-        trainer = DQNTrainer(config, experiment_dir)
-        trainer.train()
+        trainer = DQNTrainer(config, experiment_dir, context=context)
+        try:
+            trainer.train()
+        finally:
+            context.close()
 

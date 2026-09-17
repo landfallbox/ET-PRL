@@ -13,7 +13,6 @@ from .orchestration import (
     resolve_experiment_dir,
 )
 from .reproducibility import configure_reproducibility
-from .rate_controller import RateController
 
 __all__ = [
     "Logger",
@@ -27,7 +26,6 @@ __all__ = [
     "create_experiment_context",
     "resolve_experiment_dir",
     "copy_config_snapshot",
-    "RateController",
 ]
 
 # 可选的可视化和超参数优化工具（需要额外依赖）

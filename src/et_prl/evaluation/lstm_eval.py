@@ -22,7 +22,7 @@ from et_prl.utils import (
 )
 
 
-def test_lstm(train_experiment_dir: Path = None):
+def run_lstm(train_experiment_dir: Path = None):
     """
     LSTM 模型评估主函数
 

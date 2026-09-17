@@ -541,7 +541,9 @@ def main(
     micro_x_max: Optional[float] = None,
 ) -> None:
     if results_dir is None:
-        results_dir = project_root() / 'outputs' / 'runs' / 'control_compare' / '20260402_222140'
+        from et_prl.plotting.control.results_path import default_control_compare_results_dir
+
+        results_dir = default_control_compare_results_dir()
     if output_dir is None:
         output_dir = project_root() / 'outputs' / 'figures'
     if env_data_path is None:

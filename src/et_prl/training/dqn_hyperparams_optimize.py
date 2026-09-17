@@ -12,8 +12,8 @@ from et_prl.environments import SequenceEnv
 from et_prl.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
 from et_prl.config.dqn import DQNConfig
-from et_prl.agents.dqn.agent import DQNAgent
-from et_prl.utils.reproducibility_dqn import configure_reproducibility
+from et_prl.agents.dqn import DQNAgent
+from et_prl.utils import configure_reproducibility
 from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.training.dqn_trainer import DQNTrainer
 from et_prl.config.loader import load_config
@@ -74,30 +74,6 @@ def _build_trial_config(base_config, params: dict, max_episodes: int):
     return replace(base_config, **updates)
 
 
-def _create_reward_calculator(config: DQNConfig, data: pd.DataFrame, action_space) -> RewardCalculator:
-    return RewardCalculator(
-        data,
-        action_space,
-        config.REWARD_WEIGHT_EFFICIENCY,
-        config.REWARD_WEIGHT_COMFORT,
-        config.TARGET_SUPPLY_TEMP,
-        config.COEFF_DATE_PATH,
-        config.CHILLER_CAPACITY,
-        config.CHILLER_REF_POWER,
-        config.CHILLER_SUPPLY_TEMP_REF,
-        config.COMFORT_SIGMA,
-        config.CHILLER_HIGH_THRESHOLD,
-        config.CHILLER_MEDIUM_THRESHOLD,
-        config.CHILLER_LOW_THRESHOLD,
-        config.CHILLER_F_NOMINAL,
-        config.CHILLER_F_CW,
-        config.CHILLER_F_TOWER,
-        config.CHILLER_F_CHW,
-        config.CHILLER_CP,
-        config.CHILLER_WATER_DENSITY,
-    )
-
-
 def _create_objective(
     train_data: pd.DataFrame,
     val_data: pd.DataFrame,
@@ -145,8 +121,8 @@ def _create_objective(
                 device=device,
             )
 
-            train_reward_calc = _create_reward_calculator(trial_config, train_data, action_space)
-            val_reward_calc = _create_reward_calculator(trial_config, val_data, action_space)
+            train_reward_calc = RewardCalculator.from_config(config=trial_config, data=train_data, action_space=action_space)
+            val_reward_calc = RewardCalculator.from_config(config=trial_config, data=val_data, action_space=action_space)
             train_env = SequenceEnv(train_data, trial_config.STATE_COLUMNS, train_reward_calc)
             val_env = SequenceEnv(val_data, trial_config.STATE_COLUMNS, val_reward_calc)
 

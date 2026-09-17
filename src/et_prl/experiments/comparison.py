@@ -12,90 +12,18 @@ from et_prl.evaluation.control.common import (
     create_streaming_gate,
     resolve_train_experiment_dir,
 )
-from et_prl.evaluation.control.strategies.event_driven import test_event_driven
-from et_prl.evaluation.control.strategies.fixed_interval import test_fixed_interval
-from et_prl.evaluation.control.strategies.event_triggered_etc import test_event_triggered_etc
-from et_prl.evaluation.control.strategies.pid import test_pid
-from et_prl.evaluation.control.strategies.rbc import test_rule_based_control
+from et_prl.evaluation.control.strategies.event_driven import run_event_driven
+from et_prl.evaluation.control.strategies.fixed_interval import run_fixed_interval
+from et_prl.evaluation.control.strategies.event_triggered_etc import run_event_triggered_etc
+from et_prl.evaluation.control.strategies.pid import run_pid
+from et_prl.evaluation.control.strategies.rbc import run_rule_based_control
 from et_prl.config.loader import load_config
 
 
 def _get_paper_symbol_field_mapping() -> dict[str, str]:
-    try:
-        from et_prl.evaluation.control.common import get_paper_symbol_field_mapping
+    from et_prl.evaluation.control.common import get_paper_symbol_field_mapping
 
-        return get_paper_symbol_field_mapping()
-    except (ImportError, AttributeError):
-        return {
-            "E_daily": "E_daily_kwh_per_day",
-            "eta_saving": "eta_saving_pct",
-            "PPR": "PPR_percent",
-            "sigma_delta_a": "sigma_delta_a",
-            "N_daily": "N_daily_count_per_day",
-            "ACR": "ACR",
-        }
-
-
-def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
-    fixed_reward = float(fixed_summary.get("total_reward", 0.0))
-    event_reward = float(event_summary.get("total_reward", 0.0))
-
-    fixed_actions = int(fixed_summary.get("action_count", 0))
-    event_actions = int(event_summary.get("action_count", 0))
-    action_reduction = fixed_actions - event_actions
-    action_reduction_pct = (action_reduction / fixed_actions * 100.0) if fixed_actions > 0 else 0.0
-
-    ppr = (event_reward / fixed_reward) if fixed_reward != 0 else 0.0
-    acr = (fixed_actions / event_actions) if event_actions > 0 else float("inf")
-    e_fixed = float(fixed_summary.get("E_total_kwh", 0.0))
-    e_event = float(event_summary.get("E_total_kwh", 0.0))
-    eta_saving_pct = ((e_fixed - e_event) / e_fixed * 100.0) if e_fixed > 0 else 0.0
-
-    e_daily_fixed = float(fixed_summary.get("E_daily_kwh_per_day", 0.0))
-    e_daily_event = float(event_summary.get("E_daily_kwh_per_day", 0.0))
-    n_daily_fixed = float(fixed_summary.get("N_daily_count_per_day", 0.0))
-    n_daily_event = float(event_summary.get("N_daily_count_per_day", 0.0))
-    sigma_delta_a_fixed = float(fixed_summary.get("sigma_delta_a", 0.0))
-    sigma_delta_a_event = float(event_summary.get("sigma_delta_a", 0.0))
-    trigger_rate_fixed = float(fixed_summary.get("event_trigger_rate", 0.0))
-    trigger_rate_event = float(event_summary.get("event_trigger_rate", 0.0))
-
-    return {
-        "reward_change": event_reward - fixed_reward,
-        "reward_change_pct": ((event_reward - fixed_reward) / fixed_reward * 100.0) if fixed_reward != 0 else 0.0,
-        "comfort_change": float(event_summary.get("avg_comfort_score", 0.0))
-        - float(fixed_summary.get("avg_comfort_score", 0.0)),
-        "energy_change": float(event_summary.get("avg_energy_score", 0.0))
-        - float(fixed_summary.get("avg_energy_score", 0.0)),
-        "action_reduction": int(action_reduction),
-        "action_reduction_pct": float(action_reduction_pct),
-        "PPR": float(ppr),
-        "PPR_percent": float(ppr * 100.0),
-        "ACR": float(acr),
-        "eta_saving_pct": float(eta_saving_pct),
-        "E_baseline_total_kwh": float(e_fixed),
-        "E_ET_PRL_total_kwh": float(e_event),
-        "E_baseline_daily_kwh_per_day": float(e_daily_fixed),
-        "E_ET_PRL_daily_kwh_per_day": float(e_daily_event),
-        "E_daily_change": float(e_daily_event - e_daily_fixed),
-        "E_daily_change_pct": float(((e_daily_event - e_daily_fixed) / e_daily_fixed * 100.0) if e_daily_fixed > 0 else 0.0),
-        "N_daily_baseline": float(n_daily_fixed),
-        "N_daily_ET_PRL": float(n_daily_event),
-        "N_daily_change": float(n_daily_event - n_daily_fixed),
-        "N_daily_change_pct": float(((n_daily_event - n_daily_fixed) / n_daily_fixed * 100.0) if n_daily_fixed > 0 else 0.0),
-        "sigma_delta_a_baseline": float(sigma_delta_a_fixed),
-        "sigma_delta_a_ET_PRL": float(sigma_delta_a_event),
-        "sigma_delta_a_change": float(sigma_delta_a_event - sigma_delta_a_fixed),
-        "sigma_delta_a_change_pct": float(
-            ((sigma_delta_a_event - sigma_delta_a_fixed) / sigma_delta_a_fixed * 100.0) if sigma_delta_a_fixed > 0 else 0.0
-        ),
-        "trigger_rate_baseline": float(trigger_rate_fixed),
-        "trigger_rate_ET_PRL": float(trigger_rate_event),
-        "trigger_rate_change": float(trigger_rate_event - trigger_rate_fixed),
-        "trigger_rate_change_pct": float(
-            ((trigger_rate_event - trigger_rate_fixed) / trigger_rate_fixed * 100.0) if trigger_rate_fixed > 0 else 0.0
-        ),
-    }
+    return get_paper_symbol_field_mapping()
 
 
 def _resolve_train_dir_from_model_path(dqn_model_path: Path | None, config) -> Path | None:
@@ -200,7 +128,7 @@ def compare_control_strategies(
     for interval in resolved_fixed_intervals:
         fixed_key = f"fixed_interval_{interval}"
         fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-        fixed_summary, fixed_step_results = test_fixed_interval(
+        fixed_summary, fixed_step_results = run_fixed_interval(
             agent=agent,
             env=fixed_env,
             action_space=action_space,
@@ -216,7 +144,7 @@ def compare_control_strategies(
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
-    event_summary, event_step_results = test_event_driven(
+    event_summary, event_step_results = run_event_driven(
         agent=agent,
         env=event_env,
         data=test_data,
@@ -243,7 +171,7 @@ def compare_control_strategies(
     pid_max_action_step = float(getattr(config, "PID_MAX_ACTION_STEP", 2.0))
     pid_supply_temp_ref = float(getattr(config, "PID_SUPPLY_TEMP_REF", config.CHILLER_SUPPLY_TEMP_REF))
     pid_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    pid_summary, pid_step_results = test_pid(
+    pid_summary, pid_step_results = run_pid(
         env=pid_env,
         action_space=action_space,
         supply_temp_ref=pid_supply_temp_ref,
@@ -262,7 +190,7 @@ def compare_control_strategies(
 
     rbc_fixed_setpoint = float(config.RBC_FIXED_SETPOINT)
     rbc_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    rbc_summary, rbc_step_results = test_rule_based_control(
+    rbc_summary, rbc_step_results = run_rule_based_control(
         env=rbc_env,
         action_space=action_space,
         fixed_setpoint=rbc_fixed_setpoint,
@@ -274,7 +202,7 @@ def compare_control_strategies(
 
     cl_threshold, twb_threshold, cl_predict_threshold = _resolve_event_thresholds(config, test_data)
     event_trigger_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    event_trigger_summary, event_trigger_step_results = test_event_triggered_etc(
+    event_trigger_summary, event_trigger_step_results = run_event_triggered_etc(
         agent=agent,
         env=event_trigger_env,
         data=test_data,

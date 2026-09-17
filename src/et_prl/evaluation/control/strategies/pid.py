@@ -7,7 +7,7 @@ from et_prl.environments import SequenceEnv
 from et_prl.evaluation.control.common import compute_extended_test_metrics, find_nearest_action_index
 
 
-def test_pid(
+def run_pid(
     env: SequenceEnv,
     action_space: np.ndarray,
     supply_temp_ref: float,

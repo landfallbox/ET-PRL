@@ -7,7 +7,6 @@ from __future__ import annotations
 from collections import deque
 
 import numpy as np
-from scipy.spatial.distance import euclidean
 
 
 class StreamingIsolationDepth:

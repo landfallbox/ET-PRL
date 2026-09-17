@@ -7,7 +7,7 @@ from et_prl.environments import SequenceEnv
 from et_prl.evaluation.control.common import compute_extended_test_metrics, find_nearest_action_index
 
 
-def test_rule_based_control(
+def run_rule_based_control(
     env: SequenceEnv,
     action_space: np.ndarray,
     fixed_setpoint: float = 7.0,

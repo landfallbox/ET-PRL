@@ -7,7 +7,7 @@ from typing import Optional, Dict
 from dataclasses import dataclass
 from pathlib import Path
 
-from et_prl.detection import MultiScaleDistributionTracker
+
 from et_prl.detection import StreamingIsolationDepth
 from et_prl.detection import StreamingStats
 from et_prl.detection import StreamingThresholdOptimizer
@@ -27,6 +27,7 @@ class GateDecision:
     reset_threshold: float = 0.0  # 退出触发状态的下阈值
     trigger_state: int = 0  # 滞回锁存状态（1=已触发未复位）
     min_interval_satisfied: int = 1  # 是否满足最小触发间隔
+    confidence: float = 0.0  # 决策置信度（0-1，当前为融合异常分数截断）
 
 
 class StreamingAnomalyGate:
@@ -114,7 +115,7 @@ class StreamingAnomalyGate:
         if trigger_hysteresis_margin is None:
             trigger_hysteresis_margin = get_default("gate").GATE_TRIGGER_HYSTERESIS_MARGIN
         if min_trigger_interval is None:
-            min_trigger_interval = getattr(get_default("gate"), "\1", 1)
+            min_trigger_interval = get_default("gate").GATE_MIN_TRIGGER_INTERVAL
 
         score_weight_sum = float(score_short_weight + score_medium_weight + score_long_weight)
         if score_weight_sum <= 0.0:
@@ -160,38 +161,6 @@ class StreamingAnomalyGate:
         self._last_trigger_step = -10**9
         self._trigger_latched = False
 
-    def initialize_with_data(self, initial_data: np.ndarray) -> None:
-        """
-        用离线初始化数据初始化网关（可选）
-
-        如果有历史数据，可用它来初始化统计信息
-        这有助于改善冷启动性能
-
-        参数：
-            initial_data: 初始化数据，shape (n_samples, feature_dim)
-        """
-        assert initial_data.shape[1] == self.feature_dim
-
-        print(f"用{len(initial_data)}个样本初始化在线异常检测网关...")
-
-        self.feature_stats._initialize(initial_data)
-        self.anomaly_detector._initialize_reference_set(initial_data)
-
-        # 初始化阈值
-        normalized_data = np.array(
-            [self.feature_stats.normalize(sample) for sample in initial_data]
-        )
-        scores = self.anomaly_detector.score_batch(normalized_data, window="long")
-
-        # 设置初始阈值（无先验事件率，使用分数中位数）
-        initial_threshold = float(np.median(scores))
-        self.threshold_optimizer.global_threshold = initial_threshold
-        self.threshold_optimizer.local_threshold = initial_threshold
-        self.threshold_optimizer.adaptive_threshold = initial_threshold
-
-        self._initialized = True
-        print("初始化完成")
-
     def predict(
         self,
         sample: np.ndarray,
@@ -209,7 +178,8 @@ class StreamingAnomalyGate:
         返回：
             GateDecision: 门控决策结果
         """
-        assert sample.shape[0] == self.feature_dim
+        if sample.shape[0] != self.feature_dim:
+            raise ValueError(f"样本特征维度不匹配: {sample.shape[0]} != {self.feature_dim}")
 
         self.sample_count += 1
 
@@ -267,6 +237,7 @@ class StreamingAnomalyGate:
             reset_threshold=exit_threshold,
             trigger_state=int(self._trigger_latched),
             min_interval_satisfied=int(min_interval_satisfied),
+            confidence=float(min(1.0, fused_anomaly_score)),
         )
 
     def _update_on_new_sample(

@@ -17,8 +17,8 @@ from et_prl.evaluation.control.common import (
     create_streaming_gate,
     resolve_train_experiment_dir,
 )
-from et_prl.evaluation.control.strategies.event_driven import test_event_driven
-from et_prl.evaluation.control.strategies.fixed_interval import test_fixed_interval
+from et_prl.evaluation.control.strategies.event_driven import run_event_driven
+from et_prl.evaluation.control.strategies.fixed_interval import run_fixed_interval
 from et_prl.config.loader import load_config
 
 
@@ -453,7 +453,7 @@ def optimize_gate_hyperparameters(
     )
 
     baseline_env = SequenceEnv(fit_data, base_config.STATE_COLUMNS, reward_calc)
-    baseline_summary, _ = test_fixed_interval(
+    baseline_summary, _ = run_fixed_interval(
         agent=agent,
         env=baseline_env,
         action_space=action_space,
@@ -538,7 +538,7 @@ def optimize_gate_hyperparameters(
                 gate.predict(sample)
 
             env = SequenceEnv(fit_data, trial_config.STATE_COLUMNS, reward_calc)
-            summary, step_results = test_event_driven(
+            summary, step_results = run_event_driven(
                 agent=agent,
                 env=env,
                 data=fit_data,
@@ -676,7 +676,7 @@ def optimize_gate_hyperparameters(
         best_trial_config = _build_trial_config(base_config, merged_best_params)
 
         holdout_baseline_env = SequenceEnv(holdout_data, base_config.STATE_COLUMNS, reward_calc)
-        holdout_baseline_summary, _ = test_fixed_interval(
+        holdout_baseline_summary, _ = run_fixed_interval(
             agent=agent,
             env=holdout_baseline_env,
             action_space=action_space,
@@ -696,7 +696,7 @@ def optimize_gate_hyperparameters(
             holdout_gate.predict(sample)
 
         holdout_env = SequenceEnv(holdout_data, best_trial_config.STATE_COLUMNS, reward_calc)
-        holdout_summary, holdout_step_results = test_event_driven(
+        holdout_summary, holdout_step_results = run_event_driven(
             agent=agent,
             env=holdout_env,
             data=holdout_data,

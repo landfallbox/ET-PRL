@@ -12,7 +12,7 @@ from et_prl.utils import CheckpointManager, ConfigManager, Logger, resolve_exper
 
 from et_prl.config.dqn import DQNConfig
 from et_prl.config.loader import get_default
-from et_prl.agents.dqn.agent import DQNAgent
+from et_prl.agents.dqn import DQNAgent
 from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.training.dqn_trainer import DQNTrainer
 from et_prl.detection.streaming_gate import StreamingAnomalyGate
@@ -87,34 +87,6 @@ def _create_agent(config: DQNConfig, action_space: np.ndarray, device: torch.dev
     )
 
 
-def _create_reward_calculator(
-    config: DQNConfig,
-    test_data: pd.DataFrame,
-    action_space: np.ndarray,
-) -> RewardCalculator:
-    return RewardCalculator(
-        data=test_data,
-        action_space=action_space,
-        weight_efficiency=config.REWARD_WEIGHT_EFFICIENCY,
-        weight_comfort=config.REWARD_WEIGHT_COMFORT,
-        target_supply_temp=config.TARGET_SUPPLY_TEMP,
-        coeff_path=config.COEFF_DATE_PATH,
-        chiller_capacity=config.CHILLER_CAPACITY,
-        chiller_ref_power=config.CHILLER_REF_POWER,
-        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        comfort_sigma=config.COMFORT_SIGMA,
-        chiller_high_threshold=config.CHILLER_HIGH_THRESHOLD,
-        chiller_medium_threshold=config.CHILLER_MEDIUM_THRESHOLD,
-        chiller_low_threshold=config.CHILLER_LOW_THRESHOLD,
-        f_nominal=config.CHILLER_F_NOMINAL,
-        f_cw=config.CHILLER_F_CW,
-        f_tower=config.CHILLER_F_TOWER,
-        f_chw=config.CHILLER_F_CHW,
-        c_p=config.CHILLER_CP,
-        density_water=config.CHILLER_WATER_DENSITY,
-    )
-
-
 def build_test_components(
     config: DQNConfig,
     resolved_train_dir: Path,
@@ -147,7 +119,7 @@ def build_test_components(
     )
     agent.policy_net.eval()
 
-    reward_calc = _create_reward_calculator(config=config, test_data=test_data, action_space=action_space)
+    reward_calc = RewardCalculator.from_config(config=config, data=test_data, action_space=action_space)
 
     return test_data, action_space, agent, checkpoint, reward_calc
 
@@ -206,23 +178,6 @@ def create_streaming_gate(
 def find_nearest_action_index(action_space: np.ndarray, target_value: float) -> int:
     distances = np.abs(action_space - float(target_value))
     return int(np.argmin(distances))
-
-
-def compute_violation_metrics(
-    chiller_supply_temperature: list[float],
-    comfort_lower_bound: float = 15.0,
-    comfort_upper_bound: float = 19.0,
-) -> tuple[int, float]:
-    if not chiller_supply_temperature:
-        return 0, 0.0
-
-    violation_count = sum(
-        1
-        for temperature in chiller_supply_temperature
-        if temperature < comfort_lower_bound or temperature > comfort_upper_bound
-    )
-    violation_rate = violation_count / len(chiller_supply_temperature)
-    return int(violation_count), float(violation_rate * 100.0)
 
 
 def compute_extended_test_metrics(

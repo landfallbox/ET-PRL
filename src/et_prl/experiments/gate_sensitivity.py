@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from statistics import NormalDist
 from typing import Any
@@ -14,13 +14,13 @@ from et_prl.utils import create_experiment_context
 
 from et_prl.config.control_compare import ControlCompareConfig
 from et_prl.evaluation.control.common import (
-    _create_reward_calculator,
     build_test_components,
     create_streaming_gate,
     resolve_train_experiment_dir,
 )
-from et_prl.evaluation.control.strategies.event_driven import test_event_driven
-from et_prl.evaluation.control.strategies.fixed_interval import test_fixed_interval
+from et_prl.agents.dqn.rewards import RewardCalculator
+from et_prl.evaluation.control.strategies.event_driven import run_event_driven
+from et_prl.evaluation.control.strategies.fixed_interval import run_fixed_interval
 from et_prl.config.loader import load_config
 
 
@@ -164,12 +164,9 @@ def _values_with_baseline(
     return tuple(unique)
 
 
-def _build_analysis_config(base_cls: type[Any], overrides: dict[str, Any]) -> type[Any]:
-    class AnalysisConfig(base_cls):
-        pass
-    for key, value in overrides.items():
-        setattr(AnalysisConfig, key, value)
-    return AnalysisConfig
+def _build_analysis_config(base_config: Any, overrides: dict[str, Any]) -> Any:
+    """基于基配置实例生成分析配置实例（frozen dataclass 用 replace，不修改原实例）。"""
+    return replace(base_config, **overrides)
 
 
 def _build_score_weight_overrides(
@@ -483,7 +480,7 @@ def _evaluate_with_gate(
     gate: Any,
 ) -> tuple[dict, pd.DataFrame]:
     env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    return test_event_driven(
+    return run_event_driven(
         agent=agent, env=env, data=test_data, action_space=action_space,
         gate=gate, feature_columns=config.FEATURE_COLUMNS, supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
     )
@@ -606,7 +603,7 @@ def run_gate_mixed_sensitivity_analysis(
                                             reward_calc=reward_calc, test_data=test_data, gate=copy.deepcopy(bc_gate))
     # Fixed-step baseline
     bc_env = SequenceEnv(test_data, cfg.STATE_COLUMNS, reward_calc)
-    fb_sum, fb_steps = test_fixed_interval(agent=agent, env=bc_env, action_space=action_space,
+    fb_sum, fb_steps = run_fixed_interval(agent=agent, env=bc_env, action_space=action_space,
                                             fixed_interval=int(cfg.GATE_OPT_BASELINE_FIXED_INTERVAL),
                                             supply_temp_ref=cfg.CHILLER_SUPPLY_TEMP_REF,
                                             comfort_lower_bound=cfg.COMFORT_LOWER_BOUND,
@@ -617,11 +614,11 @@ def run_gate_mixed_sensitivity_analysis(
     bc_rounds: list[dict[str, Any]] = []
     fb_rounds: list[dict[str, Any]] = []
     for ri, rs, re, rd in rounds:
-        rrc = _create_reward_calculator(cfg, rd, action_space)
+        rrc = RewardCalculator.from_config(config=cfg, data=rd, action_space=action_space)
         rs_sum, rs_steps = _evaluate_with_gate(config=bc_cfg, agent=agent, action_space=action_space,
                                                 reward_calc=rrc, test_data=rd, gate=copy.deepcopy(bc_gate))
         fenv = SequenceEnv(rd, cfg.STATE_COLUMNS, rrc)
-        f_sum, _ = test_fixed_interval(agent=agent, env=fenv, action_space=action_space,
+        f_sum, _ = run_fixed_interval(agent=agent, env=fenv, action_space=action_space,
                                         fixed_interval=int(cfg.GATE_OPT_BASELINE_FIXED_INTERVAL),
                                         supply_temp_ref=cfg.CHILLER_SUPPLY_TEMP_REF,
                                         comfort_lower_bound=cfg.COMFORT_LOWER_BOUND, comfort_upper_bound=cfg.COMFORT_UPPER_BOUND)
@@ -643,7 +640,7 @@ def run_gate_mixed_sensitivity_analysis(
         diag = _gate_trace_diagnostics(sr, bc_steps)
         round_data_rows: list[dict[str, Any]] = []
         for ri, rs, re, rd in rounds:
-            rrc = _create_reward_calculator(cand_cfg, rd, action_space)
+            rrc = RewardCalculator.from_config(config=cand_cfg, data=rd, action_space=action_space)
             rs_s, rs_sr = _evaluate_with_gate(config=cand_cfg, agent=agent, action_space=action_space,
                                                reward_calc=rrc, test_data=rd, gate=copy.deepcopy(cg))
             rr = _round_metric_row(summary=rs_s, step_results=rs_sr,
