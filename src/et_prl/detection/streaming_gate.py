@@ -11,7 +11,6 @@ from pathlib import Path
 from et_prl.detection import StreamingIsolationDepth
 from et_prl.detection import StreamingStats
 from et_prl.detection import StreamingThresholdOptimizer
-from et_prl.config.loader import get_default
 
 
 @dataclass
@@ -44,21 +43,24 @@ class StreamingAnomalyGate:
     def __init__(
         self,
         feature_dim: int,
-        local_window_size: Optional[int] = None,
-        global_ema_decay: Optional[float] = None,
-        reference_samples: Optional[int] = None,
-        alpha_local_weight: Optional[float] = None,
-        threshold_bias: Optional[float] = None,
-        threshold_quantile: Optional[float] = None,
-        threshold_mad_scale: Optional[float] = None,
-        threshold_local_update_rate: Optional[float] = None,
-        threshold_quantile_weight: Optional[float] = None,
-        threshold_min_samples_for_optimization: Optional[int] = None,
-        score_short_weight: Optional[float] = None,
-        score_medium_weight: Optional[float] = None,
-        score_long_weight: Optional[float] = None,
-        trigger_hysteresis_margin: Optional[float] = None,
-        min_trigger_interval: Optional[int] = None,
+        local_window_size: int,
+        global_ema_decay: float,
+        reference_samples: int,
+        alpha_local_weight: float,
+        threshold_bias: float,
+        threshold_quantile: float,
+        threshold_mad_scale: float,
+        threshold_local_update_rate: float,
+        threshold_quantile_weight: float,
+        threshold_min_samples_for_optimization: int,
+        score_short_weight: float,
+        score_medium_weight: float,
+        score_long_weight: float,
+        trigger_hysteresis_margin: float,
+        min_trigger_interval: int,
+        stats_ema_decay: float,
+        stats_window_size: int,
+        isolation_update_freq: int,
     ):
         """
         初始化在线异常检测门控
@@ -80,42 +82,14 @@ class StreamingAnomalyGate:
             score_long_weight: 长时异常分数权重
             trigger_hysteresis_margin: 触发滞回边际（抑制阈值附近抖动）
             min_trigger_interval: 最小触发间隔（步）
+            stats_ema_decay: 特征统计EMA衰减率
+            stats_window_size: 特征统计滑动窗口大小
+            isolation_update_freq: 流式隔离深度参考集更新频率
+
+        所有参数均为必填，由调用方从配置实例显式传入（本类不依赖全局默认配置）。
         """
         self.feature_dim = feature_dim
         self.sample_count = 0
-
-        if local_window_size is None:
-            local_window_size = get_default("gate").GATE_LOCAL_WINDOW_SIZE
-        if global_ema_decay is None:
-            global_ema_decay = get_default("gate").GATE_GLOBAL_EMA_DECAY
-        if reference_samples is None:
-            reference_samples = get_default("gate").GATE_REFERENCE_SAMPLES
-        if alpha_local_weight is None:
-            alpha_local_weight = get_default("gate").GATE_ALPHA_LOCAL_WEIGHT
-        if threshold_bias is None:
-            threshold_bias = get_default("gate").GATE_THRESHOLD_BIAS
-        if threshold_quantile is None:
-            threshold_quantile = get_default("gate").THRESHOLD_QUANTILE
-        if threshold_mad_scale is None:
-            threshold_mad_scale = get_default("gate").THRESHOLD_MAD_SCALE
-        if threshold_local_update_rate is None:
-            threshold_local_update_rate = get_default("gate").THRESHOLD_LOCAL_UPDATE_RATE
-        if threshold_quantile_weight is None:
-            threshold_quantile_weight = get_default("gate").THRESHOLD_QUANTILE_WEIGHT
-        if threshold_min_samples_for_optimization is None:
-            threshold_min_samples_for_optimization = (
-                get_default("gate").THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION
-            )
-        if score_short_weight is None:
-            score_short_weight = get_default("gate").GATE_SCORE_SHORT_WEIGHT
-        if score_medium_weight is None:
-            score_medium_weight = get_default("gate").GATE_SCORE_MEDIUM_WEIGHT
-        if score_long_weight is None:
-            score_long_weight = get_default("gate").GATE_SCORE_LONG_WEIGHT
-        if trigger_hysteresis_margin is None:
-            trigger_hysteresis_margin = get_default("gate").GATE_TRIGGER_HYSTERESIS_MARGIN
-        if min_trigger_interval is None:
-            min_trigger_interval = get_default("gate").GATE_MIN_TRIGGER_INTERVAL
 
         score_weight_sum = float(score_short_weight + score_medium_weight + score_long_weight)
         if score_weight_sum <= 0.0:
@@ -131,14 +105,14 @@ class StreamingAnomalyGate:
         # 1. 流式特征统计维护器
         self.feature_stats = StreamingStats(
             feature_dim=feature_dim,
-            ema_decay=get_default("gate").STATS_EMA_DECAY,
-            window_size=get_default("gate").STATS_WINDOW_SIZE,
+            ema_decay=stats_ema_decay,
+            window_size=stats_window_size,
         )
 
         # 2. 流式异常检测器（替代IsolationForest）
         self.anomaly_detector = StreamingIsolationDepth(
             n_reference_samples=reference_samples,
-            update_freq=get_default("gate").ISOLATION_UPDATE_FREQ,
+            update_freq=isolation_update_freq,
         )
 
         # 3. 双层阈值优化器

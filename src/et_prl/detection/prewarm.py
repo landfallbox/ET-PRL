@@ -48,6 +48,20 @@ def prewarm_gate(output_path: Path, gate_config=None) -> Path:
         global_ema_decay=gate_config.GATE_GLOBAL_EMA_DECAY,
         reference_samples=gate_config.GATE_REFERENCE_SAMPLES,
         alpha_local_weight=gate_config.GATE_ALPHA_LOCAL_WEIGHT,
+        threshold_bias=gate_config.GATE_THRESHOLD_BIAS,
+        threshold_quantile=gate_config.THRESHOLD_QUANTILE,
+        threshold_mad_scale=gate_config.THRESHOLD_MAD_SCALE,
+        threshold_local_update_rate=gate_config.THRESHOLD_LOCAL_UPDATE_RATE,
+        threshold_quantile_weight=gate_config.THRESHOLD_QUANTILE_WEIGHT,
+        threshold_min_samples_for_optimization=gate_config.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION,
+        score_short_weight=gate_config.GATE_SCORE_SHORT_WEIGHT,
+        score_medium_weight=gate_config.GATE_SCORE_MEDIUM_WEIGHT,
+        score_long_weight=gate_config.GATE_SCORE_LONG_WEIGHT,
+        trigger_hysteresis_margin=gate_config.GATE_TRIGGER_HYSTERESIS_MARGIN,
+        min_trigger_interval=gate_config.GATE_MIN_TRIGGER_INTERVAL,
+        stats_ema_decay=gate_config.STATS_EMA_DECAY,
+        stats_window_size=gate_config.STATS_WINDOW_SIZE,
+        isolation_update_freq=gate_config.ISOLATION_UPDATE_FREQ,
     )
 
     print(f"开始纯在线预热，样本数: {len(prewarm_data)}")
