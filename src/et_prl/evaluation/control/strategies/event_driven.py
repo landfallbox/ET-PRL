@@ -15,7 +15,6 @@ from et_prl.detection.streaming_gate import StreamingAnomalyGate
 def run_event_driven(
     agent: DQNAgent,
     env: SequenceEnv,
-    data: pd.DataFrame,
     action_space: np.ndarray,
     gate: StreamingAnomalyGate,
     feature_columns: list[str],
@@ -36,7 +35,7 @@ def run_event_driven(
     current_action_value = float(action_space[current_action_idx])
 
     while True:
-        feature_values = data.iloc[steps][feature_columns].to_numpy(dtype=np.float32)
+        feature_values = env.data.iloc[steps][feature_columns].to_numpy(dtype=np.float32)
         gate_decision = gate.predict(feature_values)
 
         gate_signal = int(gate_decision.gate_signal)

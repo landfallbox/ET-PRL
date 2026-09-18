@@ -137,7 +137,6 @@ def run_ablation_experiment(
     event_summary, event_step_results = run_event_driven(
         agent=agent,
         env=event_env,
-        data=test_data,
         action_space=action_space,
         gate=event_gate,
         feature_columns=config.FEATURE_COLUMNS,

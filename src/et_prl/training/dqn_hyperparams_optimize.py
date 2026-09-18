@@ -13,6 +13,7 @@ from et_prl.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
 from et_prl.config.dqn import DQNConfig
 from et_prl.agents.dqn import DQNAgent
+from et_prl.data import load_action_space, load_state_data
 from et_prl.utils import configure_reproducibility
 from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.training.dqn_trainer import DQNTrainer
@@ -106,20 +107,7 @@ def _create_objective(
             trainer = DQNTrainer(trial_config, trial_dir)
             device = torch.device(trial_config.DEVICE)
 
-            agent = DQNAgent(
-                state_size=trial_config.STATE_SIZE,
-                action_space=action_space,
-                hidden_sizes=trial_config.HIDDEN_SIZES,
-                learning_rate=trial_config.LEARNING_RATE,
-                gamma=trial_config.GAMMA,
-                epsilon_start=trial_config.EPSILON_START,
-                epsilon_min=trial_config.EPSILON_MIN,
-                epsilon_decay=trial_config.EPSILON_DECAY,
-                memory_capacity=trial_config.MEMORY_CAPACITY,
-                batch_size=trial_config.BATCH_SIZE,
-                target_update_freq=trial_config.TARGET_UPDATE_FREQ,
-                device=device,
-            )
+            agent = DQNAgent.from_config(config=trial_config, action_space=action_space, device=device)
 
             train_reward_calc = RewardCalculator.from_config(config=trial_config, data=train_data, action_space=action_space)
             val_reward_calc = RewardCalculator.from_config(config=trial_config, data=val_data, action_space=action_space)
@@ -194,9 +182,9 @@ def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_j
     logger.info("开始 DQN 贝叶斯超参优化")
     logger.info(f"试验次数: {n_trials}, 每个 trial 最大轮数: {max_episodes}, 并行任务数: {n_jobs}")
 
-    train_data = DQNTrainer._load_data(base_config.get_train_data_path(), base_config.STATE_COLUMNS)
-    val_data = DQNTrainer._load_data(base_config.get_val_data_path(), base_config.STATE_COLUMNS)
-    action_space = DQNTrainer._load_action_space(base_config.ACTION_SPACE_PATH)
+    train_data = load_state_data(base_config.get_train_data_path(), base_config.STATE_COLUMNS)
+    val_data = load_state_data(base_config.get_val_data_path(), base_config.STATE_COLUMNS)
+    action_space = load_action_space(base_config.ACTION_SPACE_PATH)
 
     space = _create_search_space()
     optimizer = BayesianOptimizer(

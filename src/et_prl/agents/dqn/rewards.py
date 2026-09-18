@@ -8,6 +8,30 @@ import pandas as pd
 from et_prl.environments import RewardCalculator as BaseRewardCalculator
 from et_prl.config.dqn import DQNConfig
 
+# 冷机性能模型系数（电容温度多项式 / EIR-温度多项式 / EIR-PLR 多项式）。
+# 拟合自冷机性能曲线，作为奖励模型的固有常数，故提为模块级常量。
+_CHILLER_CAP_F_TEMP_COEFFS = (
+    4.575085e-01,  # b1
+    1.313508e-01,  # b2
+    -4.408831e-03,  # b3
+    1.930354e-02,  # b4
+    -5.479641e-04,  # b5
+    -1.376580e-03,  # b6
+)
+_CHILLER_EIR_F_TEMP_COEFFS = (
+    6.794525e-01,  # d1
+    6.694756e-02,  # d2
+    -3.625396e-03,  # d3
+    -1.018762e-02,  # d4
+    1.066394e-03,  # d5
+    -2.113402e-03,  # d6
+)
+_CHILLER_EIR_F_PLR_COEFFS = (
+    7.859908e-02,  # g1
+    1.950291e-01,  # g2
+    7.241581e-01,  # g3
+)
+
 
 class RewardCalculator(BaseRewardCalculator):
     def __init__(
@@ -120,21 +144,9 @@ class RewardCalculator(BaseRewardCalculator):
         clc = cooling_load / running_chillers
         t_chwr = action_value + clc / ((self.c_p * self.density_water * self.f_chw) / 3600.0)
 
-        b1 = 4.575085e-01
-        b2 = 1.313508e-01
-        b3 = -4.408831e-03
-        b4 = 1.930354e-02
-        b5 = -5.479641e-04
-        b6 = -1.376580e-03
-        d1 = 6.794525e-01
-        d2 = 6.694756e-02
-        d3 = -3.625396e-03
-        d4 = -1.018762e-02
-        d5 = 1.066394e-03
-        d6 = -2.113402e-03
-        g1 = 7.859908e-02
-        g2 = 1.950291e-01
-        g3 = 7.241581e-01
+        b1, b2, b3, b4, b5, b6 = _CHILLER_CAP_F_TEMP_COEFFS
+        d1, d2, d3, d4, d5, d6 = _CHILLER_EIR_F_TEMP_COEFFS
+        g1, g2, g3 = _CHILLER_EIR_F_PLR_COEFFS
 
         plr = float(np.clip(clc / self.chiller_capacity, 0.0, 1.5))
         t_cwr = outdoor_temp

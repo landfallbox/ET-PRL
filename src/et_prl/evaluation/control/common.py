@@ -12,9 +12,9 @@ from et_prl.utils import CheckpointManager, ConfigManager, Logger, resolve_exper
 
 from et_prl.config.dqn import DQNConfig
 from et_prl.config.loader import get_default
+from et_prl.data import load_action_space, load_state_data
 from et_prl.agents.dqn import DQNAgent
 from et_prl.agents.dqn.rewards import RewardCalculator
-from et_prl.training.dqn_trainer import DQNTrainer
 from et_prl.detection.streaming_gate import StreamingAnomalyGate
 
 
@@ -71,20 +71,7 @@ def copy_train_config(
 
 
 def _create_agent(config: DQNConfig, action_space: np.ndarray, device: torch.device) -> DQNAgent:
-    return DQNAgent(
-        state_size=config.STATE_SIZE,
-        action_space=action_space,
-        hidden_sizes=config.HIDDEN_SIZES,
-        learning_rate=config.LEARNING_RATE,
-        gamma=config.GAMMA,
-        epsilon_start=config.EPSILON_START,
-        epsilon_min=config.EPSILON_MIN,
-        epsilon_decay=config.EPSILON_DECAY,
-        memory_capacity=config.MEMORY_CAPACITY,
-        batch_size=config.BATCH_SIZE,
-        target_update_freq=config.TARGET_UPDATE_FREQ,
-        device=device,
-    )
+    return DQNAgent.from_config(config=config, action_space=action_space, device=device)
 
 
 def build_test_components(
@@ -102,11 +89,11 @@ def build_test_components(
     else:
         raise ValueError(f"不支持的数据划分: {data_split}")
 
-    test_data = DQNTrainer._load_data(split_data_path, config.STATE_COLUMNS)
+    test_data = load_state_data(split_data_path, config.STATE_COLUMNS)
     if test_data.empty:
         raise ValueError(f"{split_key} 数据为空: {split_data_path}")
 
-    action_space = DQNTrainer._load_action_space(config.ACTION_SPACE_PATH)
+    action_space = load_action_space(config.ACTION_SPACE_PATH)
     device = torch.device(config.DEVICE)
 
     agent = _create_agent(config, action_space, device)
@@ -125,7 +112,7 @@ def build_test_components(
 
 
 def create_streaming_gate(
-    config: type[Any],
+    config: Any,
     test_data: pd.DataFrame,
     logger: Logger,
     gate_state_path: Path | None,

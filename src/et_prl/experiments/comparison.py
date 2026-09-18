@@ -10,6 +10,7 @@ from et_prl.evaluation.control.common import (
     build_test_components,
     copy_train_config,
     create_streaming_gate,
+    get_paper_symbol_field_mapping,
     resolve_train_experiment_dir,
 )
 from et_prl.evaluation.control.strategies.event_driven import run_event_driven
@@ -20,10 +21,16 @@ from et_prl.evaluation.control.strategies.rbc import run_rule_based_control
 from et_prl.config.loader import load_config
 
 
-def _get_paper_symbol_field_mapping() -> dict[str, str]:
-    from et_prl.evaluation.control.common import get_paper_symbol_field_mapping
-
-    return get_paper_symbol_field_mapping()
+# PID 基线控制器与事件触发基线的固定参数。
+# 这些是基线策略的固有参数，不属于可配置超参（不在配置 schema 内），
+# 故以模块常量显式声明，避免用 getattr(config, key, default) 伪装成可配置项。
+_PID_KP = 0.6
+_PID_KI = 0.05
+_PID_KD = 0.1
+_PID_ERROR_DEADBAND = 0.1
+_PID_DERIVATIVE_FILTER_ALPHA = 0.7
+_PID_MAX_ACTION_STEP = 2.0
+_EVENT_TRIGGER_SCORE_THRESHOLD = 0.6
 
 
 def _resolve_train_dir_from_model_path(dqn_model_path: Path | None, config) -> Path | None:
@@ -142,7 +149,6 @@ def compare_control_strategies(
     event_summary, event_step_results = run_event_driven(
         agent=agent,
         env=event_env,
-        data=test_data,
         action_space=action_space,
         gate=event_gate,
         feature_columns=config.FEATURE_COLUMNS,
@@ -153,16 +159,14 @@ def compare_control_strategies(
         config.get_run_results_dir(mode="eval") / "event_driven_step_results.csv", index=False
     )
 
-    pid_kp = float(getattr(config, "PID_KP", 0.6))
-    pid_ki = float(getattr(config, "PID_KI", 0.05))
-    pid_kd = float(getattr(config, "PID_KD", 0.1))
-    pid_integral_limit = float(
-        getattr(config, "PID_INTEGRAL_LIMIT", max(float(np.max(action_space) - np.min(action_space)) * 4.0, 1.0))
-    )
-    pid_error_deadband = float(getattr(config, "PID_ERROR_DEADBAND", 0.1))
-    pid_derivative_filter_alpha = float(getattr(config, "PID_DERIVATIVE_FILTER_ALPHA", 0.7))
-    pid_max_action_step = float(getattr(config, "PID_MAX_ACTION_STEP", 2.0))
-    pid_supply_temp_ref = float(getattr(config, "PID_SUPPLY_TEMP_REF", config.CHILLER_SUPPLY_TEMP_REF))
+    pid_kp = float(_PID_KP)
+    pid_ki = float(_PID_KI)
+    pid_kd = float(_PID_KD)
+    pid_integral_limit = float(max(float(np.max(action_space) - np.min(action_space)) * 4.0, 1.0))
+    pid_error_deadband = float(_PID_ERROR_DEADBAND)
+    pid_derivative_filter_alpha = float(_PID_DERIVATIVE_FILTER_ALPHA)
+    pid_max_action_step = float(_PID_MAX_ACTION_STEP)
+    pid_supply_temp_ref = float(config.CHILLER_SUPPLY_TEMP_REF)
     pid_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     pid_summary, pid_step_results = run_pid(
         env=pid_env,
@@ -207,9 +211,9 @@ def compare_control_strategies(
             "Twb": twb_threshold,
             "CL_predict": cl_predict_threshold,
         },
-        threshold_window_size=min(int(getattr(config, "GATE_LOCAL_WINDOW_SIZE", 20)), 20),
-        threshold_min_samples=min(int(getattr(config, "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION", 3)), 3),
-        trigger_score_threshold=float(getattr(config, "EVENT_TRIGGER_SCORE_THRESHOLD", 0.6)),
+        threshold_window_size=min(int(config.GATE_LOCAL_WINDOW_SIZE), 20),
+        threshold_min_samples=min(int(config.THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION), 3),
+        trigger_score_threshold=float(_EVENT_TRIGGER_SCORE_THRESHOLD),
     )
     summaries["event_triggered_etc"] = event_trigger_summary
     event_trigger_step_results.to_csv(
@@ -219,7 +223,7 @@ def compare_control_strategies(
     metrics_recorder.save_metrics(
         {
             **base_payload,
-            "paper_symbol_mapping": _get_paper_symbol_field_mapping(),
+            "paper_symbol_mapping": get_paper_symbol_field_mapping(),
             "strategies_performance": summaries,
             "pid_params": {
                 "kp": pid_kp,

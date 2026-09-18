@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import torch
+from et_prl.data import load_action_space, load_state_data
 from et_prl.environments import SequenceEnv
 from et_prl.utils import CheckpointManager, ExperimentContext, Logger, MetricsRecorder
 
@@ -46,25 +46,12 @@ class DQNTrainer:
             f"CUDNN_DETERMINISTIC={getattr(self.config, 'CUDNN_DETERMINISTIC', None)}"
         )
 
-        train_data = self._load_data(self.config.get_train_data_path(), self.config.STATE_COLUMNS)
-        val_data = self._load_data(self.config.get_val_data_path(), self.config.STATE_COLUMNS)
-        action_space = self._load_action_space(self.config.ACTION_SPACE_PATH)
+        train_data = load_state_data(self.config.get_train_data_path(), self.config.STATE_COLUMNS)
+        val_data = load_state_data(self.config.get_val_data_path(), self.config.STATE_COLUMNS)
+        action_space = load_action_space(self.config.ACTION_SPACE_PATH)
 
         device = torch.device(self.config.DEVICE)
-        agent = DQNAgent(
-            state_size=self.config.STATE_SIZE,
-            action_space=action_space,
-            hidden_sizes=self.config.HIDDEN_SIZES,
-            learning_rate=self.config.LEARNING_RATE,
-            gamma=self.config.GAMMA,
-            epsilon_start=self.config.EPSILON_START,
-            epsilon_min=self.config.EPSILON_MIN,
-            epsilon_decay=self.config.EPSILON_DECAY,
-            memory_capacity=self.config.MEMORY_CAPACITY,
-            batch_size=self.config.BATCH_SIZE,
-            target_update_freq=self.config.TARGET_UPDATE_FREQ,
-            device=device,
-        )
+        agent = DQNAgent.from_config(config=self.config, action_space=action_space, device=device)
 
         reward_calc = _RewardCalculator.from_config(config=self.config, data=train_data, action_space=action_space)
         train_env = SequenceEnv(train_data, self.config.STATE_COLUMNS, reward_calc)
@@ -199,52 +186,20 @@ class DQNTrainer:
         }
 
     def _val_episode(self, agent: DQNAgent, env: SequenceEnv) -> dict:
+        # select_action(training=False) 本身即纯贪心（不读取 epsilon），无需临时改写 agent.epsilon
         state, _ = env.reset()
         total_reward = 0.0
         steps = 0
-        epsilon_backup = agent.epsilon
-        agent.epsilon = 0.0
-        try:
-            while True:
-                steps += 1
-                action_idx = agent.select_action(state, training=False)
-                action_value = agent.get_action_value(action_idx)
-                next_state, reward, terminated, _, _ = env.step(action_value)
-                total_reward += float(reward)
-                state = next_state
-                if terminated:
-                    break
-        finally:
-            agent.epsilon = epsilon_backup
+        while True:
+            steps += 1
+            action_idx = agent.select_action(state, training=False)
+            action_value = agent.get_action_value(action_idx)
+            next_state, reward, terminated, _, _ = env.step(action_value)
+            total_reward += float(reward)
+            state = next_state
+            if terminated:
+                break
         return {"total_reward": total_reward, "steps": steps}
-
-    @staticmethod
-    def _load_data(path: Path, required_columns: list[str]) -> pd.DataFrame:
-        if not path.exists():
-            raise FileNotFoundError(f"数据文件不存在: {path}")
-        data = pd.read_csv(path)
-        missing = [col for col in required_columns if col not in data.columns]
-        if missing:
-            raise ValueError(f"数据缺少必要列: {missing}")
-        return data
-
-    @staticmethod
-    def _load_action_space(path: Path) -> np.ndarray:
-        if not path.exists():
-            raise FileNotFoundError(f"动作空间文件不存在: {path}")
-        action_space = np.load(path, allow_pickle=True)
-        action_space = np.asarray(action_space, dtype=np.float32).squeeze()
-
-        if action_space.ndim == 0:
-            action_space = action_space.reshape(1)
-
-        if action_space.ndim != 1:
-            raise ValueError(f"动作空间维度必须为 1，当前维度: {action_space.ndim}，形状: {action_space.shape}")
-
-        if action_space.size == 0:
-            raise ValueError("动作空间不能为空")
-
-        return action_space
 
     def _should_validate(self, episode: int) -> bool:
         if self.config.VAL_INTERVAL <= 0:

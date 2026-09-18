@@ -8,12 +8,9 @@ import pandas as pd
 import torch
 
 from et_prl.config.loader import load_config
-from et_prl.data import tensor_loader
+from et_prl.data import build_sliding_window_sequences
 from et_prl.models import LSTM
 from et_prl.utils import CheckpointManager, ConfigManager
-
-
-BUILD_SLIDING_WINDOW_SEQUENCES = getattr(tensor_loader, "build_sliding_window_sequences")
 
 
 def _zscore_transform(df: pd.DataFrame, mean_dict: dict, std_dict: dict, columns: list[str]) -> pd.DataFrame:
@@ -39,7 +36,7 @@ def _build_sequences(feature_array, window_length: int):
             f"样本数量不足，当前行数={num_rows}，窗口长度={window_length}，至少需要 {window_length + 1} 行"
         )
 
-    sequence_features = BUILD_SLIDING_WINDOW_SEQUENCES(feature_tensor, window_length)
+    sequence_features = build_sliding_window_sequences(feature_tensor, window_length)
     return sequence_features[:-1]
 
 

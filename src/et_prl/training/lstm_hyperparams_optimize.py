@@ -59,13 +59,14 @@ def adjust_hyperparams_by_correlation(params: dict) -> dict:
     return adjusted_params
 
 
-def create_objective_fn(train_loader, val_loader, logger):
+def create_objective_fn(train_loader, val_loader, base_config, logger):
     """
     创建目标函数工厂
 
     参数：
         train_loader: 训练数据加载器
         val_loader: 验证数据加载器
+        base_config: 基础配置实例（每个 trial 基于它派生，避免重复加载 YAML）
         logger: 日志记录器
 
     返回：
@@ -83,7 +84,7 @@ def create_objective_fn(train_loader, val_loader, logger):
             验证损失（单个浮点数）
         """
         try:
-            config = load_config("lstm")
+            config = base_config
 
             adjusted_params = adjust_hyperparams_by_correlation(params)
 
@@ -194,6 +195,7 @@ def optimize_lstm_hyperparameters(n_trials: int = 80):
     objective_fn = create_objective_fn(
         train_loader=train_loader,
         val_loader=val_loader,
+        base_config=config,
         logger=logger
     )
 

@@ -12,6 +12,25 @@ from pathlib import Path
 from et_prl.config.control_compare import ControlCompareConfig
 from et_prl.utils import HyperparameterSpace, Logger
 
+# 门控优化参数 -> (配置属性名, 类型) 的单一事实源。
+# 搜索空间构建、trial 配置覆盖、多阶段参数合并均从此派生，
+# 新增/调整门控超参时只需在此处维护一次。
+GATE_OPT_PARAM_MAPPING: dict[str, tuple[str, type]] = {
+    "global_ema_decay": ("GATE_GLOBAL_EMA_DECAY", float),
+    "alpha_local_weight": ("GATE_ALPHA_LOCAL_WEIGHT", float),
+    "local_window_size": ("GATE_LOCAL_WINDOW_SIZE", int),
+    "reference_samples": ("GATE_REFERENCE_SAMPLES", int),
+    "threshold_bias": ("GATE_THRESHOLD_BIAS", float),
+    "threshold_quantile": ("THRESHOLD_QUANTILE", float),
+    "threshold_mad_scale": ("THRESHOLD_MAD_SCALE", float),
+    "threshold_local_update_rate": ("THRESHOLD_LOCAL_UPDATE_RATE", float),
+    "threshold_quantile_weight": ("THRESHOLD_QUANTILE_WEIGHT", float),
+    "threshold_min_samples_for_optimization": ("THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION", int),
+    "score_short_weight": ("GATE_SCORE_SHORT_WEIGHT", float),
+    "score_medium_weight": ("GATE_SCORE_MEDIUM_WEIGHT", float),
+    "trigger_hysteresis_margin": ("GATE_TRIGGER_HYSTERESIS_MARGIN", float),
+}
+
 
 def _get_dynamic_param_range(
     param_name: str,
@@ -184,29 +203,12 @@ def _create_search_space(
 
     space = HyperparameterSpace()
 
-    # 参数->属性名的映射，便于在phase2/3中固定前阶段的参数
-    param_mapping = {
-        "global_ema_decay": ("float", config.GATE_OPT_GLOBAL_EMA_DECAY_MIN, config.GATE_OPT_GLOBAL_EMA_DECAY_MAX),
-        "alpha_local_weight": ("float", config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MIN, config.GATE_OPT_ALPHA_LOCAL_WEIGHT_MAX),
-        "local_window_size": ("int", config.GATE_OPT_LOCAL_WINDOW_SIZE_MIN, config.GATE_OPT_LOCAL_WINDOW_SIZE_MAX),
-        "reference_samples": ("int", config.GATE_OPT_REFERENCE_SAMPLES_MIN, config.GATE_OPT_REFERENCE_SAMPLES_MAX),
-        "threshold_bias": ("float", config.GATE_OPT_THRESHOLD_BIAS_MIN, config.GATE_OPT_THRESHOLD_BIAS_MAX),
-        "threshold_quantile": ("float", config.GATE_OPT_THRESHOLD_QUANTILE_MIN, config.GATE_OPT_THRESHOLD_QUANTILE_MAX),
-        "threshold_mad_scale": ("float", config.GATE_OPT_THRESHOLD_MAD_SCALE_MIN, config.GATE_OPT_THRESHOLD_MAD_SCALE_MAX),
-        "threshold_local_update_rate": ("float", config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MIN, config.GATE_OPT_THRESHOLD_LOCAL_UPDATE_RATE_MAX),
-        "threshold_quantile_weight": ("float", config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MIN, config.GATE_OPT_THRESHOLD_QUANTILE_WEIGHT_MAX),
-        "threshold_min_samples_for_optimization": ("int", config.GATE_OPT_THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION_MIN, config.GATE_OPT_THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION_MAX),
-        "score_short_weight": ("float", config.GATE_OPT_SCORE_SHORT_WEIGHT_MIN, config.GATE_OPT_SCORE_SHORT_WEIGHT_MAX),
-        "score_medium_weight": ("float", config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MIN, config.GATE_OPT_SCORE_MEDIUM_WEIGHT_MAX),
-        "trigger_hysteresis_margin": ("float", config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MIN, config.GATE_OPT_TRIGGER_HYSTERESIS_MARGIN_MAX),
-    }
-
-    # 按顺序添加参数
+    # 按顺序添加参数（类型取自 GATE_OPT_PARAM_MAPPING 单一事实源）
     for param_name in params_to_optimize:
-        if param_name not in param_mapping:
+        if param_name not in GATE_OPT_PARAM_MAPPING:
             continue
 
-        param_type, _default_min, _default_max = param_mapping[param_name]
+        param_type = GATE_OPT_PARAM_MAPPING[param_name][1]
 
         # 如果不是phase1，尝试从previous_best_params获取最优值并缩小范围
         prev_value = None
@@ -231,22 +233,8 @@ def _create_search_space(
 
 def _build_trial_config(base_config, params: dict):
     """基于 base 配置实例生成 trial 配置（frozen dataclass 用 replace）。"""
-    # 参数映射：参数名 -> (config属性名, 类型)
-    param_config_mapping = {
-        "global_ema_decay": ("GATE_GLOBAL_EMA_DECAY", float),
-        "alpha_local_weight": ("GATE_ALPHA_LOCAL_WEIGHT", float),
-        "local_window_size": ("GATE_LOCAL_WINDOW_SIZE", int),
-        "reference_samples": ("GATE_REFERENCE_SAMPLES", int),
-        "threshold_bias": ("GATE_THRESHOLD_BIAS", float),
-        "threshold_quantile": ("THRESHOLD_QUANTILE", float),
-        "threshold_mad_scale": ("THRESHOLD_MAD_SCALE", float),
-        "threshold_local_update_rate": ("THRESHOLD_LOCAL_UPDATE_RATE", float),
-        "threshold_quantile_weight": ("THRESHOLD_QUANTILE_WEIGHT", float),
-        "threshold_min_samples_for_optimization": ("THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION", int),
-        "score_short_weight": ("GATE_SCORE_SHORT_WEIGHT", float),
-        "score_medium_weight": ("GATE_SCORE_MEDIUM_WEIGHT", float),
-        "trigger_hysteresis_margin": ("GATE_TRIGGER_HYSTERESIS_MARGIN", float),
-    }
+    # 参数映射取自 GATE_OPT_PARAM_MAPPING 单一事实源
+    param_config_mapping = GATE_OPT_PARAM_MAPPING
 
     # 针对score_weight需要特别处理
     has_score_short = "score_short_weight" in params

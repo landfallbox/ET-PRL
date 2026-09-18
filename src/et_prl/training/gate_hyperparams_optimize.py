@@ -31,6 +31,7 @@ from et_prl.training.gate_optimize_metrics import (
     _split_validation_for_optimization,
 )
 from et_prl.training.gate_optimize_space import (
+    GATE_OPT_PARAM_MAPPING,
     _build_trial_config,
     _create_search_space,
     _get_phase_params,
@@ -132,7 +133,6 @@ class _ObjectiveEvaluator:
             summary, step_results = run_event_driven(
                 agent=self._agent,
                 env=env,
-                data=self._fit_data,
                 action_space=self._action_space,
                 gate=gate,
                 feature_columns=trial_config.FEATURE_COLUMNS,
@@ -206,14 +206,9 @@ def _merge_best_params(
 ) -> dict:
     """合并多阶段参数：前阶段 best + 当前阶段 best + 配置默认值（min/max 中点）。"""
     merged_best_params: dict = {}
-    all_params = [
-        "global_ema_decay", "alpha_local_weight", "local_window_size", "reference_samples",
-        "threshold_bias", "threshold_quantile", "threshold_mad_scale",
-        "threshold_local_update_rate", "threshold_quantile_weight", "threshold_min_samples_for_optimization",
-        "score_short_weight", "score_medium_weight", "trigger_hysteresis_margin",
-    ]
 
-    for param in all_params:
+    # 参数全集取自 GATE_OPT_PARAM_MAPPING 单一事实源
+    for param in GATE_OPT_PARAM_MAPPING:
         if previous_best_params is not None and param in previous_best_params:
             merged_best_params[param] = previous_best_params[param]
         elif param in best_params:
@@ -274,7 +269,6 @@ def _evaluate_holdout(
     holdout_summary, holdout_step_results = run_event_driven(
         agent=agent,
         env=holdout_env,
-        data=holdout_data,
         action_space=action_space,
         gate=holdout_gate,
         feature_columns=best_trial_config.FEATURE_COLUMNS,
@@ -496,24 +490,15 @@ def optimize_gate_hyperparameters(
 
     best_trial_config = _build_trial_config(base_config, merged_best_params)
 
-    best_config_overrides = {
-        "GATE_GLOBAL_EMA_DECAY": float(merged_best_params["global_ema_decay"]),
-        "GATE_ALPHA_LOCAL_WEIGHT": float(merged_best_params["alpha_local_weight"]),
-        "GATE_LOCAL_WINDOW_SIZE": int(merged_best_params["local_window_size"]),
-        "GATE_REFERENCE_SAMPLES": int(merged_best_params["reference_samples"]),
-        "GATE_THRESHOLD_BIAS": float(merged_best_params["threshold_bias"]),
-        "THRESHOLD_QUANTILE": float(merged_best_params["threshold_quantile"]),
-        "THRESHOLD_MAD_SCALE": float(merged_best_params["threshold_mad_scale"]),
-        "THRESHOLD_LOCAL_UPDATE_RATE": float(merged_best_params["threshold_local_update_rate"]),
-        "THRESHOLD_QUANTILE_WEIGHT": float(merged_best_params["threshold_quantile_weight"]),
-        "THRESHOLD_MIN_SAMPLES_FOR_OPTIMIZATION": int(merged_best_params["threshold_min_samples_for_optimization"]),
-        "GATE_SCORE_SHORT_WEIGHT": float(merged_best_params["score_short_weight"]),
-        "GATE_SCORE_MEDIUM_WEIGHT": float(merged_best_params["score_medium_weight"]),
-        "GATE_SCORE_LONG_WEIGHT": float(
-            max(0.01, 1.0 - float(merged_best_params["score_short_weight"]) - float(merged_best_params["score_medium_weight"]))
-        ),
-        "GATE_TRIGGER_HYSTERESIS_MARGIN": float(merged_best_params["trigger_hysteresis_margin"]),
+    # 最优参数 -> 配置覆盖项（基于 GATE_OPT_PARAM_MAPPING 单一事实源派生）
+    best_config_overrides: dict = {
+        config_attr: param_type(merged_best_params[param])
+        for param, (config_attr, param_type) in GATE_OPT_PARAM_MAPPING.items()
     }
+    # score_long_weight 为派生量（1 - short - medium，下限 0.01），不在搜索空间内
+    best_config_overrides["GATE_SCORE_LONG_WEIGHT"] = float(
+        max(0.01, 1.0 - float(merged_best_params["score_short_weight"]) - float(merged_best_params["score_medium_weight"]))
+    )
 
     holdout_test_result: dict | None = None
     if holdout_data is not None and not holdout_data.empty:

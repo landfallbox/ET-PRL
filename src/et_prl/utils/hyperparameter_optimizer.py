@@ -218,11 +218,12 @@ class BayesianOptimizer:
 
         # 记录每一轮的结果
         for trial in study.trials:
+            rounded_params = self._round_params(trial.params)
             trial_record = {
                 "trial_number": trial.number,
-                "params": self._round_params(trial.params),
+                "params": rounded_params,
                 "params_raw": trial.params,
-                "params_rounded": self._round_params(trial.params),
+                "params_rounded": rounded_params,
                 "value": trial.value,
                 "state": trial.state.name,
             }

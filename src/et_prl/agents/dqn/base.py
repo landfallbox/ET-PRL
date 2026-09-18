@@ -80,6 +80,24 @@ class DQNAgent(Agent):
         self.replay_buffer = ReplayBuffer(int(memory_capacity))
         self.learn_counter = 0
 
+    @classmethod
+    def from_config(cls, config, action_space: np.ndarray, device: torch.device) -> "DQNAgent":
+        """从 DQNConfig 构造智能体，收敛各调用点重复的 12 参数构造。"""
+        return cls(
+            state_size=config.STATE_SIZE,
+            action_space=action_space,
+            hidden_sizes=config.HIDDEN_SIZES,
+            learning_rate=config.LEARNING_RATE,
+            gamma=config.GAMMA,
+            epsilon_start=config.EPSILON_START,
+            epsilon_min=config.EPSILON_MIN,
+            epsilon_decay=config.EPSILON_DECAY,
+            memory_capacity=config.MEMORY_CAPACITY,
+            batch_size=config.BATCH_SIZE,
+            target_update_freq=config.TARGET_UPDATE_FREQ,
+            device=device,
+        )
+
     def select_action(self, state: np.ndarray, training: bool = True) -> int:
         """使用 ε-贪心策略选择动作索引。"""
         if training and random.random() < self.epsilon:

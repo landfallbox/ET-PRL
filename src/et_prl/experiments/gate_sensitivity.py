@@ -49,12 +49,14 @@ from et_prl.experiments.sensitivity_stats import (
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class _SilentLogger:
-    def info(self, *args: Any, **kwargs: Any) -> None:
-        return None
-    def warning(self, *args: Any, **kwargs: Any) -> None:
-        return None
-    def error(self, *args: Any, **kwargs: Any) -> None:
-        return None
+    """静默日志：吞掉任意日志方法调用（info/debug/warning/error/close 等），
+    避免在敏感性分析中产生日志输出，同时兼容下游对 Logger 接口的任意调用。"""
+
+    def __getattr__(self, name: str):
+        def _noop(*args: Any, **kwargs: Any) -> None:
+            return None
+
+        return _noop
 
 
 def _coerce_value(spec: SensitivitySpec, value: Any) -> Any:
@@ -63,7 +65,7 @@ def _coerce_value(spec: SensitivitySpec, value: Any) -> Any:
     return float(value)
 
 
-def _is_baseline_value(base_config: type[Any], spec: SensitivitySpec, value: Any) -> bool:
+def _is_baseline_value(base_config: Any, spec: SensitivitySpec, value: Any) -> bool:
     base = _coerce_value(spec, getattr(base_config, spec.config_attr))
     if spec.integer:
         return int(value) == int(base)
@@ -71,7 +73,7 @@ def _is_baseline_value(base_config: type[Any], spec: SensitivitySpec, value: Any
 
 
 def _values_with_baseline(
-    base_config: type[Any], spec_name: str, values: tuple[Any, ...]
+    base_config: Any, spec_name: str, values: tuple[Any, ...]
 ) -> tuple[Any, ...]:
     spec = SPEC_BY_NAME[spec_name]
     prepared = [_coerce_value(spec, v) for v in values]
@@ -89,7 +91,7 @@ def _build_analysis_config(base_config: Any, overrides: dict[str, Any]) -> Any:
 
 
 def _build_score_weight_overrides(
-    base_config: type[Any], short_weight: Any
+    base_config: Any, short_weight: Any
 ) -> dict[str, float]:
     sw = float(short_weight)
     if not 0.0 < sw < 1.0:
@@ -108,7 +110,7 @@ def _build_score_weight_overrides(
 
 
 def _build_param_overrides(
-    base_config: type[Any], spec_name: str, value: Any
+    base_config: Any, spec_name: str, value: Any
 ) -> dict[str, Any]:
     spec = SPEC_BY_NAME[spec_name]
     value = _coerce_value(spec, value)
@@ -124,7 +126,7 @@ def _merge_overrides(*groups: dict[str, Any]) -> dict[str, Any]:
     return merged
 
 
-def _load_prewarm_features(config: type[Any]) -> np.ndarray:
+def _load_prewarm_features(config: Any) -> np.ndarray:
     cols = list(config.FEATURE_COLUMNS)
     train_df = pd.read_csv(config.get_train_data_path())
     val_df = pd.read_csv(config.get_val_data_path())
@@ -160,7 +162,7 @@ def _prewarm_gate(gate: Any, prewarm_features: np.ndarray) -> None:
 
 
 def _build_candidate_gate(
-    config: type[Any], test_data: pd.DataFrame, prewarm_features: np.ndarray
+    config: Any, test_data: pd.DataFrame, prewarm_features: np.ndarray
 ) -> Any:
     gate = create_streaming_gate(config=config, test_data=test_data, logger=_SilentLogger(), gate_state_path=None)
     _prewarm_gate(gate, prewarm_features)
@@ -169,7 +171,7 @@ def _build_candidate_gate(
 
 def _evaluate_with_gate(
     *,
-    config: type[Any],
+    config: Any,
     agent: Any,
     action_space: np.ndarray,
     reward_calc: Any,
@@ -178,7 +180,7 @@ def _evaluate_with_gate(
 ) -> tuple[dict, pd.DataFrame]:
     env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     return run_event_driven(
-        agent=agent, env=env, data=test_data, action_space=action_space,
+        agent=agent, env=env, action_space=action_space,
         gate=gate, feature_columns=config.FEATURE_COLUMNS, supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
     )
 
@@ -194,7 +196,7 @@ def _candidate_label(md: dict[str, Any]) -> str:
 
 
 def _make_pairwise_metadata(
-    base_config: type[Any], design: PairwiseDesign, x: Any, y: Any, idx: int
+    base_config: Any, design: PairwiseDesign, x: Any, y: Any, idx: int
 ) -> dict[str, Any]:
     xs, ys = SPEC_BY_NAME[design.x_param], SPEC_BY_NAME[design.y_param]
     return {
@@ -214,7 +216,7 @@ def _make_pairwise_metadata(
 
 
 def _make_single_metadata(
-    base_config: type[Any], design: SingleSweepDesign, value: Any, idx: int
+    base_config: Any, design: SingleSweepDesign, value: Any, idx: int
 ) -> dict[str, Any]:
     spec = SPEC_BY_NAME[design.parameter]
     value = _coerce_value(spec, value)
@@ -318,12 +320,12 @@ def run_gate_mixed_sensitivity_analysis(
 ) -> dict[str, Any]:
     cfg = load_config("control_compare")
     train_dir = resolve_train_experiment_dir(train_experiment_dir)
-    bs_samp = int(bootstrap_samples if bootstrap_samples is not None else getattr(cfg, "GATE_SENSITIVITY_BOOTSTRAP_SAMPLES", 500))
-    bs_blk = int(bootstrap_block_size if bootstrap_block_size is not None else getattr(cfg, "GATE_SENSITIVITY_BOOTSTRAP_BLOCK_SIZE", 48))
-    bs_seed = int(bootstrap_seed if bootstrap_seed is not None else getattr(cfg, "GATE_SENSITIVITY_BOOTSTRAP_SEED", 42))
-    cl = float(np.clip(getattr(cfg, "GATE_SENSITIVITY_CONFIDENCE_LEVEL", 0.95), 1e-6, 1.0 - 1e-6))
-    sl = float(np.clip(getattr(cfg, "GATE_SENSITIVITY_SIGNIFICANCE_LEVEL", 0.05), 1e-6, 1.0 - 1e-6))
-    rls = int(getattr(cfg, "GATE_SENSITIVITY_ROUND_LENGTH_STEPS", 288))
+    bs_samp = int(bootstrap_samples if bootstrap_samples is not None else cfg.GATE_SENSITIVITY_BOOTSTRAP_SAMPLES)
+    bs_blk = int(bootstrap_block_size if bootstrap_block_size is not None else cfg.GATE_SENSITIVITY_BOOTSTRAP_BLOCK_SIZE)
+    bs_seed = int(bootstrap_seed if bootstrap_seed is not None else cfg.GATE_SENSITIVITY_BOOTSTRAP_SEED)
+    cl = float(np.clip(cfg.GATE_SENSITIVITY_CONFIDENCE_LEVEL, 1e-6, 1.0 - 1e-6))
+    sl = float(np.clip(cfg.GATE_SENSITIVITY_SIGNIFICANCE_LEVEL, 1e-6, 1.0 - 1e-6))
+    rls = int(cfg.GATE_SENSITIVITY_ROUND_LENGTH_STEPS)
 
     root = Path(output_dir or (cfg.LOG_ROOT_DIR / "online_anomaly_detection" / "sensitivity")) / cfg.TIMESTAMP
     root.mkdir(parents=True, exist_ok=True)
@@ -344,8 +346,8 @@ def run_gate_mixed_sensitivity_analysis(
     if not rounds:
         raise ValueError(f"{data_split} data length {len(test_data)} < round length {rls}")
 
-    # Baseline gate
-    bc_cfg = _build_analysis_config(cfg, {})
+    # Baseline gate（空覆盖的 replace 等价于原配置本身，直接复用 cfg）
+    bc_cfg = cfg
     bc_gate = _build_candidate_gate(bc_cfg, test_data, pf)
     bc_sum, bc_steps = _evaluate_with_gate(config=bc_cfg, agent=agent, action_space=action_space,
                                             reward_calc=reward_calc, test_data=test_data, gate=copy.deepcopy(bc_gate))

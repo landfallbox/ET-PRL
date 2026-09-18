@@ -35,7 +35,6 @@ class DatasetLoader:
             config: 配置对象（如 LSTMConfig）
         """
         self.config = config
-        self.normalizers = None
 
     def load_data(
         self, load_normalizer: bool = True, reshape_for_rnn: bool = False
@@ -60,10 +59,10 @@ class DatasetLoader:
         val_features, val_targets = load_csv_to_tensor(val_path, self.config.TARGET_COLUMN)
         test_features, test_targets = load_csv_to_tensor(test_path, self.config.TARGET_COLUMN)
 
-        # 加载归一化参数
+        # 加载归一化参数（仅校验文件可加载，返回值未被使用）
         if load_normalizer:
             normalizer_path = self.config.get_normalizer_path()
-            self.normalizers = Normalizer.load_normalizers(normalizer_path)
+            Normalizer.load_normalizers(normalizer_path)
 
         # 如果需要，reshape 为 RNN 序列格式
         if reshape_for_rnn:

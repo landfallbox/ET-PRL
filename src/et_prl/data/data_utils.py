@@ -4,7 +4,56 @@
 @Description : 数据处理工具函数
 """
 
+import numpy as np
 import pandas as pd
+from pathlib import Path
+
+
+def load_state_data(path: Path, required_columns: list[str]) -> pd.DataFrame:
+    """加载 CSV 数据并校验必要列存在。
+
+    参数：
+        path: 数据文件路径
+        required_columns: 必须包含的列名
+
+    异常：
+        FileNotFoundError: 文件不存在
+        ValueError: 缺少必要列
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"数据文件不存在: {path}")
+    data = pd.read_csv(path)
+    missing = [col for col in required_columns if col not in data.columns]
+    if missing:
+        raise ValueError(f"数据缺少必要列: {missing}")
+    return data
+
+
+def load_action_space(path: Path) -> np.ndarray:
+    """加载 1 维动作空间数组。
+
+    参数：
+        path: .npy 动作空间文件路径
+
+    异常：
+        FileNotFoundError: 文件不存在
+        ValueError: 维度不为 1 或为空
+    """
+    if not path.exists():
+        raise FileNotFoundError(f"动作空间文件不存在: {path}")
+    action_space = np.load(path, allow_pickle=True)
+    action_space = np.asarray(action_space, dtype=np.float32).squeeze()
+
+    if action_space.ndim == 0:
+        action_space = action_space.reshape(1)
+
+    if action_space.ndim != 1:
+        raise ValueError(f"动作空间维度必须为 1，当前维度: {action_space.ndim}，形状: {action_space.shape}")
+
+    if action_space.size == 0:
+        raise ValueError("动作空间不能为空")
+
+    return action_space
 
 
 def select_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
