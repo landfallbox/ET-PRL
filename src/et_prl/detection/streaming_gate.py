@@ -153,11 +153,7 @@ class StreamingAnomalyGate:
             quantile_weight=threshold_quantile_weight,
         )
 
-        # 4. 多尺度分布追踪器
-
-
         # 初始化状态
-        self._initialized = False
         self._last_trigger_step = -10**9
         self._trigger_latched = False
 
@@ -274,38 +270,10 @@ class StreamingAnomalyGate:
         )
 
 
-
-    def predict_batch(
-        self,
-        samples: np.ndarray,
-        timestamps: Optional[np.ndarray] = None,
-        feedback_labels: Optional[np.ndarray] = None,
-    ) -> list:
-        """
-        批量预测
-
-        参数：
-            samples: 输入样本，shape (n_samples, feature_dim)
-            timestamps: 时间戳数组（可选）
-            feedback_labels: 反馈标签数组（可选）
-
-        返回：
-            GateDecision列表
-        """
-        decisions = []
-        for i, sample in enumerate(samples):
-            timestamp = timestamps[i] if timestamps is not None else None
-            feedback = feedback_labels[i] if feedback_labels is not None else None
-            decision = self.predict(sample, timestamp, feedback)
-            decisions.append(decision)
-
-        return decisions
-
     def get_statistics(self) -> Dict:
         """获取网关的统计信息和诊断数据"""
         return {
             "sample_count": self.sample_count,
-            "initialized": self._initialized,
             "score_weights": {
                 "short": self.score_short_weight,
                 "medium": self.score_medium_weight,
@@ -323,26 +291,6 @@ class StreamingAnomalyGate:
 
         }
 
-    def report_feedback(self, decision_id: int, true_label: int) -> None:
-        """
-        报告人工反馈（用于优化）
-
-        在生产环境中，可能有延迟的标注反馈
-        这个方法可用于集成这些反馈
-        """
-        # 当前实现简单，可扩展为维护决策历史并进行批量反馈
-        pass
-
-    def get_gate_signal(self, sample: np.ndarray) -> int:
-        """简化接口：直接获取二值门控信号"""
-        decision = self.predict(sample)
-        return decision.gate_signal
-
-    def get_anomaly_score(self, sample: np.ndarray) -> float:
-        """简化接口：直接获取异常分数"""
-        decision = self.predict(sample)
-        return decision.anomaly_score
-
     def save_state(self, path: str | Path) -> None:
         """
         保存网关状态到文件
@@ -357,7 +305,6 @@ class StreamingAnomalyGate:
             "version": 2,
             "feature_dim": self.feature_dim,
             "sample_count": self.sample_count,
-            "initialized": self._initialized,
             "trigger_hysteresis_margin": self.trigger_hysteresis_margin,
             "min_trigger_interval": self.min_trigger_interval,
             "trigger_active": self._trigger_latched,
@@ -398,7 +345,6 @@ class StreamingAnomalyGate:
             )
 
         self.sample_count = int(payload.get("sample_count", 0))
-        self._initialized = bool(payload.get("initialized", False))
         self.trigger_hysteresis_margin = float(
             payload.get("trigger_hysteresis_margin", self.trigger_hysteresis_margin)
         )

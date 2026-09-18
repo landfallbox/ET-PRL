@@ -6,7 +6,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -117,60 +117,6 @@ def build_sliding_window_sequences(features: torch.Tensor, seq_length: int) -> t
     time_offsets = torch.arange(seq_length - 1, -1, -1, device=features.device).unsqueeze(0)
     time_indices = start_indices + time_offsets
     return features[time_indices].contiguous()
-
-
-def load_csv_to_sequence_tensor(
-    file_path: Path,
-    target_column_name: str,
-    seq_length: int,
-    input_size: int,
-    input_format: Literal["flattened", "raw"] = "flattened",
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    直接从CSV加载并转换为RNN序列格式张量
-
-    参数：
-        file_path: CSV文件路径
-        target_column_name: 目标列名（完整列名）
-        seq_length: 序列长度
-        input_size: 输入特征维度
-        input_format: 输入特征格式
-            - "flattened": 每行特征已展平为 seq_length * input_size
-            - "raw": 每行特征为单时刻 input_size，将在函数内构建滑动窗口
-
-    返回：
-        (sequence_features, targets)
-        sequence_features: shape (num_samples, seq_length, input_size)
-        targets: shape (num_samples, 1)
-    """
-    if seq_length < 1:
-        raise ValueError(f"seq_length 必须大于等于 1，当前值为 {seq_length}")
-
-    if input_size < 1:
-        raise ValueError(f"input_size 必须大于等于 1，当前值为 {input_size}")
-
-    if input_format not in {"flattened", "raw"}:
-        raise ValueError(f"input_format 仅支持 'flattened' 或 'raw'，当前值为 {input_format}")
-
-    features, targets = load_csv_to_tensor(file_path=file_path, target_column_name=target_column_name)
-
-    if input_format == "flattened":
-        sequence_features = reshape_to_sequence_format(
-            features=features,
-            seq_length=seq_length,
-            input_size=input_size,
-        )
-        return sequence_features, targets
-
-    if features.shape[1] != input_size:
-        raise ValueError(
-            "raw 格式下特征维度不匹配。"
-            f"期望 input_size={input_size}，实际特征维度={features.shape[1]}"
-        )
-
-    sequence_features = build_sliding_window_sequences(features, seq_length)
-    aligned_targets = targets[seq_length - 1 :]
-    return sequence_features, aligned_targets
 
 
 def create_data_loaders(

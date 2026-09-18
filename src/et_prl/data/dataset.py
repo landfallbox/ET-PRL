@@ -4,7 +4,7 @@
 @Description : 数据集加载器，统一处理数据加载和预处理流程
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 from torch.utils.data import DataLoader
 
@@ -89,15 +89,6 @@ class DatasetLoader:
         )
 
         return train_loader, val_loader, test_loader
-
-    def get_normalizers(self) -> Optional[Dict[str, Normalizer]]:
-        """
-        获取归一化器
-
-        返回：
-            归一化器字典，包含 'feature' 和 'target' 键
-        """
-        return self.normalizers
 
     def get_data_info(self) -> Dict[str, any]:
         """

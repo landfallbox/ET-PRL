@@ -99,7 +99,6 @@ SINGLE_SWEEPS: tuple[SingleSweepDesign, ...] = (
     ),
 )
 
-PREWARM_SPLITS: tuple[str, ...] = ("train", "val")
 ZERO_SENSITIVITY_ABS_TOL = 1e-9
 SAMPLE_INTERVAL_MINUTES = 5.0
 

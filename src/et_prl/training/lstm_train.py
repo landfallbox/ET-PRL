@@ -38,7 +38,7 @@ def train_lstm():
     # 2. 加载数据
     logger.info("加载数据...")
     dataset_loader = DatasetLoader(config)
-    train_loader, val_loader, test_loader = dataset_loader.load_data(
+    train_loader, val_loader, _ = dataset_loader.load_data(
         load_normalizer=True,
         reshape_for_rnn=True
     )

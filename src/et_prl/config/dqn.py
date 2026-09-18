@@ -16,7 +16,6 @@ class DQNConfig(BaseConfig):
     VAL_FILENAME: str
     TEST_FILENAME: str
     STATE_SIZE: int
-    ACTION_SIZE: int
     HIDDEN_SIZES: list
     LEARNING_RATE: float
     GAMMA: float
@@ -31,7 +30,6 @@ class DQNConfig(BaseConfig):
     VAL_INTERVAL: int
     REWARD_WEIGHT_EFFICIENCY: float
     REWARD_WEIGHT_COMFORT: float
-    REWARD_STRATEGY: str
     TARGET_SUPPLY_TEMP: float
     CHILLER_SUPPLY_TEMP_REF: float
     COMFORT_SIGMA: float
@@ -46,7 +44,6 @@ class DQNConfig(BaseConfig):
     CHILLER_HIGH_THRESHOLD: int
     CHILLER_MEDIUM_THRESHOLD: int
     CHILLER_LOW_THRESHOLD: int
-    SHOW_FIGURES: bool
 
     @property
     def ACTION_SPACE_PATH(self) -> Path:
@@ -55,11 +52,6 @@ class DQNConfig(BaseConfig):
     @property
     def COEFF_DATE_PATH(self) -> Path:
         return self.DATA_ROOT / "coeff_date.npy"
-
-    @property
-    def ENV_DATA_PATH(self) -> Path:
-        return self.DATA_ROOT / "dqn" / "env_data_with_predict.csv"
-
 
     def validate(self) -> None:
         total = self.REWARD_WEIGHT_EFFICIENCY + self.REWARD_WEIGHT_COMFORT

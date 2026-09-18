@@ -13,7 +13,6 @@ from et_prl.evaluation import calculate_mae, calculate_rmse, calculate_mape, cal
 from et_prl.models import LSTM
 from et_prl.utils import (
     CheckpointManager,
-    ConfigManager,
     Visualizer,
     copy_config_snapshot,
     create_experiment_context,
@@ -55,22 +54,13 @@ def run_lstm(train_experiment_dir: Path = None):
     )
     logger.info(f"使用训练实验目录: {train_experiment_dir}")
 
-    # 3. 加载训练实验配置
-    logger.info("加载训练实验配置...")
-    train_config_manager = ConfigManager(train_experiment_dir)
-    config_dict = train_config_manager.load_config()
-
-    # 保存训练配置到评估目录（便于追溯）
+    # 3. 保存训练配置到评估目录（便于追溯）
     copy_config_snapshot(
         source_experiment_dir=train_experiment_dir,
         target_experiment_dir=test_experiment_dir,
         config_filename=config.CONFIG_FILENAME,
         logger=logger,
     )
-
-    # 重建配置对象（用于数据加载）
-    config = load_config("lstm")
-    logger.info("配置加载完成")
     logger.info(f"实验名称: {config.EXPERIMENT_NAME}")
     logger.info(f"设备: {config.DEVICE}")
 

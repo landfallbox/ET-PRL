@@ -37,7 +37,6 @@ PRESET_MAP: dict[str, type] = {
     "gate": GateConfig,
     "control_compare": ControlCompareConfig,
     "event_driven": EventDrivenDQNConfig,
-    "default": DQNConfig,
 }
 
 
@@ -181,12 +180,18 @@ def load_config_path(path: str | Path, timestamp: str | None = None):
     p = Path(path)
     if not p.is_absolute():
         p = project_root() / p
-    # 推断 schema：优先按文件名匹配预设，否则要求文件内显式声明
+    # 推断 schema：优先按文件名匹配预设，否则要求文件内显式声明 _schema
     stem = p.stem
     schema = PRESET_MAP.get(stem)
     merged = _load_yaml_file(p, set())
     if schema is None:
-        schema = PRESET_MAP.get(merged.pop("_schema", ""), DQNConfig)
+        schema_name = merged.pop("_schema", None)
+        if schema_name not in PRESET_MAP:
+            raise ConfigError(
+                f"无法推断 schema（文件={p.name}）：文件名不匹配任何预设，"
+                f"且未声明有效的 _schema 键。可选: {', '.join(sorted(PRESET_MAP))}"
+            )
+        schema = PRESET_MAP[schema_name]
     root = project_root()
     if timestamp is not None:
         merged["TIMESTAMP"] = timestamp

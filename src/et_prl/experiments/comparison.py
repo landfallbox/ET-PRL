@@ -44,18 +44,15 @@ def _resolve_train_dir_from_model_path(dqn_model_path: Path | None, config) -> P
     return checkpoint_dir.parent
 
 
-def _resolve_event_thresholds(config, test_data) -> tuple[float, float, float]:
-    def _attr_or_std(column: str, attr_name: str, fallback: float) -> float:
-        config_value = getattr(config, attr_name, None)
-        if config_value is not None:
-            return max(float(config_value), 1e-6)
+def _resolve_event_thresholds(test_data) -> tuple[float, float, float]:
+    def _std_or_fallback(column: str, fallback: float) -> float:
         if column in test_data.columns:
             return max(float(test_data[column].std(ddof=0)), 1e-6)
         return float(fallback)
 
-    cl_threshold = _attr_or_std("CL", "EVENT_CL_THRESHOLD", 50.0)
-    twb_threshold = _attr_or_std("Twb", "EVENT_TWB_THRESHOLD", 1.0)
-    cl_predict_threshold = _attr_or_std("CL_predict", "EVENT_CL_PREDICT_THRESHOLD", 50.0)
+    cl_threshold = _std_or_fallback("CL", 50.0)
+    twb_threshold = _std_or_fallback("Twb", 1.0)
+    cl_predict_threshold = _std_or_fallback("CL_predict", 50.0)
     return cl_threshold, twb_threshold, cl_predict_threshold
 
 
@@ -200,7 +197,7 @@ def compare_control_strategies(
         config.get_run_results_dir(mode="eval") / "rbc_step_results.csv", index=False
     )
 
-    cl_threshold, twb_threshold, cl_predict_threshold = _resolve_event_thresholds(config, test_data)
+    cl_threshold, twb_threshold, cl_predict_threshold = _resolve_event_thresholds(test_data)
     event_trigger_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
     event_trigger_summary, event_trigger_step_results = run_event_triggered_etc(
         agent=agent,
