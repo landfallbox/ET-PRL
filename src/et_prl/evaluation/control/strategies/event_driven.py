@@ -20,8 +20,6 @@ def run_event_driven(
     gate: StreamingAnomalyGate,
     feature_columns: list[str],
     supply_temp_ref: float,
-    comfort_lower_bound: float = 13.0,
-    comfort_upper_bound: float = 21.0,
 ) -> tuple[dict, pd.DataFrame]:
     state, _ = env.reset()
     total_reward = 0.0

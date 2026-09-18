@@ -36,7 +36,6 @@ class StreamingIsolationDepth:
         }
 
         self.sample_count = 0
-        self.covariance_matrix = None
 
     def _get_window_array(self, window: str) -> np.ndarray | None:
         window_buffer = {

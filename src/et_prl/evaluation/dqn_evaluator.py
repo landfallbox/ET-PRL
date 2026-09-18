@@ -56,8 +56,6 @@ def run_dqn(train_experiment_dir: Path | None = None, fixed_interval: int = 4) -
         action_space=action_space,
         fixed_interval=fixed_interval,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
-        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     action_distribution = (

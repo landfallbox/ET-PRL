@@ -36,9 +36,6 @@ COLOR_LOAD = '#0072B2'
 COLOR_ET = '#C43C2B'
 COLOR_ST = '#1F5AA6'
 COLOR_TTC = '#9AA0A6'
-COLOR_SHADE = '#BCC5D1'
-COLOR_SHADE_EDGE = '#9DA9B8'
-SHADE_ALPHA = 0.38
 LOAD_LINEWIDTH = 1.2
 LOAD_ALPHA = 0.90
 
@@ -89,145 +86,6 @@ def _style_axes(ax: plt.Axes, tick_size: float = 10.5) -> None:
         spine.set_linewidth(0.95)
 
 
-def _expand_window_hysteresis(
-    local_delta_abs: np.ndarray,
-    seed_start: int,
-    seed_end: int,
-    low_threshold: float,
-    hysteresis_steps: int,
-) -> tuple[int, int]:
-    n = len(local_delta_abs)
-    if n == 0:
-        return 0, 0
-
-    stop_steps = max(1, int(hysteresis_steps))
-
-    left = seed_start
-    low_streak = 0
-    idx = seed_start
-    while idx > 0:
-        idx -= 1
-        if local_delta_abs[idx] < low_threshold:
-            low_streak += 1
-        else:
-            low_streak = 0
-
-        if low_streak >= stop_steps:
-            left = min(n - 1, idx + stop_steps)
-            break
-        left = idx
-    else:
-        left = 0
-
-    right = seed_end
-    low_streak = 0
-    idx = seed_end
-    while idx < n - 1:
-        idx += 1
-        if local_delta_abs[idx] < low_threshold:
-            low_streak += 1
-        else:
-            low_streak = 0
-
-        if low_streak >= stop_steps:
-            right = max(0, idx - stop_steps)
-            break
-        right = idx
-    else:
-        right = n - 1
-
-    if right < left:
-        right = left
-    return left, right
-
-
-def _extract_shaded_windows(
-    local_delta_abs: np.ndarray,
-    local_t: np.ndarray,
-    sampling_interval_min: float,
-    quantile_high: float = 0.85,
-    quantile_low: float = 0.60,
-    hysteresis_steps: int = 3,
-    max_windows: int = 4,
-    min_center_gap_hours: float = 2.5,
-) -> list[tuple[float, float]]:
-    if len(local_t) == 0 or len(local_delta_abs) == 0:
-        return []
-
-    q_high = float(np.clip(quantile_high, 0.0, 1.0))
-    q_low = float(np.clip(quantile_low, 0.0, 1.0))
-    if q_low > q_high:
-        q_low = q_high
-
-    high_thr = float(np.quantile(local_delta_abs, q_high))
-    low_thr = float(np.quantile(local_delta_abs, q_low))
-    mask = local_delta_abs >= high_thr
-
-    segments: list[tuple[int, int]] = []
-    start_idx: Optional[int] = None
-    for idx, is_high in enumerate(mask):
-        if is_high and start_idx is None:
-            start_idx = idx
-        elif not is_high and start_idx is not None:
-            segments.append((start_idx, idx - 1))
-            start_idx = None
-    if start_idx is not None:
-        segments.append((start_idx, len(mask) - 1))
-
-    if not segments:
-        return []
-
-    scored: list[tuple[float, float, int, int]] = []
-    for seg_start, seg_end in segments:
-        ext_start, ext_end = _expand_window_hysteresis(
-            local_delta_abs=local_delta_abs,
-            seed_start=seg_start,
-            seed_end=seg_end,
-            low_threshold=low_thr,
-            hysteresis_steps=hysteresis_steps,
-        )
-        peak_delta = float(np.max(local_delta_abs[seg_start : seg_end + 1]))
-        sum_delta = float(np.sum(local_delta_abs[seg_start : seg_end + 1]))
-        score = peak_delta + 0.35 * sum_delta
-
-        center_h = float((local_t[seg_start] + local_t[seg_end]) / 2.0)
-        scored.append((score, center_h, ext_start, ext_end))
-
-    ranked = sorted(scored, key=lambda x: x[0], reverse=True)
-
-    selected: list[tuple[float, float, int, int]] = []
-    for candidate in ranked:
-        center_h = candidate[1]
-        if all(abs(center_h - existing[1]) >= min_center_gap_hours for existing in selected):
-            selected.append(candidate)
-        if len(selected) >= max_windows:
-            break
-
-    if not selected and ranked:
-        selected.append(ranked[0])
-
-    selected.sort(key=lambda x: x[3])
-
-    merged_idx: list[tuple[int, int]] = []
-    for _, _, cur_start, cur_end in selected:
-        if not merged_idx:
-            merged_idx.append((cur_start, cur_end))
-            continue
-        prev_start, prev_end = merged_idx[-1]
-        if cur_start <= prev_end + 1:
-            merged_idx[-1] = (prev_start, max(prev_end, cur_end))
-        else:
-            merged_idx.append((cur_start, cur_end))
-
-    dt_h = sampling_interval_min / 60.0
-    windows: list[tuple[float, float]] = []
-    for idx_start, idx_end in merged_idx:
-        t_start = float(local_t[idx_start])
-        t_end = float(min(24.0, local_t[idx_end] + dt_h))
-        windows.append((t_start, t_end))
-    return windows
-
-
 def generate_trigger_alignment_figure(
     results_dir: Path,
     env_data_path: Path,
@@ -235,8 +93,6 @@ def generate_trigger_alignment_figure(
     sampling_interval_min: float = 5.0,
     selected_day: Optional[int] = None,
     high_change_quantile: float = 0.85,
-    low_change_quantile: float = 0.60,
-    hysteresis_steps: int = 3,
 ) -> None:
     results = _load_results(results_dir)
     if not env_data_path.exists():
@@ -361,8 +217,6 @@ def main() -> None:
     parser.add_argument('--sampling-interval-min', type=float, default=5.0)
     parser.add_argument('--selected-day', type=int, default=None)
     parser.add_argument('--high-change-quantile', type=float, default=0.85)
-    parser.add_argument('--low-change-quantile', type=float, default=0.60)
-    parser.add_argument('--hysteresis-steps', type=int, default=3)
     args = parser.parse_args()
 
     root = project_root()
@@ -381,8 +235,6 @@ def main() -> None:
         sampling_interval_min=args.sampling_interval_min,
         selected_day=args.selected_day,
         high_change_quantile=args.high_change_quantile,
-        low_change_quantile=args.low_change_quantile,
-        hysteresis_steps=args.hysteresis_steps,
     )
 
 

@@ -130,8 +130,6 @@ def run_ablation_experiment(
         action_space=action_space,
         fixed_interval=fixed_interval,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
-        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
@@ -144,8 +142,6 @@ def run_ablation_experiment(
         gate=event_gate,
         feature_columns=config.FEATURE_COLUMNS,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
-        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
 
     comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)

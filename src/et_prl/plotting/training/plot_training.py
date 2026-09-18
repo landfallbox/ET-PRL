@@ -71,14 +71,6 @@ def _build_val_output_filename(exp_dir: Path, suffix: str = "") -> str:
     return "_".join(parts) + ".png"
 
 
-def _smooth(values: np.ndarray, window: int = 5) -> np.ndarray:
-    """对一维数组做 EMA 平滑（窗口越大，平滑越强）。"""
-    if window <= 1 or len(values) < window:
-        return values
-    alpha = 2.0 / (window + 1.0)
-    return pd.Series(values).ewm(alpha=alpha, adjust=False).mean().to_numpy()
-
-
 def _smooth_bidirectional(values: np.ndarray, window: int = 5) -> np.ndarray:
     """双向 EMA 平滑：前向+反向 EMA 取均值，降低波动并减少相位滞后。"""
     if window <= 1 or len(values) < window:

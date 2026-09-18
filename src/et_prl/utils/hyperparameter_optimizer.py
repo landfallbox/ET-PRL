@@ -96,7 +96,6 @@ class BayesianOptimizer:
         self.best_params: Optional[Dict[str, Any]] = None
         self.best_value: Optional[float] = None
         self.study: Optional[optuna.Study] = None
-        self.optimization_history: list = []
 
     def _create_sampler(self):
         """创建采样器"""

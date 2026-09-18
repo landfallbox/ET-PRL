@@ -351,11 +351,9 @@ def run_gate_mixed_sensitivity_analysis(
                                             reward_calc=reward_calc, test_data=test_data, gate=copy.deepcopy(bc_gate))
     # Fixed-step baseline
     bc_env = SequenceEnv(test_data, cfg.STATE_COLUMNS, reward_calc)
-    fb_sum, fb_steps = run_fixed_interval(agent=agent, env=bc_env, action_space=action_space,
+    fb_sum, _ = run_fixed_interval(agent=agent, env=bc_env, action_space=action_space,
                                             fixed_interval=int(cfg.GATE_OPT_BASELINE_FIXED_INTERVAL),
-                                            supply_temp_ref=cfg.CHILLER_SUPPLY_TEMP_REF,
-                                            comfort_lower_bound=cfg.COMFORT_LOWER_BOUND,
-                                            comfort_upper_bound=cfg.COMFORT_UPPER_BOUND)
+                                            supply_temp_ref=cfg.CHILLER_SUPPLY_TEMP_REF)
     bc_met = _metric_summary(bc_sum, bc_steps, bc_sum, fb_sum)
 
     # Round baselines
@@ -368,8 +366,7 @@ def run_gate_mixed_sensitivity_analysis(
         fenv = SequenceEnv(rd, cfg.STATE_COLUMNS, rrc)
         f_sum, _ = run_fixed_interval(agent=agent, env=fenv, action_space=action_space,
                                         fixed_interval=int(cfg.GATE_OPT_BASELINE_FIXED_INTERVAL),
-                                        supply_temp_ref=cfg.CHILLER_SUPPLY_TEMP_REF,
-                                        comfort_lower_bound=cfg.COMFORT_LOWER_BOUND, comfort_upper_bound=cfg.COMFORT_UPPER_BOUND)
+                                        supply_temp_ref=cfg.CHILLER_SUPPLY_TEMP_REF)
         bc_rounds.append(_round_metric_row(summary=rs_sum, step_results=rs_steps,
                                             default_baseline_summary=rs_sum, fixed_baseline_summary=f_sum,
                                             round_index=ri, round_start_step=rs, round_end_step=re, round_length_steps=rls))

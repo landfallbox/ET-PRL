@@ -131,8 +131,6 @@ def compare_control_strategies(
             action_space=action_space,
             fixed_interval=interval,
             supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-            comfort_lower_bound=config.COMFORT_LOWER_BOUND,
-            comfort_upper_bound=config.COMFORT_UPPER_BOUND,
         )
         summaries[fixed_key] = fixed_summary
         fixed_step_results.to_csv(
@@ -149,8 +147,6 @@ def compare_control_strategies(
         gate=event_gate,
         feature_columns=config.FEATURE_COLUMNS,
         supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-        comfort_lower_bound=config.COMFORT_LOWER_BOUND,
-        comfort_upper_bound=config.COMFORT_UPPER_BOUND,
     )
     summaries["event_driven"] = event_summary
     event_step_results.to_csv(

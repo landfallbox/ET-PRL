@@ -202,11 +202,11 @@ def _create_search_space(
     }
 
     # 按顺序添加参数
-    for idx, param_name in enumerate(params_to_optimize):
+    for param_name in params_to_optimize:
         if param_name not in param_mapping:
             continue
 
-        param_type, default_min, default_max = param_mapping[param_name]
+        param_type, _default_min, _default_max = param_mapping[param_name]
 
         # 如果不是phase1，尝试从previous_best_params获取最优值并缩小范围
         prev_value = None

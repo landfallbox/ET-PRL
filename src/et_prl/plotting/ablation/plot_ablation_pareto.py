@@ -11,7 +11,6 @@ from pathlib import Path
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from et_prl.config.base import project_root
@@ -41,43 +40,6 @@ def _build_ablation_dataframe() -> pd.DataFrame:
         {"method": PROPOSED_METHOD, "E_daily": 7331.85, "PPR": 94.41, "ACR": 2.1525},
     ]
     return pd.DataFrame.from_records(records)
-
-
-def _compute_pareto_mask(energy: np.ndarray, ppr: np.ndarray) -> np.ndarray:
-    """Return non-dominated mask under min-energy and max-PPR objectives."""
-    n = len(energy)
-    mask = np.ones(n, dtype=bool)
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
-            better_or_equal = (energy[j] <= energy[i]) and (ppr[j] >= ppr[i])
-            strictly_better = (energy[j] < energy[i]) or (ppr[j] > ppr[i])
-            if better_or_equal and strictly_better:
-                mask[i] = False
-                break
-    return mask
-
-
-def _extract_pareto_front(df: pd.DataFrame) -> pd.DataFrame:
-    """Extract Pareto-optimal points and order them as the upper envelope."""
-    pareto_mask = _compute_pareto_mask(
-        df["E_daily"].to_numpy(dtype=float),
-        df["PPR"].to_numpy(dtype=float),
-    )
-    pareto_df = df.loc[pareto_mask].copy()
-    pareto_df = pareto_df.sort_values(by=["E_daily", "PPR"], ascending=[True, False], kind="mergesort")
-
-    # Remove any residual numerical ties that would create non-front segments.
-    frontier_rows: list[pd.Series] = []
-    best_ppr = -np.inf
-    tol = 1e-9
-    for _, row in pareto_df.iterrows():
-        if float(row["PPR"]) > best_ppr + tol:
-            frontier_rows.append(row)
-            best_ppr = float(row["PPR"])
-
-    return pd.DataFrame(frontier_rows)
 
 
 def generate_figure(output_path: Path) -> None:
