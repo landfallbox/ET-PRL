@@ -180,7 +180,7 @@ def optimize_lstm_hyperparameters(n_trials: int = 80):
 
     logger.info("搜索空间已定义:")
     for param_name, param_config in space.to_dict().items():
-        logger.info(f"  {param_name}: {param_config}")
+        logger.info(f"{param_name}: {param_config}")
 
     logger.info("初始化贝叶斯优化器...")
     optimizer = BayesianOptimizer(
@@ -208,7 +208,7 @@ def optimize_lstm_hyperparameters(n_trials: int = 80):
     logger.info(f"最优验证损失: {result['best_value']:.6f}")
     logger.info("最优超参:")
     for param_name, param_value in result["best_params"].items():
-        logger.info(f"  {param_name}: {param_value}")
+        logger.info(f"{param_name}: {param_value}")
 
     logger.info(f"优化结果已保存到: {output_dir / 'results' / 'optimization_results.json'}")
 

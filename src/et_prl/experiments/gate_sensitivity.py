@@ -16,7 +16,6 @@ import pandas as pd
 from et_prl.environments import SequenceEnv
 from et_prl.utils import create_experiment_context
 
-from et_prl.config.control_compare import ControlCompareConfig
 from et_prl.evaluation.control.common import (
     build_test_components,
     create_streaming_gate,
@@ -335,7 +334,7 @@ def run_gate_mixed_sensitivity_analysis(
                                     tb_dir=root / cfg.TB_DIR_NAME)
     log = ctx.logger
     log.info("Gate mixed sensitivity analysis")
-    log.info(f"  train_dir={train_dir}  data_split={data_split}  output={root}")
+    log.info(f"train_dir={train_dir}  data_split={data_split}  output={root}")
 
     test_data, action_space, agent, ckpt, reward_calc = build_test_components(
         config=cfg, resolved_train_dir=train_dir, data_split=data_split,
@@ -406,7 +405,7 @@ def run_gate_mixed_sensitivity_analysis(
                 row, rrows = _run_candidate(md=md, cand_cfg=cand_cfg, **shared_ctx)
                 all_rows.append(row)
                 round_rows.extend(rrows)
-                log.info(f"  [{idx}/{total}] {_candidate_label(md)}  "
+                log.info(f"[{idx}/{total}] {_candidate_label(md)}  "
                          f"R={row['total_reward']:.4f}  "
                          f"N={row['N_daily_count_per_day']:.2f}  "
                          f"E={row['E_daily_kwh_per_day']:.2f}")
@@ -422,7 +421,7 @@ def run_gate_mixed_sensitivity_analysis(
             row, rrows = _run_candidate(md=md, cand_cfg=cand_cfg, **shared_ctx)
             all_rows.append(row)
             round_rows.extend(rrows)
-            log.info(f"  [{idx}/{len(vals)}] {_candidate_label(md)}  "
+            log.info(f"[{idx}/{len(vals)}] {_candidate_label(md)}  "
                      f"R={row['total_reward']:.4f}  "
                      f"N={row['N_daily_count_per_day']:.2f}  "
                      f"E={row['E_daily_kwh_per_day']:.2f}")

@@ -54,9 +54,9 @@ def train_lstm():
         dropout=config.DROPOUT
     )
     logger.info("模型架构:")
-    logger.info(f"  输入特征维度: {config.INPUT_SIZE}")
-    logger.info(f"  隐藏层大小: {config.HIDDEN_SIZES}")
-    logger.info(f"  输出维度: {config.OUTPUT_SIZE}")
+    logger.info(f"输入特征维度: {config.INPUT_SIZE}")
+    logger.info(f"隐藏层大小: {config.HIDDEN_SIZES}")
+    logger.info(f"输出维度: {config.OUTPUT_SIZE}")
 
     # 4. 创建优化器和损失函数
     logger.info("初始化优化器和损失函数...")

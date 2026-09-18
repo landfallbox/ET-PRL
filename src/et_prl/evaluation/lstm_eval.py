@@ -41,7 +41,6 @@ def run_lstm(train_experiment_dir: Path = None):
     )
     logger = context.logger
 
-    logger.info("=" * 50)
     logger.info("开始模型评估")
     logger.info(f"评估实验目录: {test_experiment_dir}")
 
@@ -83,9 +82,9 @@ def run_lstm(train_experiment_dir: Path = None):
         dropout=config.DROPOUT
     )
     logger.info("模型架构:")
-    logger.info(f"  输入特征维度: {config.INPUT_SIZE}")
-    logger.info(f"  隐藏层大小: {config.HIDDEN_SIZES}")
-    logger.info(f"  输出维度: {config.OUTPUT_SIZE}")
+    logger.info(f"输入特征维度: {config.INPUT_SIZE}")
+    logger.info(f"隐藏层大小: {config.HIDDEN_SIZES}")
+    logger.info(f"输出维度: {config.OUTPUT_SIZE}")
 
     # 6. 加载最优模型权重
     logger.info("加载最优模型权重...")
@@ -101,7 +100,7 @@ def run_lstm(train_experiment_dir: Path = None):
     if best_metrics:
         logger.info("训练时的验证指标:")
         for key, value in best_metrics.items():
-            logger.info(f"  {key}: {value:.4f}")
+            logger.info(f"{key}: {value:.4f}")
 
     # 7. 创建损失函数和评估器
     logger.info("初始化评估器...")
@@ -120,7 +119,7 @@ def run_lstm(train_experiment_dir: Path = None):
 
     logger.info("测试集评估结果:")
     for key, value in test_metrics.items():
-        logger.info(f"  {key}: {value:.4f}")
+        logger.info(f"{key}: {value:.4f}")
 
     # 9. 收集预测值和真实值用于可视化
     logger.info("收集预测值和真实值...")

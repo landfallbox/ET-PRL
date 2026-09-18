@@ -5,7 +5,6 @@ from pathlib import Path
 from et_prl.environments import SequenceEnv
 from et_prl.utils import create_experiment_context
 
-from et_prl.config.dqn import DQNConfig
 from et_prl.evaluation.control.common import (
     build_test_components,
     copy_train_config,
