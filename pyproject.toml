@@ -20,8 +20,9 @@ docs = [
     "python-docx>=1.1.0",
 ]
 dev = [
-    "black>=24.0.0",
-    "pylint>=3.0.0",
+    "pre-commit>=4.0.0",
+    "pyright>=1.1.390",
+    "ruff>=0.11.0",
 ]
 
 [project.scripts]
@@ -45,6 +46,8 @@ etprl-run-ablation-wo-multi-scale = "et_prl.cli.ablation:main_wo_multi_scale"
 etprl-run-ablation-single-scale-short = "et_prl.cli.ablation:main_single_scale_short"
 etprl-run-ablation-single-scale-medium = "et_prl.cli.ablation:main_single_scale_medium"
 etprl-run-ablation-single-scale-long = "et_prl.cli.ablation:main_single_scale_long"
+etprl-preprocess-lstm = "et_prl.data.preprocess_lstm:main"
+etprl-preprocess-dqn = "et_prl.data.preprocess_dqn:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -56,9 +59,30 @@ packages = ["src/et_prl"]
 [tool.uv]
 index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
-# Black 代码格式化配置
-[tool.black]
+# Ruff lint + 格式化配置（替代 black + pylint）
+[tool.ruff]
 line-length = 100
-target-version = ["py313"]
-include = '\.pyi?$'
+target-version = "py313"
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle 错误
+    "W",    # pycodestyle 警告
+    "F",    # pyflakes：未用导入、未定义名称等
+    "I",    # isort：导入排序
+    "UP",   # pyupgrade：现代语法（Dict→dict、Optional→| 等）
+    "B",    # flake8-bugbear：常见 bug 模式
+]
+
+# Pyright 类型检查配置
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.13"
+typeCheckingMode = "basic"
+
+[dependency-groups]
+dev = [
+    "pandas-stubs>=3.0.5.260914",
+]
 
