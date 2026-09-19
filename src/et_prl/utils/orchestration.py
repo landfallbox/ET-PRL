@@ -28,10 +28,15 @@ class ExperimentContext:
         if callable(close_logger):
             close_logger()
 
+    def __enter__(self) -> ExperimentContext:
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
 
 class ConfigLike(Protocol):
-    def to_dict(self) -> dict[str, Any]:
-        ...
+    def to_dict(self) -> dict[str, Any]: ...
 
 
 def _resolve_config_payload(config: object) -> dict[str, Any]:
@@ -69,7 +74,9 @@ def create_experiment_context(
             results_dir=results_dir,
             tb_dir=tb_dir,
         ),
-        checkpoint_manager=CheckpointManager(experiment_dir, checkpoint_dir_name=checkpoint_dir_name)
+        checkpoint_manager=CheckpointManager(
+            experiment_dir, checkpoint_dir_name=checkpoint_dir_name
+        )
         if with_checkpoint_manager
         else None,
     )

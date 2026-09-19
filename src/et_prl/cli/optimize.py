@@ -1,10 +1,10 @@
 import argparse
 from pathlib import Path
 
-from et_prl.training.lstm_hyperparams_optimize import optimize_lstm_hyperparameters
-from et_prl.training.dqn_hyperparams_optimize import optimize_dqn_hyperparameters
 from et_prl.experiments.gate_sensitivity import run_gate_mixed_sensitivity_analysis
+from et_prl.training.dqn_hyperparams_optimize import optimize_dqn_hyperparameters
 from et_prl.training.gate_hyperparams_optimize import optimize_gate_hyperparameters
+from et_prl.training.lstm_hyperparams_optimize import optimize_lstm_hyperparameters
 
 
 def main_dqn() -> None:
@@ -35,7 +35,10 @@ def main_gate() -> None:
         "--dqn_model_dir",
         type=str,
         default=None,
-        help="DQN model run directory used to load checkpoints/best_model.pth; defaults to latest logs/dqn/train/<timestamp>",
+        help=(
+            "DQN model run directory used to load checkpoints/best_model.pth; "
+            "defaults to latest logs/dqn/train/<timestamp>"
+        ),
     )
     parser.add_argument("--n_trials", type=int, default=None)
     parser.add_argument("--n_jobs", type=int, default=None)
@@ -52,7 +55,9 @@ def main_gate() -> None:
         train_experiment_dir=Path(args.dqn_model_dir) if args.dqn_model_dir else None,
         n_trials=args.n_trials,
         n_jobs=args.n_jobs,
-        previous_phase_result_dir=Path(args.previous_phase_result_dir) if args.previous_phase_result_dir else None,
+        previous_phase_result_dir=Path(args.previous_phase_result_dir)
+        if args.previous_phase_result_dir
+        else None,
     )
 
 
@@ -62,7 +67,10 @@ def main_gate_sensitivity() -> None:
         "--dqn_model_dir",
         type=str,
         default=None,
-        help="DQN model run directory used to load checkpoints/best_model.pth; defaults to latest logs/dqn/train/<timestamp>",
+        help=(
+            "DQN model run directory used to load checkpoints/best_model.pth; "
+            "defaults to latest logs/dqn/train/<timestamp>"
+        ),
     )
     parser.add_argument("--output_dir", type=str, default=None)
     parser.add_argument(
@@ -95,7 +103,7 @@ def main_gate_sensitivity() -> None:
     run_gate_mixed_sensitivity_analysis(
         train_experiment_dir=Path(args.dqn_model_dir) if args.dqn_model_dir else None,
         output_dir=Path(args.output_dir) if args.output_dir else None,
-        data_split=str(args.data_split),
+        data_split=args.data_split,
         bootstrap_samples=args.bootstrap_samples,
         bootstrap_block_size=args.bootstrap_block_size,
         bootstrap_seed=args.bootstrap_seed,

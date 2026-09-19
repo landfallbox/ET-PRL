@@ -9,6 +9,7 @@
 - 派生值（DEVICE / RAW_DATA_PATH / 各实验目录）改为 property / 实例方法。
 - TIMESTAMP 为字段：由 loader 注入当前时间戳，运行期用 dataclasses.replace 覆盖。
 """
+
 from __future__ import annotations
 
 import os

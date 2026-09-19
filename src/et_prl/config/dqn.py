@@ -1,4 +1,5 @@
 """DQNConfig 配置（frozen dataclass schema）。值由 YAML 提供（见 configs/）。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -58,5 +59,6 @@ class DQNConfig(BaseConfig):
         if abs(total - 1.0) > 1e-6:
             raise ValueError(f"Reward weights must sum to 1.0, got {total}")
         if not (0 <= self.EPSILON_MIN <= self.EPSILON_START <= 1.0):
-            raise ValueError("Epsilon values must satisfy: 0 <= EPSILON_MIN <= EPSILON_START <= 1.0")
-
+            raise ValueError(
+                "Epsilon values must satisfy: 0 <= EPSILON_MIN <= EPSILON_START <= 1.0"
+            )

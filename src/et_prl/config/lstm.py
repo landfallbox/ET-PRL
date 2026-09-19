@@ -1,4 +1,5 @@
 """LSTMConfig 配置（frozen dataclass schema）。值由 YAML 提供（见 configs/）。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

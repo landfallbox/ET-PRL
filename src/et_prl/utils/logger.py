@@ -1,8 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 日志记录器（通用可复用实现）
-"""
+"""日志记录器（通用可复用实现）。"""
 
 import logging
 import uuid
@@ -76,6 +72,10 @@ class Logger:
     def error(self, msg: str):
         """ERROR 级别日志"""
         self.logger.error(msg, stacklevel=2)
+
+    def exception(self, msg: str):
+        """EXCEPTION 级别日志（附带当前异常栈）"""
+        self.logger.exception(msg, stacklevel=2)
 
     def close(self) -> None:
         """刷新并释放日志文件句柄。"""

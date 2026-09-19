@@ -1,16 +1,14 @@
 """
 在线异常检测网关
 """
+
 import pickle
-import numpy as np
-from typing import Optional, Dict
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 
-from et_prl.detection import StreamingIsolationDepth
-from et_prl.detection import StreamingStats
-from et_prl.detection import StreamingThresholdOptimizer
+from et_prl.detection import StreamingIsolationDepth, StreamingStats, StreamingThresholdOptimizer
 
 
 @dataclass
@@ -20,7 +18,7 @@ class GateDecision:
     gate_signal: int  # 0=正常, 1=异常(触发DQN)
     anomaly_score: float  # 0-1的异常分数
     adaptive_threshold: float  # 当前触发阈值
-    timestamp: Optional[float] = None  # 样本时间戳
+    timestamp: float | None = None  # 样本时间戳
     base_threshold: float = 0.0  # 未加滞回边际的基础阈值
     trigger_threshold: float = 0.0  # 进入触发状态的上阈值
     reset_threshold: float = 0.0  # 退出触发状态的下阈值
@@ -128,14 +126,14 @@ class StreamingAnomalyGate:
         )
 
         # 初始化状态
-        self._last_trigger_step = -10**9
+        self._last_trigger_step = -(10**9)
         self._trigger_latched = False
 
     def predict(
         self,
         sample: np.ndarray,
-        timestamp: Optional[float] = None,
-        feedback_label: Optional[int] = None,
+        timestamp: float | None = None,
+        feedback_label: int | None = None,
     ) -> GateDecision:
         """
         对单个样本进行异常判断（核心推理方法）
@@ -176,14 +174,24 @@ class StreamingAnomalyGate:
         # 5. 做二值决策（双阈值滞回 + 最小触发间隔）：
         #    非锁存状态下需要越过较高的 enter 阈值且满足最小间隔才触发；
         #    触发后进入锁存态，只有跌破较低的 exit 阈值才复位，抑制阈值附近抖振。
-        enter_threshold = float(np.clip(adaptive_threshold + self.trigger_hysteresis_margin, 0.0, 1.0))
-        exit_threshold = float(np.clip(adaptive_threshold - self.trigger_hysteresis_margin, 0.0, 1.0))
+        enter_threshold = float(
+            np.clip(adaptive_threshold + self.trigger_hysteresis_margin, 0.0, 1.0)
+        )
+        exit_threshold = float(
+            np.clip(adaptive_threshold - self.trigger_hysteresis_margin, 0.0, 1.0)
+        )
         if self._trigger_latched and fused_anomaly_score <= exit_threshold:
             self._trigger_latched = False
 
-        min_interval_satisfied = self.sample_count - self._last_trigger_step > self.min_trigger_interval
+        min_interval_satisfied = (
+            self.sample_count - self._last_trigger_step > self.min_trigger_interval
+        )
         gate_signal = 0
-        if (not self._trigger_latched) and min_interval_satisfied and fused_anomaly_score > enter_threshold:
+        if (
+            (not self._trigger_latched)
+            and min_interval_satisfied
+            and fused_anomaly_score > enter_threshold
+        ):
             gate_signal = 1
             self._trigger_latched = True
             self._last_trigger_step = self.sample_count
@@ -216,7 +224,7 @@ class StreamingAnomalyGate:
         normalized_sample: np.ndarray,
         anomaly_score: float,
         gate_decision: int,
-        feedback_label: Optional[int] = None,
+        feedback_label: int | None = None,
     ) -> None:
         """
         用新样本更新所有在线模块（在线学习的关键）
@@ -243,8 +251,7 @@ class StreamingAnomalyGate:
             perform_optimization=True,
         )
 
-
-    def get_statistics(self) -> Dict:
+    def get_statistics(self) -> dict:
         """获取网关的统计信息和诊断数据"""
         return {
             "sample_count": self.sample_count,
@@ -262,7 +269,6 @@ class StreamingAnomalyGate:
             "feature_stats": self.feature_stats.get_statistics(),
             "anomaly_detector": self.anomaly_detector.get_statistics(),
             "threshold_optimizer": self.threshold_optimizer.get_statistics(),
-
         }
 
     def save_state(self, path: str | Path) -> None:
@@ -287,7 +293,6 @@ class StreamingAnomalyGate:
             "feature_stats": self.feature_stats,
             "anomaly_detector": self.anomaly_detector,
             "threshold_optimizer": self.threshold_optimizer,
-
         }
 
         with open(target_path, "wb") as file:
@@ -309,7 +314,8 @@ class StreamingAnomalyGate:
                 payload = pickle.load(file)
             except ModuleNotFoundError as exc:
                 raise ModuleNotFoundError(
-                    "网关状态文件引用了不存在的旧模块路径，请使用当前代码重新生成 gate state 文件后再加载。"
+                    "网关状态文件引用了不存在的旧模块路径，"
+                    "请使用当前代码重新生成 gate state 文件后再加载。"
                 ) from exc
 
         saved_feature_dim = int(payload.get("feature_dim", -1))
@@ -322,22 +328,31 @@ class StreamingAnomalyGate:
         self.trigger_hysteresis_margin = float(
             payload.get("trigger_hysteresis_margin", self.trigger_hysteresis_margin)
         )
-        self.min_trigger_interval = int(payload.get("min_trigger_interval", self.min_trigger_interval))
-        self._trigger_latched = bool(payload.get("trigger_latched", payload.get("trigger_active", False)))
-        self._last_trigger_step = int(payload.get("last_trigger_step", -10**9))
+        self.min_trigger_interval = int(
+            payload.get("min_trigger_interval", self.min_trigger_interval)
+        )
+        self._trigger_latched = bool(
+            payload.get("trigger_latched", payload.get("trigger_active", False))
+        )
+        self._last_trigger_step = int(payload.get("last_trigger_step", -(10**9)))
         self.feature_stats = payload["feature_stats"]
         self.anomaly_detector = payload["anomaly_detector"]
         configured_threshold_optimizer = self.threshold_optimizer
         loaded_threshold_optimizer = payload["threshold_optimizer"]
-        loaded_threshold_optimizer.local_window_size = configured_threshold_optimizer.local_window_size
-        loaded_threshold_optimizer.global_ema_decay = configured_threshold_optimizer.global_ema_decay
+        loaded_threshold_optimizer.local_window_size = (
+            configured_threshold_optimizer.local_window_size
+        )
+        loaded_threshold_optimizer.global_ema_decay = (
+            configured_threshold_optimizer.global_ema_decay
+        )
         loaded_threshold_optimizer.alpha = configured_threshold_optimizer.alpha
-        loaded_threshold_optimizer.min_samples_for_optimization = configured_threshold_optimizer.min_samples_for_optimization
+        loaded_threshold_optimizer.min_samples_for_optimization = (
+            configured_threshold_optimizer.min_samples_for_optimization
+        )
         loaded_threshold_optimizer.quantile = configured_threshold_optimizer.quantile
         loaded_threshold_optimizer.mad_scale = configured_threshold_optimizer.mad_scale
-        loaded_threshold_optimizer.local_update_rate = configured_threshold_optimizer.local_update_rate
+        loaded_threshold_optimizer.local_update_rate = (
+            configured_threshold_optimizer.local_update_rate
+        )
         loaded_threshold_optimizer.quantile_weight = configured_threshold_optimizer.quantile_weight
         self.threshold_optimizer = loaded_threshold_optimizer
-
-
-

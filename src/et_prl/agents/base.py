@@ -1,9 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/11
-
-强化学习智能体基类定义。
-"""
+"""强化学习智能体基类定义。"""
 
 from abc import ABC, abstractmethod
 
@@ -37,5 +32,3 @@ class Agent(ABC):
             next_state: 下一个状态
         """
         raise NotImplementedError
-
-

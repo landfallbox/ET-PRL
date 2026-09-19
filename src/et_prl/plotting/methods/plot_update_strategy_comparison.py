@@ -7,6 +7,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
 
 from et_prl.config.base import project_root
 
@@ -26,7 +27,9 @@ def _find_cross_trigger_points(values: np.ndarray, threshold: np.ndarray) -> np.
     return np.where(trigger_mask)[0]
 
 
-def _find_intersections(time_axis: np.ndarray, signal: np.ndarray, threshold: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _find_intersections(
+    time_axis: np.ndarray, signal: np.ndarray, threshold: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Find approximate intersection points (t, value) where signal crosses threshold.
 
     Uses linear interpolation between consecutive samples for a more precise location.
@@ -60,13 +63,21 @@ def _setup_chinese_font() -> None:
     plt.rcParams.update(
         {
             "font.family": "sans-serif",
-            "font.sans-serif": ["Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "Arial Unicode MS", "DejaVu Sans"],
+            "font.sans-serif": [
+                "Microsoft YaHei",
+                "SimHei",
+                "Noto Sans CJK SC",
+                "Arial Unicode MS",
+                "DejaVu Sans",
+            ],
             "axes.unicode_minus": False,
         }
     )
 
 
-def _draw_axes_with_arrows(ax: plt.Axes, x_min: float, x_max: float, y_min: float, y_max: float) -> None:
+def _draw_axes_with_arrows(
+    ax: Axes, x_min: float, x_max: float, y_min: float, y_max: float
+) -> None:
     ax.annotate(
         "",
         xy=(x_max, y_min + 0.02),
@@ -81,28 +92,28 @@ def _draw_axes_with_arrows(ax: plt.Axes, x_min: float, x_max: float, y_min: floa
     )
 
 
-def _draw_bottom_timeline(ax: plt.Axes, trigger_t: np.ndarray, color: str, y_line: float) -> None:
+def _draw_bottom_timeline(ax: Axes, trigger_t: np.ndarray, color: str, y_line: float) -> None:
     ax.hlines(y=y_line, xmin=0.8, xmax=9.2, colors="#9099A1", linewidth=1.3)
-    
+
     # Handle overlapping points with vertical jitter
     # Group points by x-coordinate (within 0.1 tolerance)
     if len(trigger_t) == 0:
         return
-    
+
     sorted_indices = np.argsort(trigger_t)
     sorted_t = trigger_t[sorted_indices]
-    
+
     # Find groups of nearby points
     groups = []
     current_group = [sorted_t[0]]
     for i in range(1, len(sorted_t)):
-        if abs(sorted_t[i] - sorted_t[i-1]) < 0.1:
+        if abs(sorted_t[i] - sorted_t[i - 1]) < 0.1:
             current_group.append(sorted_t[i])
         else:
             groups.append(current_group)
             current_group = [sorted_t[i]]
     groups.append(current_group)
-    
+
     # Plot with vertical jitter for overlapping points
     jitter_step = 0.04
     for group in groups:
@@ -113,15 +124,19 @@ def _draw_bottom_timeline(ax: plt.Axes, trigger_t: np.ndarray, color: str, y_lin
         else:
             # Multiple overlapping points - apply vertical jitter
             n = len(group)
-            offsets = np.linspace(-(n-1) * jitter_step / 2, (n-1) * jitter_step / 2, n)
+            offsets = np.linspace(-(n - 1) * jitter_step / 2, (n - 1) * jitter_step / 2, n)
             y_pos = y_line + offsets
-        
-        ax.scatter(group_arr, y_pos, s=220, color=color, edgecolors="white", linewidths=1.3, zorder=6)
-        for x, y in zip(group_arr, y_pos):
-            ax.text(x, y - 0.005, "v", ha="center", va="center", fontsize=9, color="white", zorder=7)
+
+        ax.scatter(
+            group_arr, y_pos, s=220, color=color, edgecolors="white", linewidths=1.3, zorder=6
+        )
+        for x, y in zip(group_arr, y_pos, strict=True):
+            ax.text(
+                x, y - 0.005, "v", ha="center", va="center", fontsize=9, color="white", zorder=7
+            )
 
 
-def _decorate_common_text(ax: plt.Axes, x_max: float, y_max: float, y_min: float) -> None:
+def _decorate_common_text(ax: Axes, x_max: float, y_max: float, y_min: float) -> None:
     # Decorative labels removed as requested (no '高','低','0','偏差','时间 t','值')
     return
 
@@ -133,7 +148,6 @@ def create_update_strategy_comparison(output_path: Path, dpi: int = 220) -> Path
     signal = _build_signal(time_axis)
 
     y_min, y_max = -1.05, 1.05
-    frame_colors = ["#8FB6DC", "#9ED5A7", "#B8ACE8"]
     signal_color = "#2E75C6"
     red = "#DF6C65"
     purple = "#8268C8"
@@ -144,14 +158,10 @@ def create_update_strategy_comparison(output_path: Path, dpi: int = 220) -> Path
     interval_trigger_y = np.interp(interval_trigger_t, time_axis, signal)
 
     delta_fixed = np.full_like(time_axis, 0.27)
-    fixed_trigger_idx = _find_cross_trigger_points(signal, delta_fixed)
-    fixed_trigger_t = time_axis[fixed_trigger_idx]
-    fixed_trigger_y = signal[fixed_trigger_idx]
+    _find_cross_trigger_points(signal, delta_fixed)
 
     delta_dynamic = 0.22 + 0.08 * np.sin(0.75 * time_axis + 0.5) + 0.04 * np.sin(2.1 * time_axis)
-    dynamic_trigger_idx = _find_cross_trigger_points(signal, delta_dynamic)
-    dynamic_trigger_t = time_axis[dynamic_trigger_idx]
-    dynamic_trigger_y = signal[dynamic_trigger_idx]
+    _find_cross_trigger_points(signal, delta_dynamic)
 
     # compute interpolated intersections between curve and thresholds
     fixed_plus_t, fixed_plus_y = _find_intersections(time_axis, signal, delta_fixed)
@@ -171,13 +181,30 @@ def create_update_strategy_comparison(output_path: Path, dpi: int = 220) -> Path
 
     signal_line = axes[0].plot(time_axis, signal, color=signal_color, linewidth=2.5)[0]
     for x in interval_trigger_t:
-        axes[0].vlines(x, ymin=-1.24, ymax=np.interp(x, time_axis, signal), colors="#6E95CB", linestyles="--", linewidth=1.6, alpha=0.45)
-    axes[0].scatter(interval_trigger_t, interval_trigger_y, s=84, color=signal_color, edgecolors=signal_color, zorder=5)
+        axes[0].vlines(
+            x,
+            ymin=-1.24,
+            ymax=np.interp(x, time_axis, signal),
+            colors="#6E95CB",
+            linestyles="--",
+            linewidth=1.6,
+            alpha=0.45,
+        )
+    axes[0].scatter(
+        interval_trigger_t,
+        interval_trigger_y,
+        s=84,
+        color=signal_color,
+        edgecolors=signal_color,
+        zorder=5,
+    )
     _draw_bottom_timeline(axes[0], interval_trigger_t, color="#4A90E2", y_line=-1.24)
     _decorate_common_text(axes[0], x_max=9.4, y_max=y_max, y_min=y_min)
-    interval_line = axes[0].plot([], [], linestyle="--", color="#6E95CB")[0]
+    axes[0].plot([], [], linestyle="--", color="#6E95CB")
     # legend marker for trigger points: use same style as bottom timeline in subplot 0
-    trigger_marker = axes[0].scatter([], [], s=220, color="#4A90E2", edgecolors="white", linewidths=1.3)
+    trigger_marker = axes[0].scatter(
+        [], [], s=220, color="#4A90E2", edgecolors="white", linewidths=1.3
+    )
 
     axes[1].plot(time_axis, signal, color=signal_color, linewidth=2.5)
     fixed_line = axes[1].plot(time_axis, delta_fixed, linestyle="--", color=red, linewidth=1.9)[0]
@@ -185,22 +212,30 @@ def create_update_strategy_comparison(output_path: Path, dpi: int = 220) -> Path
     # draw precise intersection vlines and place bottom timeline markers (use subplot-0 style)
     fixed_all_t = np.concatenate([fixed_plus_t, fixed_minus_t])
     fixed_all_y = np.concatenate([fixed_plus_y, fixed_minus_y])
-    for x, yv in zip(fixed_all_t, fixed_all_y):
-        axes[1].vlines(x, ymin=-1.24, ymax=yv, colors="#6E95CB", linestyles="--", linewidth=1.6, alpha=0.45)
+    for x, yv in zip(fixed_all_t, fixed_all_y, strict=True):
+        axes[1].vlines(
+            x, ymin=-1.24, ymax=yv, colors="#6E95CB", linestyles="--", linewidth=1.6, alpha=0.45
+        )
     axes[1].scatter(fixed_all_t, fixed_all_y, s=84, color="#4A90E2", edgecolors="#4A90E2", zorder=5)
     if fixed_all_t.size:
         _draw_bottom_timeline(axes[1], fixed_all_t, color="#4A90E2", y_line=-1.24)
     _decorate_common_text(axes[1], x_max=9.4, y_max=y_max, y_min=y_min)
 
     axes[2].plot(time_axis, signal, color=signal_color, linewidth=2.5)
-    dynamic_line = axes[2].plot(time_axis, delta_dynamic, linestyle="--", color=purple, linewidth=1.9)[0]
+    dynamic_line = axes[2].plot(
+        time_axis, delta_dynamic, linestyle="--", color=purple, linewidth=1.9
+    )[0]
     axes[2].plot(time_axis, -delta_dynamic, linestyle="--", color=purple, linewidth=1.9)
     # draw precise intersection vlines and place bottom timeline markers (use subplot-0 style)
     dynamic_all_t = np.concatenate([dynamic_plus_t, dynamic_minus_t])
     dynamic_all_y = np.concatenate([dynamic_plus_y, dynamic_minus_y])
-    for x, yv in zip(dynamic_all_t, dynamic_all_y):
-        axes[2].vlines(x, ymin=-1.24, ymax=yv, colors="#6E95CB", linestyles="--", linewidth=1.6, alpha=0.45)
-    axes[2].scatter(dynamic_all_t, dynamic_all_y, s=84, color="#4A90E2", edgecolors="#4A90E2", zorder=5)
+    for x, yv in zip(dynamic_all_t, dynamic_all_y, strict=True):
+        axes[2].vlines(
+            x, ymin=-1.24, ymax=yv, colors="#6E95CB", linestyles="--", linewidth=1.6, alpha=0.45
+        )
+    axes[2].scatter(
+        dynamic_all_t, dynamic_all_y, s=84, color="#4A90E2", edgecolors="#4A90E2", zorder=5
+    )
     if dynamic_all_t.size:
         _draw_bottom_timeline(axes[2], dynamic_all_t, color="#4A90E2", y_line=-1.24)
     _decorate_common_text(axes[2], x_max=9.4, y_max=y_max, y_min=y_min)
@@ -208,7 +243,12 @@ def create_update_strategy_comparison(output_path: Path, dpi: int = 220) -> Path
     # unified legend for signal, time-step marks, fixed and dynamic thresholds
     fig.legend(
         handles=[signal_line, fixed_line, dynamic_line, trigger_marker],
-        labels=["Room Temperature Deviation", "Fixed Threshold", "Dynamic Threshold", "Trigger Points"],
+        labels=[
+            "Room Temperature Deviation",
+            "Fixed Threshold",
+            "Dynamic Threshold",
+            "Trigger Points",
+        ],
         loc="upper center",
         bbox_to_anchor=(0.5, 1.06),
         ncol=4,

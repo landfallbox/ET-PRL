@@ -1,8 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : LSTM 模型训练器
-"""
+"""LSTM 模型训练器。"""
 
 from torch.utils.data import DataLoader
 

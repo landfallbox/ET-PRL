@@ -1,10 +1,10 @@
 import argparse
 from pathlib import Path
 
-from et_prl.config.loader import load_config
-from et_prl.utils import CheckpointManager
 from et_prl.cli.overrides import apply_overrides, load_overrides
+from et_prl.config.loader import load_config
 from et_prl.experiments.comparison import compare_control_strategies
+from et_prl.utils import CheckpointManager
 
 
 def _resolve_dqn_model_path(dqn_model_arg: str | None, config, dqn_config) -> Path:
@@ -26,9 +26,7 @@ def _resolve_dqn_model_path(dqn_model_arg: str | None, config, dqn_config) -> Pa
         )
 
     best_model_path = (
-        latest_train_experiment
-        / config.CHECKPOINT_DIR_NAME
-        / config.BEST_MODEL_FILENAME
+        latest_train_experiment / config.CHECKPOINT_DIR_NAME / config.BEST_MODEL_FILENAME
     )
     if not best_model_path.exists():
         raise FileNotFoundError(
@@ -78,7 +76,11 @@ def main() -> None:
         config = apply_overrides(config, gate_overrides, source_name="GATE")
 
     resolved_dqn_model_path = _resolve_dqn_model_path(args.dqn_model, config, dqn_config)
-    gate_state_path = None if args.no_load_gate_state else (Path(args.gate_state_path) if args.gate_state_path else None)
+    gate_state_path = (
+        None
+        if args.no_load_gate_state
+        else (Path(args.gate_state_path) if args.gate_state_path else None)
+    )
 
     compare_control_strategies(
         dqn_model_path=resolved_dqn_model_path,

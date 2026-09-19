@@ -5,8 +5,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import RewardCalculator as BaseRewardCalculator
+
 from et_prl.config.dqn import DQNConfig
+from et_prl.environments import RewardCalculator as BaseRewardCalculator
 
 # 冷机性能模型系数（电容温度多项式 / EIR-温度多项式 / EIR-PLR 多项式）。
 # 拟合自冷机性能曲线，作为奖励模型的固有常数，故提为模块级常量。
@@ -49,9 +50,6 @@ class RewardCalculator(BaseRewardCalculator):
         chiller_high_threshold: float,
         chiller_medium_threshold: float,
         chiller_low_threshold: float,
-        f_nominal: float,
-        f_cw: float,
-        f_tower: float,
         f_chw: float,
         c_p: float,
         density_water: float,
@@ -76,9 +74,6 @@ class RewardCalculator(BaseRewardCalculator):
         self.chiller_medium_threshold = float(chiller_medium_threshold)
         self.chiller_low_threshold = float(chiller_low_threshold)
 
-        self.f_nominal = float(f_nominal)
-        self.f_cw = float(f_cw)
-        self.f_tower = float(f_tower)
         self.f_chw = float(f_chw)
         self.c_p = float(c_p)
         self.density_water = float(density_water)
@@ -100,7 +95,9 @@ class RewardCalculator(BaseRewardCalculator):
             raise ValueError("density_water 必须大于 0")
 
     @classmethod
-    def from_config(cls, config: DQNConfig, data: pd.DataFrame, action_space: np.ndarray) -> "RewardCalculator":
+    def from_config(
+        cls, config: DQNConfig, data: pd.DataFrame, action_space: np.ndarray
+    ) -> RewardCalculator:
         """从 DQNConfig 构造奖励计算器，收敛各调用点重复的 19 参数构造。"""
         return cls(
             data=data,
@@ -116,9 +113,6 @@ class RewardCalculator(BaseRewardCalculator):
             chiller_high_threshold=config.CHILLER_HIGH_THRESHOLD,
             chiller_medium_threshold=config.CHILLER_MEDIUM_THRESHOLD,
             chiller_low_threshold=config.CHILLER_LOW_THRESHOLD,
-            f_nominal=config.CHILLER_F_NOMINAL,
-            f_cw=config.CHILLER_F_CW,
-            f_tower=config.CHILLER_F_TOWER,
             f_chw=config.CHILLER_F_CHW,
             c_p=config.CHILLER_CP,
             density_water=config.CHILLER_WATER_DENSITY,
@@ -135,7 +129,9 @@ class RewardCalculator(BaseRewardCalculator):
             return [1, 0]
         return [1, 1]
 
-    def _compute_physical_terms(self, cooling_load: float, outdoor_temp: float, action_value: float) -> tuple[float, float, int, float]:
+    def _compute_physical_terms(
+        self, cooling_load: float, outdoor_temp: float, action_value: float
+    ) -> tuple[float, float, int, float]:
         if cooling_load <= 0:
             return 0.0, float(action_value), 0, 0.0
 
@@ -151,11 +147,27 @@ class RewardCalculator(BaseRewardCalculator):
         plr = float(np.clip(clc / self.chiller_capacity, 0.0, 1.5))
         t_cwr = outdoor_temp
 
-        chiller_cap_f_temp = b1 + b2 * action_value + b3 * action_value**2 + b4 * t_cwr + b5 * t_cwr**2 + b6 * t_cwr * action_value
-        chiller_eir_f_temp = d1 + d2 * action_value + d3 * action_value**2 + d4 * t_cwr + d5 * t_cwr**2 + d6 * t_cwr * action_value
+        chiller_cap_f_temp = (
+            b1
+            + b2 * action_value
+            + b3 * action_value**2
+            + b4 * t_cwr
+            + b5 * t_cwr**2
+            + b6 * t_cwr * action_value
+        )
+        chiller_eir_f_temp = (
+            d1
+            + d2 * action_value
+            + d3 * action_value**2
+            + d4 * t_cwr
+            + d5 * t_cwr**2
+            + d6 * t_cwr * action_value
+        )
         chiller_eir_f_plr = g1 + g2 * plr + g3 * plr**2
 
-        p_chiller_single = self.chiller_ref_power * chiller_cap_f_temp * chiller_eir_f_plr * chiller_eir_f_temp
+        p_chiller_single = (
+            self.chiller_ref_power * chiller_cap_f_temp * chiller_eir_f_plr * chiller_eir_f_temp
+        )
         if not np.isfinite(p_chiller_single):
             p_chiller_single = 0.0
         p_chiller_single = max(float(p_chiller_single), 0.0)
@@ -165,10 +177,16 @@ class RewardCalculator(BaseRewardCalculator):
         row = self.data.iloc[step_index]
 
         cooling_load = float(row["CL"]) if "CL" in row else float(row.iloc[0])
-        outdoor_temp = float(row["Twb"]) if "Twb" in row else float(row.iloc[1] if len(row) > 1 else row.iloc[0])
+        outdoor_temp = (
+            float(row["Twb"])
+            if "Twb" in row
+            else float(row.iloc[1] if len(row) > 1 else row.iloc[0])
+        )
         action_value = float(action_value)
 
-        clc, t_chwr, chiller_count, p_chiller_single = self._compute_physical_terms(cooling_load, outdoor_temp, action_value)
+        clc, t_chwr, chiller_count, p_chiller_single = self._compute_physical_terms(
+            cooling_load, outdoor_temp, action_value
+        )
 
         energy_score = 1.0 - p_chiller_single / self.chiller_ref_power
         comfort_score = math.exp(-0.5 * ((t_chwr - self.supply_temp_ref) / self.comfort_sigma) ** 2)
@@ -185,4 +203,3 @@ class RewardCalculator(BaseRewardCalculator):
             "single_chiller_load": float(clc),
         }
         return float(reward), info
-

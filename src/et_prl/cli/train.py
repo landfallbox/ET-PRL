@@ -1,7 +1,7 @@
 import argparse
 
-from et_prl.training.lstm_train import train_lstm
 from et_prl.training.dqn_train import train_dqn
+from et_prl.training.lstm_train import train_lstm
 
 
 def main_dqn() -> None:

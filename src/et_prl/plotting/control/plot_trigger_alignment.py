@@ -47,7 +47,12 @@ def _validate_columns(df: pd.DataFrame) -> None:
 def _rolling_mean(values: np.ndarray, window: int) -> np.ndarray:
     if window <= 1:
         return values
-    return pd.Series(values).rolling(window=window, min_periods=1, center=True).mean().to_numpy(dtype=float)
+    return (
+        pd.Series(values)
+        .rolling(window=window, min_periods=1, center=True)
+        .mean()
+        .to_numpy(dtype=float)
+    )
 
 
 def _merge_short_runs(values: np.ndarray, min_run_length: int) -> np.ndarray:
@@ -117,7 +122,9 @@ def _build_paper_event_mask(
     if lambda_col in event_df.columns:
         lambda_state = _to_binary_state(event_df[lambda_col])
     elif "energy_score" in event_df.columns:
-        lambda_state = (pd.to_numeric(event_df["energy_score"], errors="coerce").fillna(0.0) <= 0.5).astype(int)
+        lambda_state = (
+            pd.to_numeric(event_df["energy_score"], errors="coerce").fillna(0.0) <= 0.5
+        ).astype(int)
         notes.append("lambda 缺失，使用 energy_score<=0.5 作为高电价代理")
     else:
         lambda_state = pd.Series(np.zeros(len(event_df), dtype=int), index=event_df.index)
@@ -202,7 +209,11 @@ def _build_alignment_figure(
     trigger_true = int(trigger_mask.sum())
     criterion_consistency = float((criterion_mask == trigger_mask).mean())
     precision = float(overlap_mask.sum() / trigger_true) if trigger_true > 0 else 0.0
-    recall = float(overlap_mask.sum() / int(high_change_mask.sum())) if int(high_change_mask.sum()) > 0 else 0.0
+    recall = (
+        float(overlap_mask.sum() / int(high_change_mask.sum()))
+        if int(high_change_mask.sum()) > 0
+        else 0.0
+    )
     f1 = float(2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
 
     plt.style.use("seaborn-v0_8-whitegrid")
@@ -278,7 +289,7 @@ def _build_alignment_figure(
         norm=norm,
         aspect="auto",
         interpolation="nearest",
-        extent=[x_min, x_max, 0.0, 1.0],
+        extent=(x_min, x_max, 0.0, 1.0),
         origin="lower",
     )
 
@@ -342,7 +353,10 @@ def main() -> None:
         "--output_prefix",
         type=str,
         default="outputs/figures/trigger_alignment",
-        help="输出图片名前缀（默认 outputs/figures/trigger_alignment，将生成 *_criterion.png / *_logic.png）",
+        help=(
+            "输出图片名前缀（默认 outputs/figures/trigger_alignment，"
+            "将生成 *_criterion.png / *_logic.png）"
+        ),
     )
     parser.add_argument(
         "--high_change_quantile",
@@ -363,8 +377,12 @@ def main() -> None:
         default=None,
         help="额外事件特征文件（可选，需含 step 列；用于提供 lambda/K 等）",
     )
-    parser.add_argument("--lambda_col", type=str, default="lambda_signal", help="电价状态列名（0低价/1高价）")
-    parser.add_argument("--occupancy_col", type=str, default="occupancy_state", help="占用状态列名（0无人/1有人）")
+    parser.add_argument(
+        "--lambda_col", type=str, default="lambda_signal", help="电价状态列名（0低价/1高价）"
+    )
+    parser.add_argument(
+        "--occupancy_col", type=str, default="occupancy_state", help="占用状态列名（0无人/1有人）"
+    )
     parser.add_argument("--comfort_col", type=str, default="comfort_score", help="舒适度列名")
     parser.add_argument("--th_a", type=float, default=0.4, help="论文阈值 a")
     parser.add_argument("--th_b", type=float, default=0.3, help="论文阈值 b")

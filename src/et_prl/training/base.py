@@ -1,8 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 训练器抽象基类（通用可复用实现）
-"""
+"""训练器抽象基类（通用可复用实现）。"""
 
 from abc import ABC, abstractmethod
 
@@ -52,8 +48,8 @@ class Trainer(ABC):
         epochs: int,
         logger=None,
         checkpoint_manager=None,
-        config: dict = None,
-        early_stop_patience: int = None,
+        config: dict | None = None,
+        early_stop_patience: int | None = None,
     ) -> dict:
         """
         完整的训练流程

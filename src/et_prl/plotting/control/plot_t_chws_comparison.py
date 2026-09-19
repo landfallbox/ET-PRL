@@ -12,42 +12,47 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Optional
 
 from et_prl.config.base import project_root
-from et_prl.plotting.control.plot_t_chws_macro_distribution import (
-    generate_macro_figure,
-    load_control_results as load_macro_results,
-)
 from et_prl.plotting.control.plot_t_chws_delta_analysis import (
     generate_delta_figure,
+)
+from et_prl.plotting.control.plot_t_chws_delta_analysis import (
     load_control_results as load_delta_results,
+)
+from et_prl.plotting.control.plot_t_chws_macro_distribution import (
+    generate_macro_figure,
+)
+from et_prl.plotting.control.plot_t_chws_macro_distribution import (
+    load_control_results as load_macro_results,
 )
 
 
-def main(results_dir: Optional[Path] = None, output_dir: Optional[Path] = None) -> None:
+def main(results_dir: Path | None = None, output_dir: Path | None = None) -> None:
     if results_dir is None:
         from et_prl.plotting.control.results_path import default_control_compare_results_dir
 
         results_dir = default_control_compare_results_dir()
     if output_dir is None:
-        output_dir = project_root() / 'outputs' / 'figures'
+        output_dir = project_root() / "outputs" / "figures"
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    print(f'Loading control results from {results_dir}...')
+    print(f"Loading control results from {results_dir}...")
     macro_results = load_macro_results(results_dir)
     delta_results = load_delta_results(results_dir)
 
-    output_a = output_dir / 'fig6_t_chws_macro_distribution.svg'
-    output_bc = output_dir / 'fig7_t_chws_delta_analysis.svg'
+    output_a = output_dir / "fig6_t_chws_macro_distribution.svg"
+    output_bc = output_dir / "fig7_t_chws_delta_analysis.svg"
 
     generate_macro_figure(macro_results, output_a)
     generate_delta_figure(delta_results, output_bc)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate split T_chws figures (Figure 5-2-3 and 5-2-4).')
-    parser.add_argument('--results-dir', type=Path, default=None)
-    parser.add_argument('--output-dir', type=Path, default=None)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate split T_chws figures (Figure 5-2-3 and 5-2-4)."
+    )
+    parser.add_argument("--results-dir", type=Path, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
     args = parser.parse_args()
     main(results_dir=args.results_dir, output_dir=args.output_dir)

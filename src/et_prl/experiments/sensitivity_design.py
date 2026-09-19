@@ -3,10 +3,15 @@
 本模块只含数据类与设计常量（参数规格、成对/单因子设计、轮次指标列），
 不含任何分析逻辑。供 gate_sensitivity.py 与 sensitivity_stats.py 共用。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
+from et_prl.evaluation.control.common import (
+    SAMPLE_INTERVAL_MINUTES,  # noqa: F401  (供 sensitivity_stats 等复用)
+)
 
 
 @dataclass(frozen=True)
@@ -42,7 +47,9 @@ class SingleSweepDesign:
 
 SPECS: tuple[SensitivitySpec, ...] = (
     SensitivitySpec("threshold_bias", "GATE_THRESHOLD_BIAS", "b_bias", "boundary"),
-    SensitivitySpec("trigger_hysteresis_margin", "GATE_TRIGGER_HYSTERESIS_MARGIN", "m_hys", "boundary"),
+    SensitivitySpec(
+        "trigger_hysteresis_margin", "GATE_TRIGGER_HYSTERESIS_MARGIN", "m_hys", "boundary"
+    ),
     SensitivitySpec("local_window_size", "GATE_LOCAL_WINDOW_SIZE", "W", "timescale", integer=True),
     SensitivitySpec("score_short_weight", "GATE_SCORE_SHORT_WEIGHT", "w_s", "timescale"),
     SensitivitySpec("threshold_quantile", "THRESHOLD_QUANTILE", "q", "threshold"),
@@ -81,7 +88,6 @@ SINGLE_SWEEPS: tuple[SingleSweepDesign, ...] = (
 )
 
 ZERO_SENSITIVITY_ABS_TOL = 1e-9
-SAMPLE_INTERVAL_MINUTES = 5.0
 
 ROUND_METRIC_COLUMNS: tuple[str, ...] = (
     "total_reward",

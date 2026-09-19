@@ -8,17 +8,20 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
-from et_prl.utils import CheckpointManager, ConfigManager, Logger, resolve_experiment_dir
 
+from et_prl.agents.dqn import DQNAgent
+from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.config.dqn import DQNConfig
 from et_prl.config.loader import get_default
 from et_prl.data import load_action_space, load_state_data
-from et_prl.agents.dqn import DQNAgent
-from et_prl.agents.dqn.rewards import RewardCalculator
 from et_prl.detection.streaming_gate import StreamingAnomalyGate
-
+from et_prl.utils import CheckpointManager, ConfigManager, Logger, resolve_experiment_dir
 
 TestDataSplit = Literal["test", "val", "train"]
+
+# 控制策略评估中每个环境步对应的采样间隔（分钟）。
+# 数据集为 5 分钟粒度，所有策略评估与敏感性统计共用此常量。
+SAMPLE_INTERVAL_MINUTES = 5.0
 
 
 def resolve_train_experiment_dir(train_experiment_dir: Path | None) -> Path:
@@ -44,14 +47,16 @@ def copy_train_config(
         train_config = train_config_manager.load_config()
     except FileNotFoundError:
         train_config = {}
-        logger.warning(f"训练配置文件不存在，使用当前配置类快照: {resolved_train_dir / config.CONFIG_FILENAME}")
+        logger.warning(
+            f"训练配置文件不存在，使用当前配置类快照: {resolved_train_dir / config.CONFIG_FILENAME}"
+        )
     except Exception as err:
         # YAML parser may raise ConstructorError or other subclasses of YAMLError.
         if isinstance(err, yaml.YAMLError):
             config_path = resolved_train_dir / config.CONFIG_FILENAME
             logger.warning(f"解析训练配置时出错，尝试使用 FullLoader: {err}")
             try:
-                with open(config_path, "r", encoding="utf-8") as f:
+                with open(config_path, encoding="utf-8") as f:
                     train_config = yaml.load(f, Loader=yaml.FullLoader) or {}
                 logger.info("已使用 FullLoader 成功加载训练配置")
             except Exception as ex:
@@ -61,17 +66,14 @@ def copy_train_config(
             # re-raise unexpected errors
             raise
 
-    # 优先保留训练快照中的参数（如已调优的 DQN 参数），并补齐 compare 流程涉及模块的缺失超参（如门控参数）。
+    # 优先保留训练快照中的参数（如已调优的 DQN 参数），
+    # 并补齐 compare 流程涉及模块的缺失超参（如门控参数）。
     merged_config = {
         **config.to_dict(),
         **train_config,
     }
     test_config_manager.save_config(merged_config)
     logger.info(f"已写入合并配置快照: {test_experiment_dir / config.CONFIG_FILENAME}")
-
-
-def _create_agent(config: DQNConfig, action_space: np.ndarray, device: torch.device) -> DQNAgent:
-    return DQNAgent.from_config(config=config, action_space=action_space, device=device)
 
 
 def build_test_components(
@@ -96,7 +98,7 @@ def build_test_components(
     action_space = load_action_space(config.ACTION_SPACE_PATH)
     device = torch.device(config.DEVICE)
 
-    agent = _create_agent(config, action_space, device)
+    agent = DQNAgent.from_config(config=config, action_space=action_space, device=device)
     checkpoint = CheckpointManager.load_best_model(
         experiment_dir=resolved_train_dir,
         model=agent.policy_net,
@@ -106,7 +108,9 @@ def build_test_components(
     )
     agent.policy_net.eval()
 
-    reward_calc = RewardCalculator.from_config(config=config, data=test_data, action_space=action_space)
+    reward_calc = RewardCalculator.from_config(
+        config=config, data=test_data, action_space=action_space
+    )
 
     return test_data, action_space, agent, checkpoint, reward_calc
 
@@ -114,7 +118,7 @@ def build_test_components(
 def create_streaming_gate(
     config: Any,
     test_data: pd.DataFrame,
-    logger: Logger,
+    logger: Any,
     gate_state_path: Path | None,
 ) -> StreamingAnomalyGate:
     feature_columns = config.FEATURE_COLUMNS
@@ -124,7 +128,10 @@ def create_streaming_gate(
 
     score_long_weight = getattr(config, "GATE_SCORE_LONG_WEIGHT", None)
     if score_long_weight is None:
-        score_long_weight = max(0.01, 1.0 - float(config.GATE_SCORE_SHORT_WEIGHT) - float(config.GATE_SCORE_MEDIUM_WEIGHT))
+        score_long_weight = max(
+            0.01,
+            1.0 - float(config.GATE_SCORE_SHORT_WEIGHT) - float(config.GATE_SCORE_MEDIUM_WEIGHT),
+        )
 
     gate = StreamingAnomalyGate(
         feature_dim=len(feature_columns),
@@ -174,7 +181,7 @@ def compute_extended_test_metrics(
     power_values: list[float],
     action_values: list[float],
     action_count: int,
-    sample_interval_minutes: float = 5.0,
+    sample_interval_minutes: float = SAMPLE_INTERVAL_MINUTES,
 ) -> dict[str, float | int]:
     steps = len(power_values)
     if steps == 0:

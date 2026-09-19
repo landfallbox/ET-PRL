@@ -4,10 +4,13 @@ from collections import deque
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import SequenceEnv
 
-from et_prl.evaluation.control.common import compute_extended_test_metrics, find_nearest_action_index
 from et_prl.agents.dqn import DQNAgent
+from et_prl.environments import SequenceEnv
+from et_prl.evaluation.control.common import (
+    compute_extended_test_metrics,
+    find_nearest_action_index,
+)
 
 
 def _robust_threshold(values: deque[float], fallback: float, mad_scale: float = 1.0) -> float:
@@ -18,7 +21,8 @@ def _robust_threshold(values: deque[float], fallback: float, mad_scale: float = 
     median = float(np.median(arr))
     mad = float(np.median(np.abs(arr - median)))
     threshold = median + mad_scale * mad
-    # Do not force threshold above fallback once we have enough data; this keeps triggers responsive.
+    # Do not force threshold above fallback once we have enough data;
+    # this keeps triggers responsive.
     return float(max(1e-9, threshold))
 
 
@@ -96,7 +100,9 @@ def run_event_triggered_etc(
 
     while True:
         row = data.iloc[steps]
-        current_features = {column: float(row[column]) for column in feature_columns if column in row.index}
+        current_features = {
+            column: float(row[column]) for column in feature_columns if column in row.index
+        }
 
         if prev_features is None:
             gate_signal = 1
@@ -113,7 +119,9 @@ def run_event_triggered_etc(
                 delta_buffers[column].append(delta)
                 threshold = _robust_threshold(
                     delta_buffers[column],
-                    float(max(min_thresholds.get(column, 1e-6), adaptive_thresholds.get(column, 1e-6))),
+                    float(
+                        max(min_thresholds.get(column, 1e-6), adaptive_thresholds.get(column, 1e-6))
+                    ),
                 )
                 adaptive_thresholds[column] = threshold
                 event_score = float(delta / max(threshold, 1e-9))
@@ -168,7 +176,9 @@ def run_event_triggered_etc(
                 "chiller_supply_temp": chiller_supply_temp,
                 "gate_signal": int(gate_signal),
                 "anomaly_score": float(anomaly_score),
-                "adaptive_threshold": float(max(adaptive_thresholds.values())) if adaptive_thresholds else 1.0,
+                "adaptive_threshold": float(max(adaptive_thresholds.values()))
+                if adaptive_thresholds
+                else 1.0,
                 "gate_confidence": float(min(1.0, anomaly_score)),
                 "triggered_events": ",".join(triggered_events),
             }
@@ -184,7 +194,6 @@ def run_event_triggered_etc(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,
-        sample_interval_minutes=5.0,
     )
 
     summary = {

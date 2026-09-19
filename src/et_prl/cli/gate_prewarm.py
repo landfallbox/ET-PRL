@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from et_prl.config.loader import load_config
 from et_prl.cli.overrides import apply_overrides, load_overrides
+from et_prl.config.loader import load_config
 from et_prl.detection.prewarm import prewarm_gate
 
 

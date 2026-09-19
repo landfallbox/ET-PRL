@@ -1,11 +1,7 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 模型检查点管理器（通用可复用实现）
-"""
+"""模型检查点管理器（通用可复用实现）。"""
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch
 
@@ -38,10 +34,10 @@ class CheckpointManager:
     def save_checkpoint(
         self,
         model: torch.nn.Module,
-        optimizer: Optional[torch.optim.Optimizer],
+        optimizer: torch.optim.Optimizer | None,
         epoch: int,
-        metrics: Dict[str, float],
-        config: Optional[Dict[str, Any]],
+        metrics: dict[str, float],
+        config: dict[str, Any] | None,
         filename: str = "checkpoint.pth",
         is_best: bool = False,
         best_filename: str = "best_model.pth",
@@ -80,9 +76,9 @@ class CheckpointManager:
         self,
         filepath: Path,
         model: torch.nn.Module,
-        optimizer: Optional[torch.optim.Optimizer] = None,
+        optimizer: torch.optim.Optimizer | None = None,
         map_location=None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         加载检查点到模型和优化器
 
@@ -109,8 +105,8 @@ class CheckpointManager:
 
     @staticmethod
     def find_latest_experiment(
-        experiment_name: str, mode: str = "train", log_root_dir: Optional[Path] = None
-    ) -> Optional[Path]:
+        experiment_name: str, mode: str = "train", log_root_dir: Path | None = None
+    ) -> Path | None:
         """
         查找指定实验的最新实验目录
 
@@ -153,7 +149,7 @@ class CheckpointManager:
         best_filename: str = "best_model.pth",
         checkpoint_dir_name: str = "checkpoints",
         map_location=None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         从实验目录加载最优模型
 

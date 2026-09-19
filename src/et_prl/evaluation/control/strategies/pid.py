@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import SequenceEnv
 
-from et_prl.evaluation.control.common import compute_extended_test_metrics, find_nearest_action_index
+from et_prl.environments import SequenceEnv
+from et_prl.evaluation.control.common import (
+    compute_extended_test_metrics,
+    find_nearest_action_index,
+)
 
 
 def run_pid(
@@ -56,11 +59,14 @@ def run_pid(
             integral = float(np.clip(integral + error, -abs(integral_limit), abs(integral_limit)))
         derivative_raw = float(error - prev_error) if steps > 0 else 0.0
         filtered_derivative = float(
-            derivative_filter_alpha * filtered_derivative + (1.0 - derivative_filter_alpha) * derivative_raw
+            derivative_filter_alpha * filtered_derivative
+            + (1.0 - derivative_filter_alpha) * derivative_raw
         )
 
         # PID 计算原始连续控制量，再映射到离散动作空间
-        raw_action_value = float(current_action_value + kp * error + ki * integral + kd * filtered_derivative)
+        raw_action_value = float(
+            current_action_value + kp * error + ki * integral + kd * filtered_derivative
+        )
         bounded_action_value = float(
             np.clip(
                 raw_action_value,
@@ -70,10 +76,10 @@ def run_pid(
         )
         selected_action_idx = find_nearest_action_index(action_space, bounded_action_value)
         current_action_value = float(action_space[selected_action_idx])
-        
+
         action_update_count += 1
 
-        next_state, _, terminated, _, info = env.step(current_action_value)
+        _, _, terminated, _, info = env.step(current_action_value)
 
         steps += 1
         energy_score = float(info.get("energy_score", 0.0))
@@ -110,7 +116,6 @@ def run_pid(
             }
         )
 
-        state = next_state
         if terminated:
             break
 
@@ -118,14 +123,15 @@ def run_pid(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,
-        sample_interval_minutes=5.0,
     )
 
     summary = {
         "strategy": "pid",
         "steps": steps,
         "avg_power_chiller": float(np.mean(power_values)) if power_values else 0.0,
-        "avg_energy_score": float(np.mean([r["energy_score"] for r in records])) if records else 0.0,
+        "avg_energy_score": float(np.mean([r["energy_score"] for r in records]))
+        if records
+        else 0.0,
         "action_count": int(action_update_count),
         "E_total_kwh": float(extended_metrics["E_total_kwh"]),
         "E_daily_kwh_per_day": float(extended_metrics["E_daily_kwh_per_day"]),

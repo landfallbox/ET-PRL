@@ -1,14 +1,10 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/04 星期二
-@Description : 指标记录器
-"""
+"""指标记录器。"""
 
 import json
 import math
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch
 
@@ -26,10 +22,10 @@ class MetricsRecorder:
     def __init__(
         self,
         experiment_dir: Path,
-        metrics_filename: Optional[str] = None,
-        history_filename: Optional[str] = None,
-        results_dir: Optional[Path] = None,
-        tb_dir: Optional[Path] = None,
+        metrics_filename: str | None = None,
+        history_filename: str | None = None,
+        results_dir: Path | None = None,
+        tb_dir: Path | None = None,
     ):
         """
         初始化指标记录器
@@ -73,7 +69,7 @@ class MetricsRecorder:
             self._writer.close()
             self._writer = None
 
-    def save_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None):
+    def save_metrics(self, metrics: dict[str, Any], step: int | None = None):
         """
         保存指标到 metrics.json
 
@@ -88,7 +84,7 @@ class MetricsRecorder:
         with open(metrics_file, "w", encoding="utf-8") as f:
             json.dump(self.metrics, f, indent=2, ensure_ascii=False)
 
-    def save_training_history(self, history: Dict[str, Any]):
+    def save_training_history(self, history: dict[str, Any]):
         """
         保存训练历史到 CSV 文件
 
@@ -132,7 +128,7 @@ class MetricsRecorder:
         # 批量写入 TensorBoard 事件文件（训练结束时一次性生成曲线）
         self._log_records_to_tb(records)
 
-    def _log_records_to_tb(self, records: list[Dict[str, Any]]) -> None:
+    def _log_records_to_tb(self, records: list[dict[str, Any]]) -> None:
         """将训练历史记录批量写入 TensorBoard（跳过 NaN，TB 不支持 NaN）。"""
         if self._writer is None or not records:
             return
@@ -148,7 +144,7 @@ class MetricsRecorder:
                         continue
                     self._writer.add_scalar(col, float(value), step)
 
-    def _to_native(self, obj):
+    def _to_native(self, obj) -> Any:
         """
         转换为 Python 原生类型
 
@@ -160,8 +156,10 @@ class MetricsRecorder:
         """
         import numpy as np
 
-        if isinstance(obj, (torch.Tensor, np.ndarray)):
+        if isinstance(obj, torch.Tensor):
             return obj.item() if obj.numel() == 1 else obj.tolist()
+        elif isinstance(obj, np.ndarray):
+            return obj.item() if obj.size == 1 else obj.tolist()
         elif isinstance(obj, dict):
             return {k: self._to_native(v) for k, v in obj.items()}
         elif isinstance(obj, (list, tuple)):

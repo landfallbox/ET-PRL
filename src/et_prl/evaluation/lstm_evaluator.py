@@ -1,10 +1,7 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : LSTM 模型评估器
-"""
+"""LSTM 模型评估器。"""
 
-from typing import Any, Callable, Dict
+from collections.abc import Callable
+from typing import Any
 
 import torch
 from torch.utils.data import DataLoader
@@ -22,7 +19,7 @@ class LSTMEvaluator(Evaluator):
     - 计算 loss 和可配置的评估指标
     """
 
-    def __init__(self, model, loss_fn, device: str, metrics: Dict[str, Callable] = None):
+    def __init__(self, model, loss_fn, device: str, metrics: dict[str, Callable] | None = None):
         """
         初始化评估器
 
@@ -41,7 +38,7 @@ class LSTMEvaluator(Evaluator):
         else:
             self.metrics = metrics
 
-    def evaluate(self, data_loader: DataLoader) -> Dict[str, Any]:
+    def evaluate(self, data_loader: DataLoader) -> dict[str, Any]:
         """
         在数据集上进行评估（用于验证和测试）
 

@@ -42,7 +42,7 @@ def coerce_to_existing_type(existing_value: Any, new_value: Any) -> Any:
 
 
 def load_overrides(config_path: Path) -> dict[str, Any]:
-    with open(config_path, "r", encoding="utf-8") as file:
+    with open(config_path, encoding="utf-8") as file:
         payload = json.load(file)
 
     if not isinstance(payload, dict):

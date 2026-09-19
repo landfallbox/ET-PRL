@@ -1,15 +1,11 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/24 星期二
-@Description : DQN 数据划分脚本
-"""
+"""DQN 数据划分脚本。"""
 
 from pathlib import Path
 
 import pandas as pd
 
-from et_prl.data import split_data
 from et_prl.config.loader import get_default, load_config
+from et_prl.data import split_data
 
 
 def _validate_split_ratios(train_ratio: float, val_ratio: float, test_ratio: float) -> None:

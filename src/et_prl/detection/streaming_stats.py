@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import Optional
 
 import numpy as np
 
@@ -25,7 +24,7 @@ class StreamingStats:
         feature_dim: int,
         ema_decay: float = 0.01,
         window_size: int = 1000,
-        initialize_with_data: Optional[np.ndarray] = None,
+        initialize_with_data: np.ndarray | None = None,
     ):
         self.feature_dim = feature_dim
         self.ema_decay = ema_decay

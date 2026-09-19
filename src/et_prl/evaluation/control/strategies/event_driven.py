@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import SequenceEnv
 
+from et_prl.agents.dqn import DQNAgent
+from et_prl.detection.streaming_gate import StreamingAnomalyGate
+from et_prl.environments import SequenceEnv
 from et_prl.evaluation.control.common import (
     compute_extended_test_metrics,
     find_nearest_action_index,
 )
-from et_prl.agents.dqn import DQNAgent
-from et_prl.detection.streaming_gate import StreamingAnomalyGate
 
 
 def run_event_driven(
@@ -42,7 +42,9 @@ def run_event_driven(
         anomaly_score = float(gate_decision.anomaly_score)
         adaptive_threshold = float(gate_decision.adaptive_threshold)
         gate_base_threshold = float(getattr(gate_decision, "base_threshold", np.nan))
-        gate_trigger_threshold = float(getattr(gate_decision, "trigger_threshold", adaptive_threshold))
+        gate_trigger_threshold = float(
+            getattr(gate_decision, "trigger_threshold", adaptive_threshold)
+        )
         gate_reset_threshold = float(getattr(gate_decision, "reset_threshold", np.nan))
         gate_trigger_state = int(getattr(gate_decision, "trigger_state", gate_signal))
         gate_min_interval_satisfied = int(getattr(gate_decision, "min_interval_satisfied", 1))
@@ -106,13 +108,14 @@ def run_event_driven(
 
     avg_reward_per_env_step = total_reward / steps if steps > 0 else 0.0
     avg_reward_per_action = total_reward / action_update_count if action_update_count > 0 else 0.0
-    gate_trigger_count = int(sum(int(record["gate_signal"] == 1) for record in records)) if records else 0
+    gate_trigger_count = (
+        int(sum(int(record["gate_signal"] == 1) for record in records)) if records else 0
+    )
     gate_trigger_rate = gate_trigger_count / steps if steps > 0 else 0.0
     extended_metrics = compute_extended_test_metrics(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,
-        sample_interval_minutes=5.0,
     )
 
     summary = {

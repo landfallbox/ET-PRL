@@ -1,12 +1,7 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 张量加载和转换工具
-"""
+"""张量加载和转换工具。"""
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -126,9 +121,9 @@ def create_data_loaders(
     val_targets: torch.Tensor,
     test_features: torch.Tensor,
     test_targets: torch.Tensor,
-    batch_size: Optional[int] = None,
+    batch_size: int | None = None,
     shuffle_train: bool = True,
-    config: Optional[DataLoaderConfig] = None,
+    config: DataLoaderConfig | None = None,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     创建训练、验证、测试数据加载器

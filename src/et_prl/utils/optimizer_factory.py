@@ -1,8 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 优化器工厂
-"""
+"""优化器工厂。"""
 
 import torch
 import torch.nn as nn

@@ -12,6 +12,7 @@
 - 路径字段（Path 注解）的相对路径解析为项目根绝对路径。
 - TIMESTAMP 由 loader 注入当前时间戳；运行期用 dataclasses.replace 覆盖。
 """
+
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
@@ -93,30 +94,29 @@ def _convert_value(field, value: Any, root: Path) -> Any:
     return value
 
 
-def _validate_and_build(schema: type, merged: dict[str, Any], root: Path, timestamp: str | None = None):
+def _validate_and_build(
+    schema: type, merged: dict[str, Any], root: Path, timestamp: str | None = None
+):
     if not is_dataclass(schema):
         raise ConfigError(f"{schema} 不是 dataclass，无法作为配置 schema")
     schema_fields = {f.name: f for f in fields(schema)}
 
     # TIMESTAMP 由 loader 注入（YAML 可显式提供以复现实验），须在缺失检查前
     if "TIMESTAMP" in schema_fields and "TIMESTAMP" not in merged:
-        merged["TIMESTAMP"] = timestamp if timestamp is not None else datetime.now().strftime("%Y%m%d_%H%M%S")
+        merged["TIMESTAMP"] = (
+            timestamp if timestamp is not None else datetime.now().strftime("%Y%m%d_%H%M%S")
+        )
 
     missing = [n for n in schema_fields if n not in merged]
     if missing:
-        raise ConfigError(
-            f"配置缺失字段（schema={schema.__name__}）: {', '.join(sorted(missing))}"
-        )
+        raise ConfigError(f"配置缺失字段（schema={schema.__name__}）: {', '.join(sorted(missing))}")
     unknown = [k for k in merged if k not in schema_fields]
     if unknown:
         raise ConfigError(
             f"配置含未知键（schema={schema.__name__}，请检查拼写）: {', '.join(sorted(unknown))}"
         )
 
-    kwargs = {
-        name: _convert_value(f, merged[name], root)
-        for name, f in schema_fields.items()
-    }
+    kwargs = {name: _convert_value(f, merged[name], root) for name, f in schema_fields.items()}
     return schema(**kwargs)
 
 
@@ -135,9 +135,7 @@ def _resolve_schema(name: str, _seen: set[str] | None = None) -> type:
         return PRESET_MAP[name]
     path = _configs_file(name)
     if not path.exists():
-        raise ConfigError(
-            f"未知配置预设: {name!r}，可选: {', '.join(sorted(PRESET_MAP))}"
-        )
+        raise ConfigError(f"未知配置预设: {name!r}，可选: {', '.join(sorted(PRESET_MAP))}")
     with open(path, encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     extends = data.get("extends")
@@ -153,8 +151,12 @@ def _resolve_schema(name: str, _seen: set[str] | None = None) -> type:
     raise ConfigError(f"配置 {name!r} 的 extends 链未指向任何已知预设")
 
 
-def load_config(name: str, timestamp: str | None = None):
-    """按预设名（或子目录名，如 "ablation/xxx"）加载配置。"""
+def load_config(name: str, timestamp: str | None = None) -> Any:
+    """按预设名（或子目录名，如 "ablation/xxx"）加载配置。
+
+    返回类型标注为 Any：schema 由预设名在运行期动态解析（PRESET_MAP），
+    静态分析无法推断具体配置类，调用方按预设对应的 dataclass 访问字段。
+    """
     schema = _resolve_schema(name)
     merged = _load_yaml_file(_configs_file(name), set())
     root = project_root()
@@ -164,7 +166,7 @@ def load_config(name: str, timestamp: str | None = None):
 _DEFAULT_CACHE: dict[str, Any] = {}
 
 
-def get_default(name: str):
+def get_default(name: str) -> Any:
     """返回指定预设的默认配置实例（进程内缓存）。
 
     供库代码读取"回退默认值"使用（如门控构造参数为 None 时的默认超参），
@@ -175,7 +177,7 @@ def get_default(name: str):
     return _DEFAULT_CACHE[name]
 
 
-def load_config_path(path: str | Path, timestamp: str | None = None):
+def load_config_path(path: str | Path, timestamp: str | None = None) -> Any:
     """加载任意 YAML 文件路径（支持 extends 引用 configs/ 下的预设）。"""
     p = Path(path)
     if not p.is_absolute():

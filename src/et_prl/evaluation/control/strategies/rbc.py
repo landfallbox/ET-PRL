@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import SequenceEnv
 
-from et_prl.evaluation.control.common import compute_extended_test_metrics, find_nearest_action_index
+from et_prl.environments import SequenceEnv
+from et_prl.evaluation.control.common import (
+    compute_extended_test_metrics,
+    find_nearest_action_index,
+)
 
 
 def run_rule_based_control(
@@ -93,14 +96,15 @@ def run_rule_based_control(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,
-        sample_interval_minutes=5.0,
     )
 
     summary = {
         "strategy": "rbc",
         "steps": steps,
         "total_reward": float(total_reward),
-        "avg_reward_per_action": float(total_reward / action_update_count) if action_update_count > 0 else 0.0,
+        "avg_reward_per_action": float(total_reward / action_update_count)
+        if action_update_count > 0
+        else 0.0,
         "avg_reward_per_step": float(total_reward / steps) if steps > 0 else 0.0,
         "avg_power_chiller": float(np.mean(power_values)) if power_values else 0.0,
         "avg_energy_score": float(np.mean(energy_scores)) if energy_scores else 0.0,

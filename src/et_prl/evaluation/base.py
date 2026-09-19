@@ -1,11 +1,7 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 评估器抽象基类（通用可复用实现）
-"""
+"""评估器抽象基类（通用可复用实现）。"""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 import torch
 from torch.utils.data import DataLoader
@@ -36,7 +32,7 @@ class Evaluator(ABC):
         self.model.to(device)
 
     @abstractmethod
-    def evaluate(self, data_loader: DataLoader) -> Dict[str, Any]:
+    def evaluate(self, data_loader: DataLoader) -> dict[str, Any]:
         """
         抽象方法：在数据集上进行评估
 
@@ -52,7 +48,7 @@ class Evaluator(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @torch.no_grad()
-    def validate(self, val_loader: DataLoader) -> Dict[str, Any]:
+    def validate(self, val_loader: DataLoader) -> dict[str, Any]:
         """
         在验证集上进行验证
 
@@ -65,7 +61,7 @@ class Evaluator(ABC):
         return self.evaluate(val_loader)
 
     @torch.no_grad()
-    def test(self, test_loader: DataLoader) -> Dict[str, Any]:
+    def test(self, test_loader: DataLoader) -> dict[str, Any]:
         """
         在测试集上进行测试
 

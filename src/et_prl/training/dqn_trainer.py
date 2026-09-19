@@ -4,13 +4,13 @@ from pathlib import Path
 
 import numpy as np
 import torch
+
+from et_prl.agents.dqn import DQNAgent
+from et_prl.agents.dqn.rewards import RewardCalculator as _RewardCalculator
+from et_prl.config.dqn import DQNConfig
 from et_prl.data import load_action_space, load_state_data
 from et_prl.environments import SequenceEnv
 from et_prl.utils import CheckpointManager, ExperimentContext, Logger, MetricsRecorder
-
-from et_prl.config.dqn import DQNConfig
-from et_prl.agents.dqn import DQNAgent
-from et_prl.agents.dqn.rewards import RewardCalculator as _RewardCalculator
 
 
 class DQNTrainer:
@@ -28,14 +28,15 @@ class DQNTrainer:
         if context is not None:
             self.logger = context.logger
             self.metrics_recorder = context.metrics_recorder
-            self.checkpoint_manager = (
-                context.checkpoint_manager
-                or CheckpointManager(experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME)
+            self.checkpoint_manager = context.checkpoint_manager or CheckpointManager(
+                experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME
             )
         else:
             self.logger = Logger(experiment_dir)
             self.metrics_recorder = MetricsRecorder(experiment_dir)
-            self.checkpoint_manager = CheckpointManager(experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME)
+            self.checkpoint_manager = CheckpointManager(
+                experiment_dir, checkpoint_dir_name=config.CHECKPOINT_DIR_NAME
+            )
 
     def train(self) -> None:
         self.config.validate()
@@ -53,9 +54,13 @@ class DQNTrainer:
         device = torch.device(self.config.DEVICE)
         agent = DQNAgent.from_config(config=self.config, action_space=action_space, device=device)
 
-        reward_calc = _RewardCalculator.from_config(config=self.config, data=train_data, action_space=action_space)
+        reward_calc = _RewardCalculator.from_config(
+            config=self.config, data=train_data, action_space=action_space
+        )
         train_env = SequenceEnv(train_data, self.config.STATE_COLUMNS, reward_calc)
-        val_reward_calc = _RewardCalculator.from_config(config=self.config, data=val_data, action_space=action_space)
+        val_reward_calc = _RewardCalculator.from_config(
+            config=self.config, data=val_data, action_space=action_space
+        )
         val_env = SequenceEnv(val_data, self.config.STATE_COLUMNS, val_reward_calc)
 
         self.logger.info("开始训练")
@@ -242,8 +247,3 @@ class DQNTrainer:
         self.metrics_recorder.save_training_history(history_dict)
         output_path = self.config.get_run_results_dir() / self.config.TRAINING_HISTORY_FILENAME
         self.logger.info(f"训练历史已保存: {output_path}")
-
-
-
-
-

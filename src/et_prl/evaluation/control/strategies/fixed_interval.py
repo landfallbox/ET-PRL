@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import SequenceEnv
 
+from et_prl.agents.dqn import DQNAgent
+from et_prl.environments import SequenceEnv
 from et_prl.evaluation.control.common import (
     compute_extended_test_metrics,
     find_nearest_action_index,
 )
-from et_prl.agents.dqn import DQNAgent
 
 
 def run_fixed_interval(
@@ -89,7 +89,6 @@ def run_fixed_interval(
         power_values=power_values,
         action_values=action_values,
         action_count=action_update_count,
-        sample_interval_minutes=5.0,
     )
 
     summary = {

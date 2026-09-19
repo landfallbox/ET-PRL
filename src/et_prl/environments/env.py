@@ -3,7 +3,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -16,7 +16,7 @@ class Env(ABC):
     """
 
     @abstractmethod
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self) -> tuple[np.ndarray, dict[str, Any]]:
         """
         重置环境到初始状态。
 
@@ -26,7 +26,7 @@ class Env(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, action_value: float) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action_value: float) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         """
         执行一步动作。
 

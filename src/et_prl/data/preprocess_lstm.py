@@ -1,13 +1,9 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : lstm 数据预处理
-"""
+"""lstm 数据预处理。"""
+
 import pandas as pd
 
 from et_prl.config.loader import load_config
-from et_prl.data import select_columns, split_data, build_temporal_features
-from et_prl.data import Normalizer
+from et_prl.data import Normalizer, build_temporal_features, select_columns, split_data
 
 
 def add_target_column(df: pd.DataFrame, target_column: str, target_shift: int = -1) -> pd.DataFrame:
@@ -42,7 +38,6 @@ def add_target_column(df: pd.DataFrame, target_column: str, target_shift: int = 
     return result_df
 
 
-
 def preprocess_data():
     """
     LSTM 数据预处理主函数
@@ -62,7 +57,9 @@ def preprocess_data():
 
     # 1. 加载原始数据
     print(f"加载原始数据：{config.RAW_DATA_PATH}")
-    raw_data = pd.read_csv(config.RAW_DATA_PATH,)
+    raw_data = pd.read_csv(
+        config.RAW_DATA_PATH,
+    )
     print(f"原始数据形状：{raw_data.shape}")
     print(f"数据列名：{raw_data.columns.tolist()}")
 
@@ -72,7 +69,7 @@ def preprocess_data():
     print(f"特征数据形状：{feature_data.shape}")
 
     # 3. 划分数据集
-    print(f"按比例划分数据集")
+    print("按比例划分数据集")
     print(f"训练集比例：{config.TRAIN_RATIO}")
     print(f"验证集比例：{config.VAL_RATIO}")
     print(f"测试集比例：{config.TEST_RATIO}")
@@ -82,7 +79,7 @@ def preprocess_data():
         feature_data,
         ratios=split_ratios,
         shuffle=config.SHUFFLE_DATA,
-        random_state=config.RANDOM_STATE
+        random_state=config.RANDOM_STATE,
     )
 
     train_data, val_data, test_data = data_split[0], data_split[1], data_split[2]
@@ -112,7 +109,7 @@ def preprocess_data():
     train_data = build_temporal_features(train_data, config.FEATURE_COLUMNS, config.WINDOW_LENGTH)
     val_data = build_temporal_features(val_data, config.FEATURE_COLUMNS, config.WINDOW_LENGTH)
     test_data = build_temporal_features(test_data, config.FEATURE_COLUMNS, config.WINDOW_LENGTH)
-    print(f"时序特征构建完成")
+    print("时序特征构建完成")
     print(f"训练集形状（构建特征后）：{train_data.shape}")
     print(f"验证集形状（构建特征后）：{val_data.shape}")
     print(f"测试集形状（构建特征后）：{test_data.shape}")
@@ -122,7 +119,7 @@ def preprocess_data():
     train_data = add_target_column(train_data, config.TARGET_COLUMN)
     val_data = add_target_column(val_data, config.TARGET_COLUMN)
     test_data = add_target_column(test_data, config.TARGET_COLUMN)
-    print(f"目标列添加完成")
+    print("目标列添加完成")
     print(f"训练集形状（添加目标列后）：{train_data.shape}")
     print(f"验证集形状（添加目标列后）：{val_data.shape}")
     print(f"测试集形状（添加目标列后）：{test_data.shape}")
@@ -142,10 +139,9 @@ def preprocess_data():
 
     # 9. 保存归一化参数到单个文件
     normalizer_path = config.get_normalizer_path()
-    Normalizer.save_normalizers({
-        "feature": feature_normalizer,
-        "target": target_normalizer
-    }, normalizer_path)
+    Normalizer.save_normalizers(
+        {"feature": feature_normalizer, "target": target_normalizer}, normalizer_path
+    )
     print(f"归一化参数已保存：{normalizer_path}")
 
     # 10. 保存划分后的数据

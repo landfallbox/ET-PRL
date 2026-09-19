@@ -16,11 +16,9 @@ class StreamingIsolationDepth:
         self,
         n_reference_samples: int = 500,
         update_freq: int = 100,
-        contamination: float = 0.2,
     ):
         self.n_reference_samples = n_reference_samples
         self.update_freq = update_freq
-        self.contamination = contamination
 
         self.reference_buffer = deque(maxlen=n_reference_samples)
         self.reference_array = None
@@ -94,7 +92,9 @@ class StreamingIsolationDepth:
                 if diff.size == 0:
                     continue
                 pairwise_distances = np.linalg.norm(diff, axis=1)
-                distances.extend(self._normalize_distances(pairwise_distances, feature_dim).tolist())
+                distances.extend(
+                    self._normalize_distances(pairwise_distances, feature_dim).tolist()
+                )
 
             if distances:
                 distance_array = np.asarray(distances, dtype=np.float32)

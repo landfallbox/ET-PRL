@@ -56,13 +56,19 @@ class StreamingThresholdOptimizer:
         quantile_threshold = float(np.quantile(scores, self.quantile))
         mad_threshold = self._robust_mad_threshold(scores)
 
-        candidate = self.quantile_weight * quantile_threshold + (1.0 - self.quantile_weight) * mad_threshold
+        candidate = (
+            self.quantile_weight * quantile_threshold + (1.0 - self.quantile_weight) * mad_threshold
+        )
         candidate = float(np.clip(candidate, 0.0, 1.0))
         self.local_candidate_history.append(candidate)
 
-        return (1.0 - self.local_update_rate) * self.local_threshold + self.local_update_rate * candidate
+        return (
+            1.0 - self.local_update_rate
+        ) * self.local_threshold + self.local_update_rate * candidate
 
-    def update(self, score: float, decision: int | None = None, perform_optimization: bool = True) -> None:
+    def update(
+        self, score: float, decision: int | None = None, perform_optimization: bool = True
+    ) -> None:
         self.sample_count += 1
 
         self.local_score_buffer.append(score)
@@ -74,9 +80,8 @@ class StreamingThresholdOptimizer:
             self.global_threshold = self.local_threshold
         else:
             self.global_threshold = (
-                (1 - self.global_ema_decay) * self.global_threshold
-                + self.global_ema_decay * self.local_threshold
-            )
+                1 - self.global_ema_decay
+            ) * self.global_threshold + self.global_ema_decay * self.local_threshold
 
         self.adaptive_threshold = (
             self.alpha * self.local_threshold + (1 - self.alpha) * self.global_threshold

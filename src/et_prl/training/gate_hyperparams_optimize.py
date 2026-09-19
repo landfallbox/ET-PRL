@@ -3,6 +3,7 @@
 入口 optimize_gate_hyperparameters。搜索空间/阶段管理见 gate_optimize_space，
 指标与数据切分见 gate_optimize_metrics；本文件保留优化主流程、目标函数与结果落盘。
 """
+
 from __future__ import annotations
 
 import json
@@ -12,9 +13,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from et_prl.environments import SequenceEnv
-from et_prl.utils import BayesianOptimizer, Logger
 
+from et_prl.config.loader import load_config
+from et_prl.data import load_prewarm_features
+from et_prl.environments import SequenceEnv
 from et_prl.evaluation.control.common import (
     build_test_components,
     create_streaming_gate,
@@ -22,11 +24,8 @@ from et_prl.evaluation.control.common import (
 )
 from et_prl.evaluation.control.strategies.event_driven import run_event_driven
 from et_prl.evaluation.control.strategies.fixed_interval import run_fixed_interval
-from et_prl.config.loader import load_config
-
 from et_prl.training.gate_optimize_metrics import (
     _calculate_recall_metrics,
-    _load_prewarm_features,
     _positive_part,
     _split_validation_for_optimization,
 )
@@ -37,6 +36,7 @@ from et_prl.training.gate_optimize_space import (
     _get_phase_params,
     _load_previous_phase_best,
 )
+from et_prl.utils import BayesianOptimizer, Logger
 
 
 class _ObjectiveEvaluator:
@@ -146,12 +146,18 @@ class _ObjectiveEvaluator:
             total_reward = float(summary["total_reward"])
             energy_daily = float(summary["E_daily_kwh_per_day"])
 
-            reward_drop_ratio = _positive_part((self._baseline_total_reward - total_reward) / max(abs(self._baseline_total_reward), 1e-8))
-            energy_increase_ratio = _positive_part((energy_daily - self._baseline_energy_daily) / max(abs(self._baseline_energy_daily), 1e-8))
-
-            reward_violation_ratio = _positive_part(reward_drop_ratio - self._reward_drop_tolerance_ratio) / max(
-                self._reward_drop_tolerance_ratio, 1e-8
+            reward_drop_ratio = _positive_part(
+                (self._baseline_total_reward - total_reward)
+                / max(abs(self._baseline_total_reward), 1e-8)
             )
+            energy_increase_ratio = _positive_part(
+                (energy_daily - self._baseline_energy_daily)
+                / max(abs(self._baseline_energy_daily), 1e-8)
+            )
+
+            reward_violation_ratio = _positive_part(
+                reward_drop_ratio - self._reward_drop_tolerance_ratio
+            ) / max(self._reward_drop_tolerance_ratio, 1e-8)
             energy_violation_ratio = _positive_part(
                 energy_increase_ratio - self._energy_increase_tolerance_ratio
             ) / max(self._energy_increase_tolerance_ratio, 1e-8)
@@ -189,14 +195,18 @@ class _ObjectiveEvaluator:
         except Exception:
             elapsed = time.perf_counter() - start_time
             self._logger.exception(f"Trial {trial.number} 失败")
-            self._logger.info(f"Trial {trial.number} 结束(失败) | worker={worker_name} | elapsed={elapsed:.1f}s")
+            self._logger.info(
+                f"Trial {trial.number} 结束(失败) | worker={worker_name} | elapsed={elapsed:.1f}s"
+            )
             return 1e9
 
         finally:
             with self._active_lock:
                 self._active_trials["count"] -= 1
                 current_active = self._active_trials["count"]
-            self._logger.info(f"Trial {trial.number} 释放 worker={worker_name} | active_trials={current_active}")
+            self._logger.info(
+                f"Trial {trial.number} 释放 worker={worker_name} | active_trials={current_active}"
+            )
 
 
 def _merge_best_params(
@@ -286,7 +296,8 @@ def _evaluate_holdout(
         (holdout_baseline_reward - holdout_total_reward) / max(abs(holdout_baseline_reward), 1e-8)
     )
     holdout_energy_increase_ratio = _positive_part(
-        (holdout_energy_daily - holdout_baseline_energy_daily) / max(abs(holdout_baseline_energy_daily), 1e-8)
+        (holdout_energy_daily - holdout_baseline_energy_daily)
+        / max(abs(holdout_baseline_energy_daily), 1e-8)
     )
 
     holdout_reward_violation_ratio = _positive_part(
@@ -346,12 +357,16 @@ def optimize_gate_hyperparameters(
     # 多阶段优化配置
     current_phase = getattr(base_config, "GATE_OPTIMIZATION_PHASE", "phase1")
     phase_cfg = _get_phase_params(current_phase)
-    phase_shrink_ratio = float(getattr(base_config, "GATE_OPTIMIZATION_PHASE_RANGE_SHRINK_RATIO", 0.2))
+    phase_shrink_ratio = float(
+        getattr(base_config, "GATE_OPTIMIZATION_PHASE_RANGE_SHRINK_RATIO", 0.2)
+    )
 
     if n_trials is None:
         # 根据phase使用对应的trials数
         phase_trials_attr = f"GATE_OPTIMIZATION_{current_phase.upper()}_TRIALS"
-        n_trials = int(getattr(base_config, phase_trials_attr, base_config.GATE_OPTIMIZATION_DEFAULT_TRIALS))
+        n_trials = int(
+            getattr(base_config, phase_trials_attr, base_config.GATE_OPTIMIZATION_DEFAULT_TRIALS)
+        )
     if n_jobs is None:
         n_jobs = int(base_config.GATE_OPTIMIZATION_DEFAULT_N_JOBS)
 
@@ -363,7 +378,7 @@ def optimize_gate_hyperparameters(
     logger = Logger(output_dir, log_filename="run.log")
 
     # 设置清晰的日志头
-    logger.info(f"多阶段超参优化调度")
+    logger.info("多阶段超参优化调度")
     logger.info(f"当前阶段: {current_phase.upper()}")
     logger.info(f"阶段描述: {phase_cfg['description']}")
     logger.info(f"试验次数: {n_trials}, 并行任务数: {n_jobs}")
@@ -386,16 +401,17 @@ def optimize_gate_hyperparameters(
     baseline_fixed_interval = int(base_config.GATE_OPT_BASELINE_FIXED_INTERVAL)
     validation_fit_ratio = float(getattr(base_config, "GATE_OPT_VALIDATION_FIT_RATIO", 0.8))
 
-    logger.info(
-        "目标函数: objective = action_rate + reward_penalty + energy_penalty"
-    )
+    logger.info("目标函数: objective = action_rate + reward_penalty + energy_penalty")
     logger.info(
         "其中: reward_penalty = "
-        f"{reward_drop_penalty_weight:.3f}*(max(0,reward_drop_ratio-{reward_drop_tolerance_ratio:.4f})/{max(reward_drop_tolerance_ratio, 1e-8):.4f})^2"
+        f"{reward_drop_penalty_weight:.3f}*(max(0,reward_drop_ratio-"
+        f"{reward_drop_tolerance_ratio:.4f})/{max(reward_drop_tolerance_ratio, 1e-8):.4f})^2"
     )
     logger.info(
         "其中: energy_penalty = "
-        f"{energy_increase_penalty_weight:.3f}*(max(0,energy_increase_ratio-{energy_increase_tolerance_ratio:.4f})/{max(energy_increase_tolerance_ratio, 1e-8):.4f})^2"
+        f"{energy_increase_penalty_weight:.3f}*(max(0,energy_increase_ratio-"
+        f"{energy_increase_tolerance_ratio:.4f})/"
+        f"{max(energy_increase_tolerance_ratio, 1e-8):.4f})^2"
     )
 
     resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
@@ -410,7 +426,7 @@ def optimize_gate_hyperparameters(
         val_data=val_data,
         fit_ratio=validation_fit_ratio,
     )
-    prewarm_features = _load_prewarm_features(base_config, val_df_override=fit_data)
+    prewarm_features = load_prewarm_features(base_config, val_df_override=fit_data)
 
     logger.info(
         "验证集时间切分: "
@@ -475,9 +491,17 @@ def optimize_gate_hyperparameters(
     best_params = result["best_params"]
     best_trial = optimizer.study.best_trial if optimizer.study is not None else None
     best_recall = float(best_trial.user_attrs.get("recall", 0.0)) if best_trial is not None else 0.0
-    best_precision = float(best_trial.user_attrs.get("precision", 0.0)) if best_trial is not None else 0.0
-    best_fdr = float(best_trial.user_attrs.get("false_discovery_rate", 0.0)) if best_trial is not None else 0.0
-    best_action_rate = float(best_trial.user_attrs.get("action_rate", 0.0)) if best_trial is not None else 0.0
+    best_precision = (
+        float(best_trial.user_attrs.get("precision", 0.0)) if best_trial is not None else 0.0
+    )
+    best_fdr = (
+        float(best_trial.user_attrs.get("false_discovery_rate", 0.0))
+        if best_trial is not None
+        else 0.0
+    )
+    best_action_rate = (
+        float(best_trial.user_attrs.get("action_rate", 0.0)) if best_trial is not None else 0.0
+    )
 
     # 合并多阶段参数：前阶段best + 当前阶段best + 配置默认值
     merged_best_params = _merge_best_params(previous_best_params, best_params, base_config)
@@ -497,7 +521,12 @@ def optimize_gate_hyperparameters(
     }
     # score_long_weight 为派生量（1 - short - medium，下限 0.01），不在搜索空间内
     best_config_overrides["GATE_SCORE_LONG_WEIGHT"] = float(
-        max(0.01, 1.0 - float(merged_best_params["score_short_weight"]) - float(merged_best_params["score_medium_weight"]))
+        max(
+            0.01,
+            1.0
+            - float(merged_best_params["score_short_weight"])
+            - float(merged_best_params["score_medium_weight"]),
+        )
     )
 
     holdout_test_result: dict | None = None

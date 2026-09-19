@@ -1,11 +1,8 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 数据归一化器（通用可复用实现）
-"""
+"""数据归一化器（通用可复用实现）。"""
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -32,9 +29,9 @@ class Normalizer:
         参数：
             epsilon: 防止除零的极小值，默认为 1e-8
         """
-        self.mean = None
-        self.std = None
-        self.columns = None
+        self.mean: dict[str, Any] | None = None
+        self.std: dict[str, Any] | None = None
+        self.columns: list[str] | None = None
         self.epsilon = epsilon
 
     def fit(self, df: pd.DataFrame, columns: list[str]) -> None:
@@ -53,14 +50,16 @@ class Normalizer:
             raise ValueError(f"以下列在 DataFrame 中不存在: {missing_columns}")
 
         self.columns = columns
-        self.mean = df[columns].mean().to_dict()
-        self.std = df[columns].std().to_dict()
+        means = df[columns].mean()
+        stds = df[columns].std()
+        self.mean = {col: means[col] for col in columns}
+        self.std = {col: stds[col] for col in columns}
 
         for col in self.columns:
             if self.std[col] < self.epsilon:
                 self.std[col] = self.epsilon
 
-    def transform(self, df: pd.DataFrame, columns: list[str] = None) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame, columns: list[str] | None = None) -> pd.DataFrame:
         """
         应用归一化转换
 
@@ -71,7 +70,7 @@ class Normalizer:
         返回：
             归一化后的DataFrame（原始DataFrame的副本）
         """
-        if self.mean is None or self.std is None:
+        if self.mean is None or self.std is None or self.columns is None:
             raise ValueError("Normalizer未拟合，请先调用fit()方法")
 
         if columns is None:
@@ -86,7 +85,7 @@ class Normalizer:
 
         return result_df
 
-    def inverse_transform(self, df: pd.DataFrame, columns: list[str] = None) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame, columns: list[str] | None = None) -> pd.DataFrame:
         """
         反归一化（恢复原始数据）
 
@@ -97,7 +96,7 @@ class Normalizer:
         返回：
             反归一化后的DataFrame（原始DataFrame的副本）
         """
-        if self.mean is None or self.std is None:
+        if self.mean is None or self.std is None or self.columns is None:
             raise ValueError("Normalizer未拟合，请先调用fit()方法")
 
         if columns is None:
@@ -166,7 +165,7 @@ class Normalizer:
         if not path.exists():
             raise FileNotFoundError(f"归一化参数文件不存在: {path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             params = json.load(f)
 
         self.mean = params["mean"]
@@ -216,7 +215,7 @@ class Normalizer:
         if not path.exists():
             raise FileNotFoundError(f"归一化参数文件不存在: {path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             all_params = json.load(f)
 
         normalizers = {}

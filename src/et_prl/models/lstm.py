@@ -1,8 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2025/11/18 星期二 15:18
-@Description : LSTM 模型定义（通用可复用实现）
-"""
+"""LSTM 模型定义（通用可复用实现）。"""
 
 import torch.nn as nn
 
@@ -35,7 +31,7 @@ class LSTM(nn.Module):
             batch_first: 是否将 batch 维度放在第一维，默认为 True (batch, seq, feature)
             dropout: LSTM 层之间的 dropout 比例，默认为 0.0（仅当层数 > 1 时有效）
         """
-        super(LSTM, self).__init__()
+        super().__init__()
 
         self.input_size = input_size
         self.hidden_sizes = hidden_sizes

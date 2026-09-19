@@ -1,8 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 通用评估指标函数（可复用）
-"""
+"""通用评估指标函数（可复用）。"""
 
 import torch
 from torch import Tensor
@@ -107,7 +103,9 @@ def calculate_f1(
             total_samples = sum(class_weights)
             if total_samples == 0:
                 return 0.0
-            weighted_f1 = sum(f1 * weight for f1, weight in zip(f1_per_class, class_weights))
+            weighted_f1 = sum(
+                f1 * weight for f1, weight in zip(f1_per_class, class_weights, strict=True)
+            )
             return weighted_f1 / total_samples
         else:
             raise ValueError(f"不支持的平均方式: {average}，支持: binary, macro, micro, weighted")

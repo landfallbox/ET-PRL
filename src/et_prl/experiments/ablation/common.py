@@ -3,10 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from et_prl.environments import SequenceEnv
-from et_prl.utils import create_experiment_context
-
 from et_prl.config.control_compare import ControlCompareConfig
+from et_prl.environments import SequenceEnv
 from et_prl.evaluation.control.common import (
     build_test_components,
     copy_train_config,
@@ -15,6 +13,7 @@ from et_prl.evaluation.control.common import (
     resolve_train_experiment_dir,
 )
 from et_prl.evaluation.control.strategies import run_event_driven, run_fixed_interval
+from et_prl.utils import create_experiment_context
 
 
 def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
@@ -43,7 +42,9 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
 
     return {
         "reward_change": event_reward - fixed_reward,
-        "reward_change_pct": ((event_reward - fixed_reward) / fixed_reward * 100.0) if fixed_reward != 0 else 0.0,
+        "reward_change_pct": ((event_reward - fixed_reward) / fixed_reward * 100.0)
+        if fixed_reward != 0
+        else 0.0,
         "comfort_change": float(event_summary.get("avg_comfort_score", 0.0))
         - float(fixed_summary.get("avg_comfort_score", 0.0)),
         "energy_change": float(event_summary.get("avg_energy_score", 0.0))
@@ -59,22 +60,30 @@ def _build_comparison(fixed_summary: dict, event_summary: dict) -> dict:
         "E_baseline_daily_kwh_per_day": float(e_daily_fixed),
         "E_ET_PRL_daily_kwh_per_day": float(e_daily_event),
         "E_daily_change": float(e_daily_event - e_daily_fixed),
-        "E_daily_change_pct": float(((e_daily_event - e_daily_fixed) / e_daily_fixed * 100.0) if e_daily_fixed > 0 else 0.0),
+        "E_daily_change_pct": float(
+            ((e_daily_event - e_daily_fixed) / e_daily_fixed * 100.0) if e_daily_fixed > 0 else 0.0
+        ),
         "N_daily_baseline": float(n_daily_fixed),
         "N_daily_ET_PRL": float(n_daily_event),
         "N_daily_change": float(n_daily_event - n_daily_fixed),
-        "N_daily_change_pct": float(((n_daily_event - n_daily_fixed) / n_daily_fixed * 100.0) if n_daily_fixed > 0 else 0.0),
+        "N_daily_change_pct": float(
+            ((n_daily_event - n_daily_fixed) / n_daily_fixed * 100.0) if n_daily_fixed > 0 else 0.0
+        ),
         "sigma_delta_a_baseline": float(sigma_delta_a_fixed),
         "sigma_delta_a_ET_PRL": float(sigma_delta_a_event),
         "sigma_delta_a_change": float(sigma_delta_a_event - sigma_delta_a_fixed),
         "sigma_delta_a_change_pct": float(
-            ((sigma_delta_a_event - sigma_delta_a_fixed) / sigma_delta_a_fixed * 100.0) if sigma_delta_a_fixed > 0 else 0.0
+            ((sigma_delta_a_event - sigma_delta_a_fixed) / sigma_delta_a_fixed * 100.0)
+            if sigma_delta_a_fixed > 0
+            else 0.0
         ),
         "trigger_rate_baseline": float(trigger_rate_fixed),
         "trigger_rate_ET_PRL": float(trigger_rate_event),
         "trigger_rate_change": float(trigger_rate_event - trigger_rate_fixed),
         "trigger_rate_change_pct": float(
-            ((trigger_rate_event - trigger_rate_fixed) / trigger_rate_fixed * 100.0) if trigger_rate_fixed > 0 else 0.0
+            ((trigger_rate_event - trigger_rate_fixed) / trigger_rate_fixed * 100.0)
+            if trigger_rate_fixed > 0
+            else 0.0
         ),
     }
 
@@ -95,7 +104,7 @@ def run_ablation_experiment(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     test_experiment_dir = config.LOG_ROOT_DIR / "ablation" / ablation_id / timestamp
 
-    context = create_experiment_context(
+    with create_experiment_context(
         experiment_dir=test_experiment_dir,
         config=config,
         save_config=False,
@@ -103,75 +112,80 @@ def run_ablation_experiment(
         config_filename=config.CONFIG_FILENAME,
         results_dir=test_experiment_dir / config.RESULTS_DIR_NAME,
         tb_dir=test_experiment_dir / config.TB_DIR_NAME,
-    )
-    logger = context.logger
-    metrics_recorder = context.metrics_recorder
+    ) as context:
+        logger = context.logger
+        metrics_recorder = context.metrics_recorder
 
-    resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
-    logger.info(f"使用训练实验目录: {resolved_train_dir}")
-    logger.info(f"开始消融实验: {ablation_name} ({ablation_description})")
+        resolved_train_dir = resolve_train_experiment_dir(train_experiment_dir)
+        logger.info(f"使用训练实验目录: {resolved_train_dir}")
+        logger.info(f"开始消融实验: {ablation_name} ({ablation_description})")
 
-    copy_train_config(
-        resolved_train_dir=resolved_train_dir,
-        test_experiment_dir=test_experiment_dir,
-        config=config,
-        logger=logger,
-    )
+        copy_train_config(
+            resolved_train_dir=resolved_train_dir,
+            test_experiment_dir=test_experiment_dir,
+            config=config,
+            logger=logger,
+        )
 
-    test_data, action_space, agent, checkpoint, reward_calc = build_test_components(
-        config=config,
-        resolved_train_dir=resolved_train_dir,
-    )
+        test_data, action_space, agent, checkpoint, reward_calc = build_test_components(
+            config=config,
+            resolved_train_dir=resolved_train_dir,
+        )
 
-    fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    fixed_summary, fixed_step_results = run_fixed_interval(
-        agent=agent,
-        env=fixed_env,
-        action_space=action_space,
-        fixed_interval=fixed_interval,
-        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-    )
+        fixed_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+        fixed_summary, fixed_step_results = run_fixed_interval(
+            agent=agent,
+            env=fixed_env,
+            action_space=action_space,
+            fixed_interval=fixed_interval,
+            supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        )
 
-    event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
-    event_gate = create_streaming_gate(config=config, test_data=test_data, logger=logger, gate_state_path=gate_state_path)
-    event_summary, event_step_results = run_event_driven(
-        agent=agent,
-        env=event_env,
-        action_space=action_space,
-        gate=event_gate,
-        feature_columns=config.FEATURE_COLUMNS,
-        supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
-    )
+        event_env = SequenceEnv(test_data, config.STATE_COLUMNS, reward_calc)
+        event_gate = create_streaming_gate(
+            config=config,
+            test_data=test_data,
+            logger=logger,
+            gate_state_path=gate_state_path,
+        )
+        event_summary, event_step_results = run_event_driven(
+            agent=agent,
+            env=event_env,
+            action_space=action_space,
+            gate=event_gate,
+            feature_columns=config.FEATURE_COLUMNS,
+            supply_temp_ref=config.CHILLER_SUPPLY_TEMP_REF,
+        )
 
-    comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)
-    metrics_recorder.save_metrics(
-        {
-            "mode": "ablation",
-            "ablation_id": ablation_id,
-            "ablation_name": ablation_name,
-            "ablation_description": ablation_description,
-            "train_experiment_dir": str(resolved_train_dir),
-            "best_epoch_from_train": int(checkpoint.get("epoch", -1)) + 1,
-            "best_metrics_from_train": checkpoint.get("metrics", {}),
-            "fixed_interval": int(fixed_interval),
-            "gate_state_path": str(gate_state_path) if gate_state_path is not None else None,
-            "paper_symbol_mapping": get_paper_symbol_field_mapping(),
-            "fixed_interval_summary": fixed_summary,
-            "event_driven_summary": event_summary,
-            "comparison": comparison,
-        }
-    )
+        comparison = _build_comparison(fixed_summary=fixed_summary, event_summary=event_summary)
+        metrics_recorder.save_metrics(
+            {
+                "mode": "ablation",
+                "ablation_id": ablation_id,
+                "ablation_name": ablation_name,
+                "ablation_description": ablation_description,
+                "train_experiment_dir": str(resolved_train_dir),
+                "best_epoch_from_train": int(checkpoint.get("epoch", -1)) + 1,
+                "best_metrics_from_train": checkpoint.get("metrics", {}),
+                "fixed_interval": int(fixed_interval),
+                "gate_state_path": str(gate_state_path) if gate_state_path is not None else None,
+                "paper_symbol_mapping": get_paper_symbol_field_mapping(),
+                "fixed_interval_summary": fixed_summary,
+                "event_driven_summary": event_summary,
+                "comparison": comparison,
+            }
+        )
 
-    results_dir = test_experiment_dir / config.RESULTS_DIR_NAME
-    fixed_step_results_path = results_dir / "fixed_interval_step_results.csv"
-    event_step_results_path = results_dir / "event_driven_step_results.csv"
-    fixed_step_results.to_csv(fixed_step_results_path, index=False)
-    event_step_results.to_csv(event_step_results_path, index=False)
+        results_dir = test_experiment_dir / config.RESULTS_DIR_NAME
+        fixed_step_results_path = results_dir / "fixed_interval_step_results.csv"
+        event_step_results_path = results_dir / "event_driven_step_results.csv"
+        fixed_step_results.to_csv(fixed_step_results_path, index=False)
+        event_step_results.to_csv(event_step_results_path, index=False)
 
-    logger.info(
-        "消融结果: "
-        f"ablation={ablation_name}, "
-        f"PPR={comparison['PPR']:.4f}, "
-        f"ACR={comparison['ACR']:.4f}, "
-        f"action_reduction_pct={comparison['action_reduction_pct']:.2f}%"
-    )
+        logger.info(
+            "消融结果: "
+            f"ablation={ablation_name}, "
+            f"PPR={comparison['PPR']:.4f}, "
+            f"ACR={comparison['ACR']:.4f}, "
+            f"action_reduction_pct={comparison['action_reduction_pct']:.2f}%"
+        )

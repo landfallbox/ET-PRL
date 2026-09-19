@@ -4,10 +4,8 @@ from dataclasses import replace
 from datetime import datetime
 
 from et_prl.config.loader import load_config
-from et_prl.utils import create_experiment_context
-
-from et_prl.utils import configure_reproducibility
 from et_prl.training.dqn_trainer import DQNTrainer
+from et_prl.utils import configure_reproducibility, create_experiment_context
 
 
 def _build_run_config(base_config, run_index: int, total_runs: int):
@@ -51,4 +49,3 @@ def train_dqn(runs: int = 1) -> None:
             trainer.train()
         finally:
             context.close()
-

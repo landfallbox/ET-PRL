@@ -8,10 +8,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ..base import Agent
-from .replay_buffer import ReplayBuffer
 from et_prl.models import QNetwork
 from et_prl.utils import create_optimizer
+
+from ..base import Agent
+from .replay_buffer import ReplayBuffer
 
 
 class DQNAgent(Agent):
@@ -81,7 +82,7 @@ class DQNAgent(Agent):
         self.learn_counter = 0
 
     @classmethod
-    def from_config(cls, config, action_space: np.ndarray, device: torch.device) -> "DQNAgent":
+    def from_config(cls, config, action_space: np.ndarray, device: torch.device) -> DQNAgent:
         """从 DQNConfig 构造智能体，收敛各调用点重复的 12 参数构造。"""
         return cls(
             state_size=config.STATE_SIZE,

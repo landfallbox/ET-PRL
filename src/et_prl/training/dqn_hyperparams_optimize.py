@@ -8,16 +8,15 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from et_prl.environments import SequenceEnv
-from et_prl.utils import BayesianOptimizer, HyperparameterSpace, Logger
 
-from et_prl.config.dqn import DQNConfig
 from et_prl.agents.dqn import DQNAgent
-from et_prl.data import load_action_space, load_state_data
-from et_prl.utils import configure_reproducibility
 from et_prl.agents.dqn.rewards import RewardCalculator
-from et_prl.training.dqn_trainer import DQNTrainer
+from et_prl.config.dqn import DQNConfig
 from et_prl.config.loader import load_config
+from et_prl.data import load_action_space, load_state_data
+from et_prl.environments import SequenceEnv
+from et_prl.training.dqn_trainer import DQNTrainer
+from et_prl.utils import BayesianOptimizer, HyperparameterSpace, Logger, configure_reproducibility
 
 
 def _parse_hidden_layout(layout: str) -> list[int]:
@@ -34,17 +33,20 @@ def _create_search_space() -> HyperparameterSpace:
         .add_int("batch_size", 32, 256)
         .add_float("epsilon_decay", 0.990, 0.9995)
         .add_int("target_update_freq", 50, 300)
-        .add_categorical("hidden_layout", [
-            "128",
-            "192",
-            "256",
-            "320",
-            "192,96",
-            "256,128",
-            "320,160",
-            "256,128,64",
-            "320,160,80",
-        ])
+        .add_categorical(
+            "hidden_layout",
+            [
+                "128",
+                "192",
+                "256",
+                "320",
+                "192,96",
+                "256,128",
+                "320,160",
+                "256,128,64",
+                "320,160,80",
+            ],
+        )
         .add_categorical("memory_capacity", [20000, 50000, 80000])
         .add_float("weight_efficiency", 0.30, 0.80)
         .add_float("comfort_sigma", 1.0, 3.0)
@@ -70,7 +72,9 @@ def _build_trial_config(base_config, params: dict, max_episodes: int):
         "REWARD_WEIGHT_COMFORT": 1.0 - weight_efficiency,
         "NUM_EPISODES": int(max_episodes),
         "VAL_INTERVAL": max(1, min(base_config.VAL_INTERVAL, max_episodes)),
-        "EARLY_STOPPING_PATIENCE": max(2, min(base_config.EARLY_STOPPING_PATIENCE, max_episodes // 3 or 2)),
+        "EARLY_STOPPING_PATIENCE": max(
+            2, min(base_config.EARLY_STOPPING_PATIENCE, max_episodes // 3 or 2)
+        ),
     }
     return replace(base_config, **updates)
 
@@ -95,8 +99,10 @@ def _create_objective(
             current_active = active_trials["count"]
 
         logger.info(
-            f"Trial {trial.number} 开始 | worker={worker_name} | active_trials={current_active} | "
-            f"lr={params['learning_rate']:.2e}, bs={int(params['batch_size'])}, hidden={params['hidden_layout']}"
+            f"Trial {trial.number} 开始 | worker={worker_name} | "
+            f"active_trials={current_active} | "
+            f"lr={params['learning_rate']:.2e}, bs={int(params['batch_size'])}, "
+            f"hidden={params['hidden_layout']}"
         )
 
         try:
@@ -107,10 +113,16 @@ def _create_objective(
             trainer = DQNTrainer(trial_config, trial_dir)
             device = torch.device(trial_config.DEVICE)
 
-            agent = DQNAgent.from_config(config=trial_config, action_space=action_space, device=device)
+            agent = DQNAgent.from_config(
+                config=trial_config, action_space=action_space, device=device
+            )
 
-            train_reward_calc = RewardCalculator.from_config(config=trial_config, data=train_data, action_space=action_space)
-            val_reward_calc = RewardCalculator.from_config(config=trial_config, data=val_data, action_space=action_space)
+            train_reward_calc = RewardCalculator.from_config(
+                config=trial_config, data=train_data, action_space=action_space
+            )
+            val_reward_calc = RewardCalculator.from_config(
+                config=trial_config, data=val_data, action_space=action_space
+            )
             train_env = SequenceEnv(train_data, trial_config.STATE_COLUMNS, train_reward_calc)
             val_env = SequenceEnv(val_data, trial_config.STATE_COLUMNS, val_reward_calc)
 
@@ -139,30 +151,35 @@ def _create_objective(
             elapsed_sec = time.perf_counter() - trial_start
             logger.info(
                 f"Trial {trial.number} 完成: best_val_reward={best_val_reward:.6f}, "
-                f"lr={trial_config.LEARNING_RATE:.2e}, bs={trial_config.BATCH_SIZE}, hidden={trial_config.HIDDEN_SIZES}, "
-                f"elapsed={elapsed_sec:.1f}s"
+                f"lr={trial_config.LEARNING_RATE:.2e}, bs={trial_config.BATCH_SIZE}, "
+                f"hidden={trial_config.HIDDEN_SIZES}, elapsed={elapsed_sec:.1f}s"
             )
 
             return -best_val_reward
 
         except Exception as exc:
             elapsed_sec = time.perf_counter() - trial_start
-            logger.exception(
-                f"Trial {trial.number} 失败: {exc}"
+            logger.exception(f"Trial {trial.number} 失败: {exc}")
+            logger.info(
+                f"Trial {trial.number} 结束(失败) | worker={worker_name} | "
+                f"elapsed={elapsed_sec:.1f}s"
             )
-            logger.info(f"Trial {trial.number} 结束(失败) | worker={worker_name} | elapsed={elapsed_sec:.1f}s")
             return 1e9
 
         finally:
             with active_lock:
                 active_trials["count"] -= 1
                 current_active = active_trials["count"]
-            logger.info(f"Trial {trial.number} 释放 worker={worker_name} | active_trials={current_active}")
+            logger.info(
+                f"Trial {trial.number} 释放 worker={worker_name} | active_trials={current_active}"
+            )
 
     return objective
 
 
-def optimize_dqn_hyperparameters(n_trials: int = 30, max_episodes: int = 30, n_jobs: int = 1) -> dict:
+def optimize_dqn_hyperparameters(
+    n_trials: int = 30, max_episodes: int = 30, n_jobs: int = 1
+) -> dict:
     base_config = load_config("dqn")
     output_dir = base_config.get_optimization_dir() / base_config.TIMESTAMP
     output_dir.mkdir(parents=True, exist_ok=True)

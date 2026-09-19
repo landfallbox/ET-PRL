@@ -32,9 +32,22 @@ def _plot_gate(trials: pd.DataFrame, out_path: Path) -> None:
         alpha=0.8,
         label="Trial composite score",
     )
-    plt.plot(trials["trial_number"], trials["running_best"], linewidth=2.0, label="Running best composite")
-    best_row = trials.loc[trials["composite_score"].idxmax()]
-    plt.scatter([best_row["trial_number"]], [best_row["composite_score"]], s=52, marker="*", zorder=5, label="Best trial")
+    plt.plot(
+        trials["trial_number"],
+        trials["running_best"],
+        linewidth=2.0,
+        label="Running best composite",
+    )
+    best_pos = int(trials["composite_score"].to_numpy().argmax())
+    best_row = trials.iloc[best_pos]
+    plt.scatter(
+        [best_row["trial_number"]],
+        [best_row["composite_score"]],
+        s=52,
+        marker="*",
+        zorder=5,
+        label="Best trial",
+    )
     cbar = plt.colorbar(scatter)
     cbar.set_label("Action Rate")
     plt.xlabel("Trial Number")
@@ -48,7 +61,7 @@ def _plot_gate(trials: pd.DataFrame, out_path: Path) -> None:
 
 
 def _latest_gate_trials_file() -> Path:
-    """在 outputs/runs/online_anomaly_detection/optimization/<ts>/gate/ 下找最新的 gate_trials.csv。"""
+    """在 optimization/<ts>/gate/ 下找最新的 gate_trials.csv。"""
     opt_root = project_root() / "outputs" / "runs" / "online_anomaly_detection" / "optimization"
     if not opt_root.exists():
         raise FileNotFoundError(f"未找到门控优化目录: {opt_root}")

@@ -1,6 +1,7 @@
 """
 使用最新 LSTM 训练实验对 raw_data.csv 进行 CL_next 预测
 """
+
 import json
 from pathlib import Path
 
@@ -13,7 +14,9 @@ from et_prl.models import LSTM
 from et_prl.utils import CheckpointManager, ConfigManager
 
 
-def _zscore_transform(df: pd.DataFrame, mean_dict: dict, std_dict: dict, columns: list[str]) -> pd.DataFrame:
+def _zscore_transform(
+    df: pd.DataFrame, mean_dict: dict, std_dict: dict, columns: list[str]
+) -> pd.DataFrame:
     """对指定列执行 z-score 标准化。"""
     result_df = df.copy()
     for col in columns:
@@ -33,7 +36,8 @@ def _build_sequences(feature_array, window_length: int):
     num_rows = feature_tensor.shape[0]
     if num_rows <= window_length:
         raise ValueError(
-            f"样本数量不足，当前行数={num_rows}，窗口长度={window_length}，至少需要 {window_length + 1} 行"
+            f"样本数量不足，当前行数={num_rows}，窗口长度={window_length}，"
+            f"至少需要 {window_length + 1} 行"
         )
 
     sequence_features = build_sliding_window_sequences(feature_tensor, window_length)
@@ -122,12 +126,14 @@ def predict_cl_next(
     y_pred_target = y_pred * target_std + target_mean
     y_pred_cl = y_pred_target * cl_std + cl_mean
 
-    aligned_df = raw_df.iloc[window_length - 1:-1].copy()
-    result_df = pd.DataFrame({
-        "CL": aligned_df["CL"].to_numpy(),
-        "Twb": aligned_df["Twb"].to_numpy(),
-        "CL_next": y_pred_cl,
-    })
+    aligned_df = raw_df.iloc[window_length - 1 : -1].copy()
+    result_df = pd.DataFrame(
+        {
+            "CL": aligned_df["CL"].to_numpy(),
+            "Twb": aligned_df["Twb"].to_numpy(),
+            "CL_next": y_pred_cl,
+        }
+    )
 
     output_csv_path.parent.mkdir(parents=True, exist_ok=True)
     result_df.to_csv(output_csv_path, index=False)

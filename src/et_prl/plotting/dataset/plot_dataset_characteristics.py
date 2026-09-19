@@ -7,15 +7,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from et_prl.config.base import project_root
+from et_prl.plotting._style import apply_paper_style
 
-plt.rcParams.update(
-    {
-        'font.family': 'sans-serif',
-        'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
-        'mathtext.fontset': 'dejavusans',
-        'axes.unicode_minus': False,
-    }
-)
+apply_paper_style(unicode_minus=False)
 
 
 def _load_data(data_path: Path) -> pd.DataFrame:
@@ -76,7 +70,14 @@ def plot_dataset_overview(df: pd.DataFrame, output_path: Path) -> None:
 
     # Subplot (a): representative-period trends.
     ax0 = axes[0]
-    ax0.plot(rep_df["time"], cl_smooth, color="#1d4e89", linewidth=1.3, alpha=0.95, label="Cooling Load (CL)")
+    ax0.plot(
+        rep_df["time"],
+        cl_smooth,
+        color="#1d4e89",
+        linewidth=1.3,
+        alpha=0.95,
+        label="Cooling Load (CL)",
+    )
     ax0.set_ylabel("CL (kW)")
     ax0.set_title("(a) Representative 14-day time series", loc="left", fontsize=11, pad=6)
     ax0.grid(alpha=0.25, linestyle="--")
@@ -84,7 +85,14 @@ def plot_dataset_overview(df: pd.DataFrame, output_path: Path) -> None:
     ax0.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
 
     ax0_t = ax0.twinx()
-    ax0_t.plot(rep_df["time"], twb_smooth, color="#b23a48", linewidth=1.1, alpha=0.85, label="Wet-bulb Temp (Twb)")
+    ax0_t.plot(
+        rep_df["time"],
+        twb_smooth,
+        color="#b23a48",
+        linewidth=1.1,
+        alpha=0.85,
+        label="Wet-bulb Temp (Twb)",
+    )
     ax0_t.set_ylabel(r"Twb ($^\circ$C)")
 
     lines, labels = ax0.get_legend_handles_labels()
@@ -103,10 +111,7 @@ def plot_dataset_overview(df: pd.DataFrame, output_path: Path) -> None:
     ax1 = axes[1]
     hour_index = df["time"].dt.hour + df["time"].dt.minute / 60.0
     profile = (
-        df.assign(hour=hour_index)
-        .groupby("hour")[["CL", "Twb"]]
-        .agg(["mean", "std"])
-        .reset_index()
+        df.assign(hour=hour_index).groupby("hour")[["CL", "Twb"]].agg(["mean", "std"]).reset_index()
     )
     hour = profile["hour"].to_numpy()
     cl_mean = profile[("CL", "mean")].to_numpy()

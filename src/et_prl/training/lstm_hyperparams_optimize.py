@@ -1,8 +1,5 @@
-"""
-@author: landfallbox
-@date: 2026/02/07 星期六
-@description: LSTM 超参优化脚本
-"""
+"""LSTM 超参优化脚本。"""
+
 from dataclasses import replace
 
 from et_prl.config.loader import load_config
@@ -10,7 +7,13 @@ from et_prl.data import DatasetLoader
 from et_prl.evaluation import LSTMEvaluator
 from et_prl.models import LSTM
 from et_prl.training import LSTMTrainer
-from et_prl.utils import HyperparameterSpace, BayesianOptimizer, Logger, create_loss_fn, create_optimizer
+from et_prl.utils import (
+    BayesianOptimizer,
+    HyperparameterSpace,
+    Logger,
+    create_loss_fn,
+    create_optimizer,
+)
 
 
 def adjust_hyperparams_by_correlation(params: dict) -> dict:
@@ -72,6 +75,7 @@ def create_objective_fn(train_loader, val_loader, base_config, logger):
     返回：
         目标函数 (trial, params) -> float
     """
+
     def objective(trial, params):
         """
         优化目标函数，默认最小化验证损失
@@ -116,7 +120,7 @@ def create_objective_fn(train_loader, val_loader, base_config, logger):
                 hidden_sizes=config.HIDDEN_SIZES,
                 output_size=config.OUTPUT_SIZE,
                 batch_first=config.BATCH_FIRST,
-                dropout=config.DROPOUT
+                dropout=config.DROPOUT,
             )
 
             optimizer = create_optimizer(model, config.OPTIMIZER, config.LEARNING_RATE)
@@ -133,7 +137,7 @@ def create_objective_fn(train_loader, val_loader, base_config, logger):
                 logger=None,
                 checkpoint_manager=None,
                 config=config.to_dict(),
-                early_stop_patience=config.EARLY_STOP_PATIENCE
+                early_stop_patience=config.EARLY_STOP_PATIENCE,
             )
 
             best_val_loss = history["best_val_loss"]
@@ -164,20 +168,17 @@ def optimize_lstm_hyperparameters(n_trials: int = 80):
     logger.info("加载数据...")
     dataset_loader = DatasetLoader(config)
     train_loader, val_loader, _ = dataset_loader.load_data(
-        load_normalizer=True,
-        reshape_for_rnn=True
+        load_normalizer=True, reshape_for_rnn=True
     )
     logger.info(f"数据加载完成，批大小: {config.BATCH_SIZE}")
 
     logger.info("定义超参搜索空间...")
     space = HyperparameterSpace()
-    space.add_float("learning_rate", 1e-4, 5e-3, log=True) \
-         .add_int("batch_size", 16, 128) \
-         .add_int("epochs", 30, 150) \
-         .add_float("dropout", 0.0, 0.3) \
-         .add_int("hidden_size_1", 32, 128) \
-         .add_int("hidden_size_2", 16, 64) \
-         .add_categorical("optimizer", ["adam", "sgd"])
+    space.add_float("learning_rate", 1e-4, 5e-3, log=True).add_int("batch_size", 16, 128).add_int(
+        "epochs", 30, 150
+    ).add_float("dropout", 0.0, 0.3).add_int("hidden_size_1", 32, 128).add_int(
+        "hidden_size_2", 16, 64
+    ).add_categorical("optimizer", ["adam", "sgd"])
 
     logger.info("搜索空间已定义:")
     for param_name, param_config in space.to_dict().items():
@@ -189,21 +190,15 @@ def optimize_lstm_hyperparameters(n_trials: int = 80):
         output_dir=output_dir,
         results_dir=output_dir / "results",
         sampler="tpe",
-        seed=42
+        seed=42,
     )
 
     objective_fn = create_objective_fn(
-        train_loader=train_loader,
-        val_loader=val_loader,
-        base_config=config,
-        logger=logger
+        train_loader=train_loader, val_loader=val_loader, base_config=config, logger=logger
     )
 
     logger.info("开始优化...")
-    result = optimizer.optimize(
-        objective_fn=objective_fn,
-        n_trials=int(n_trials)
-    )
+    result = optimizer.optimize(objective_fn=objective_fn, n_trials=int(n_trials))
 
     logger.info("优化完成！")
     logger.info(f"总试验数: {result['n_trials']}")
@@ -220,4 +215,3 @@ def optimize_lstm_hyperparameters(n_trials: int = 80):
 def main() -> None:
     """CLI 入口函数"""
     optimize_lstm_hyperparameters()
-

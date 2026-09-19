@@ -1,15 +1,11 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/04 星期二
-@Description : 通用贝叶斯超参优化器
-"""
+"""通用贝叶斯超参优化器。"""
 
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 import optuna
-from optuna.pruners import MedianPruner
 from optuna.samplers import RandomSampler, TPESampler
 
 
@@ -18,7 +14,7 @@ class HyperparameterSpace:
 
     def __init__(self):
         """初始化搜索空间"""
-        self.params: Dict[str, Dict[str, Any]] = {}
+        self.params: dict[str, dict[str, Any]] = {}
 
     def add_int(self, name: str, low: int, high: int) -> "HyperparameterSpace":
         """
@@ -58,7 +54,7 @@ class HyperparameterSpace:
         self.params[name] = {"type": "categorical", "choices": choices}
         return self
 
-    def to_dict(self) -> Dict[str, Dict[str, Any]]:
+    def to_dict(self) -> dict[str, dict[str, Any]]:
         """获取搜索空间字典"""
         return self.params
 
@@ -72,9 +68,9 @@ class BayesianOptimizer:
         self,
         space: HyperparameterSpace,
         output_dir: Path,
-        results_dir: Optional[Path] = None,
+        results_dir: Path | None = None,
         sampler: str = "tpe",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """
         初始化贝叶斯优化器
@@ -93,9 +89,9 @@ class BayesianOptimizer:
         self.results_dir.mkdir(parents=True, exist_ok=True)
         self.sampler = sampler
         self.seed = seed
-        self.best_params: Optional[Dict[str, Any]] = None
-        self.best_value: Optional[float] = None
-        self.study: Optional[optuna.Study] = None
+        self.best_params: dict[str, Any] | None = None
+        self.best_value: float | None = None
+        self.study: optuna.Study | None = None
 
     def _create_sampler(self):
         """创建采样器"""
@@ -151,7 +147,7 @@ class BayesianOptimizer:
         n_trials: int = 100,
         n_jobs: int = 1,
         **objective_kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         执行贝叶斯优化
 
@@ -167,10 +163,9 @@ class BayesianOptimizer:
         """
         optuna_objective = self._objective_wrapper(objective_fn, **objective_kwargs)
 
-        # 创建 Study
+        # 创建 Study（objective 为一次性返回单值，不适用剪枝，故不配置 pruner）
         sampler = self._create_sampler()
-        pruner = MedianPruner()
-        self.study = optuna.create_study(direction="minimize", sampler=sampler, pruner=pruner)
+        self.study = optuna.create_study(direction="minimize", sampler=sampler)
 
         # 执行优化
         self.study.optimize(optuna_objective, n_trials=n_trials, n_jobs=n_jobs)
@@ -196,7 +191,7 @@ class BayesianOptimizer:
                 return round(value, self.DEFAULT_ROUND_DECIMALS)
         return value
 
-    def _round_params(self, params: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _round_params(self, params: dict[str, Any] | None) -> dict[str, Any]:
         """对超参字典中的连续值做四舍五入"""
         if params is None:
             return {}
@@ -256,7 +251,7 @@ class BayesianOptimizer:
             )
         return history
 
-    def get_best_params(self) -> Dict[str, Any]:
+    def get_best_params(self) -> dict[str, Any]:
         """获取最优超参"""
         if self.best_params is None:
             raise RuntimeError("尚未完成优化，best_params 不可用")

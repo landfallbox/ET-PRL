@@ -3,6 +3,7 @@
 本模块只含搜索空间构建、阶段参数定义、动态范围计算、前阶段最优加载、
 trial 配置生成等构建逻辑，不含优化主流程。供 gate_hyperparams_optimize.py 使用。
 """
+
 from __future__ import annotations
 
 import json
@@ -162,16 +163,21 @@ def _load_previous_phase_best(
     if prev_best_path is None:
         if logger:
             logger.warning(
-                f"[{current_phase.upper()}] 前阶段结果不存在 {source_hint}，尝试路径: {[str(p) for p in candidate_paths]}"
+                f"[{current_phase.upper()}] 前阶段结果不存在 {source_hint}，"
+                f"尝试路径: {[str(p) for p in candidate_paths]}"
             )
-            logger.warning(f"[{current_phase.upper()}] 这可能意味着 {prev_phase} 尚未运行，请先执行该阶段")
+            logger.warning(
+                f"[{current_phase.upper()}] 这可能意味着 {prev_phase} 尚未运行，请先执行该阶段"
+            )
         return None
 
     try:
         with open(prev_best_path) as f:
             params = json.load(f)
         if logger:
-            logger.info(f"[{current_phase.upper()}] 已加载 {prev_phase.upper()} 的最优参数 {source_hint}")
+            logger.info(
+                f"[{current_phase.upper()}] 已加载 {prev_phase.upper()} 的最优参数 {source_hint}"
+            )
             logger.info(f"[{current_phase.upper()}] 文件: {prev_best_path}")
             logger.info(f"[{current_phase.upper()}] 参数: {list(params.keys())}")
         return params
@@ -255,8 +261,8 @@ def _build_trial_config(base_config, params: dict):
         score_short_weight = float(params["score_short_weight"])
         score_medium_weight = float(params["score_medium_weight"])
     else:
-        score_short_weight = float(getattr(base_config, "GATE_SCORE_SHORT_WEIGHT"))
-        score_medium_weight = float(getattr(base_config, "GATE_SCORE_MEDIUM_WEIGHT"))
+        score_short_weight = float(base_config.GATE_SCORE_SHORT_WEIGHT)
+        score_medium_weight = float(base_config.GATE_SCORE_MEDIUM_WEIGHT)
 
     score_long_weight = max(0.01, 1.0 - score_short_weight - score_medium_weight)
     updates["GATE_SCORE_LONG_WEIGHT"] = float(score_long_weight)

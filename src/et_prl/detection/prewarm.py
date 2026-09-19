@@ -7,40 +7,21 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
-from et_prl.detection.streaming_gate import StreamingAnomalyGate
 from et_prl.config.loader import get_default
-
-
-def _load_prewarm_data(columns: list[str]) -> np.ndarray:
-    train_path = get_default("dqn").get_train_data_path()
-    val_path = get_default("dqn").get_val_data_path()
-
-    if not train_path.exists():
-        raise FileNotFoundError(f"训练集不存在: {train_path}")
-    if not val_path.exists():
-        raise FileNotFoundError(f"验证集不存在: {val_path}")
-
-    train_df = pd.read_csv(train_path)
-    val_df = pd.read_csv(val_path)
-
-    missing_train = [col for col in columns if col not in train_df.columns]
-    missing_val = [col for col in columns if col not in val_df.columns]
-    if missing_train:
-        raise ValueError(f"训练集缺少列: {missing_train}")
-    if missing_val:
-        raise ValueError(f"验证集缺少列: {missing_val}")
-
-    merged_df = pd.concat([train_df[columns], val_df[columns]], ignore_index=True)
-    return merged_df.to_numpy(dtype=np.float32)
+from et_prl.data import load_prewarm_features
+from et_prl.detection.streaming_gate import StreamingAnomalyGate
 
 
 def prewarm_gate(output_path: Path, gate_config=None) -> Path:
     if gate_config is None:
         gate_config = get_default("gate")
-    columns = gate_config.FEATURE_COLUMNS
-    prewarm_data = _load_prewarm_data(columns)
+    # 预热数据取自 dqn 数据目录（train+val），特征列取自 gate 配置
+    columns = list(gate_config.FEATURE_COLUMNS)
+    prewarm_data = load_prewarm_features(
+        get_default("dqn"),
+        feature_columns=columns,
+    )
 
     gate = StreamingAnomalyGate(
         feature_dim=len(columns),

@@ -3,7 +3,6 @@
 """
 
 from collections import deque
-from typing import Dict, List
 
 import numpy as np
 
@@ -35,7 +34,7 @@ class ReplayBuffer:
         """
         self.buffer.append(kwargs)
 
-    def sample(self, batch_size: int) -> Dict[str, np.ndarray]:
+    def sample(self, batch_size: int) -> dict[str, np.ndarray]:
         """
         随机采样一个批量
 
@@ -80,7 +79,7 @@ class ReplayBuffer:
         """清空缓冲区"""
         self.buffer.clear()
 
-    def get_fields(self) -> List[str]:
+    def get_fields(self) -> list[str]:
         """
         获取缓冲区中所有转移的字段名
 

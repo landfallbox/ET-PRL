@@ -11,20 +11,19 @@ import pandas as pd
 
 from et_prl.config.base import project_root
 
-
 # ─────────────────────────── 样式常量 ───────────────────────────
 _COLORS = {
     "train_reward": "#1f77b4",
-    "val_reward":   "#d6604d",
-    "comfort":      "#4dac26",
-    "energy":       "#b8860b",
-    "loss":         "#7b2d8b",
-    "best":         "#d73027",
+    "val_reward": "#d6604d",
+    "comfort": "#4dac26",
+    "energy": "#b8860b",
+    "loss": "#7b2d8b",
+    "best": "#d73027",
 }
 _ALPHA_FILL = 0.12
 _FIG_DPI = 150
 _FONT_SIZE_LABEL = 11
-_FONT_SIZE_TICK  = 9
+_FONT_SIZE_TICK = 9
 _FONT_SIZE_TITLE = 12
 _FONT_SIZE_LEGEND = 9
 
@@ -43,7 +42,10 @@ def _latest_train_dir(log_root: Path | None = None) -> Path:
 
 def _resolve_training_history(exp_dir: Path) -> Path:
     """定位 training_history.csv：新布局在 results/ 子目录，旧布局在实验目录根。"""
-    for candidate in (exp_dir / "results" / "training_history.csv", exp_dir / "training_history.csv"):
+    for candidate in (
+        exp_dir / "results" / "training_history.csv",
+        exp_dir / "training_history.csv",
+    ):
         if candidate.exists():
             return candidate
     raise FileNotFoundError(f"训练历史文件不存在: {exp_dir / 'results' / 'training_history.csv'}")
@@ -116,38 +118,24 @@ def plot_dqn_training_curves(
     df = pd.read_csv(history_path)
     episodes = df["epoch"].to_numpy()
     train_reward = df["train_reward"].to_numpy()
-    train_comfort = df["train_avg_comfort_score"].to_numpy()
-    train_energy  = df["train_avg_energy_score"].to_numpy()
-    train_loss    = df["train_loss"].to_numpy()
-
-    # 验证奖励仅在 checkpoint episode 有值
-    val_mask   = df["val_reward"].notna()
-    val_ep     = episodes[val_mask]
-    val_reward = df["val_reward"].to_numpy()[val_mask]
-
-    # 找最优 checkpoint episode
-    best_idx      = int(np.argmax(val_reward))
-    best_ep       = val_ep[best_idx]
-    best_val_r    = val_reward[best_idx]
 
     # 以 "每步平均奖励" 规范化训练累积奖励，使量纲与验证奖励对齐
     train_steps = df["train_steps"].to_numpy()
-    val_steps   = df["val_steps"].bfill().to_numpy()
-    # 同时在原始量纲绘图（累积奖励差异量级过大，改用归一化）
     train_r_norm = train_reward / train_steps
-    val_r_norm   = val_reward   / val_steps[val_mask]
-    best_val_r_norm = best_val_r / val_steps[val_mask][best_idx]
 
     # ── 全局字体配置 ────────────────────────────────────────────
-    plt.rcParams.update({
-        "font.family":     "DejaVu Sans",
-        "axes.spines.top": False,
-        "axes.spines.right": False,
-    })
+    plt.rcParams.update(
+        {
+            "font.family": "DejaVu Sans",
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+        }
+    )
 
     # ── 创建画布 ─────────────────────────────────────────────────
     fig, ax = plt.subplots(
-        1, 1,
+        1,
+        1,
         figsize=(5.8, 4.2),
         dpi=_FIG_DPI,
         constrained_layout=True,
@@ -166,9 +154,13 @@ def plot_dqn_training_curves(
 
     # 平滑训练奖励（主线）
     ax.plot(
-        a_episodes, train_r_smooth,
-        color=_COLORS["train_reward"], alpha=0.95,
-        linewidth=2.0, zorder=3, label="Train reward",
+        a_episodes,
+        train_r_smooth,
+        color=_COLORS["train_reward"],
+        alpha=0.95,
+        linewidth=2.0,
+        zorder=3,
+        label="Train reward",
     )
 
     ax.set_xlabel("Episode", fontsize=_FONT_SIZE_LABEL)
@@ -223,14 +215,17 @@ def plot_dqn_validation_reward_curve(
     best_ep = int(val_ep[best_idx])
     best_val = float(val_r_norm[best_idx])
 
-    plt.rcParams.update({
-        "font.family": "DejaVu Sans",
-        "axes.spines.top": False,
-        "axes.spines.right": False,
-    })
+    plt.rcParams.update(
+        {
+            "font.family": "DejaVu Sans",
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+        }
+    )
 
     fig, ax = plt.subplots(
-        1, 1,
+        1,
+        1,
         figsize=(5.8, 4.2),
         dpi=_FIG_DPI,
         constrained_layout=True,

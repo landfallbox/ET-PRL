@@ -30,14 +30,17 @@ __all__ = [
 
 # 可选的可视化和超参数优化工具（需要额外依赖）
 try:
-    from .visualizer import Visualizer
+    from .visualizer import Visualizer  # noqa: F401  # 条件导出
 
     __all__.append("Visualizer")
 except ImportError:
     pass
 
 try:
-    from .hyperparameter_optimizer import BayesianOptimizer, HyperparameterSpace
+    from .hyperparameter_optimizer import (  # noqa: F401  # 条件导出
+        BayesianOptimizer,
+        HyperparameterSpace,
+    )
 
     __all__.extend(["HyperparameterSpace", "BayesianOptimizer"])
 except ImportError:

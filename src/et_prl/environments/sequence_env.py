@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ class RewardCalculator(ABC):
     """
 
     @abstractmethod
-    def compute(self, step_index: int, action_value: float) -> Tuple[float, Dict[str, Any]]:
+    def compute(self, step_index: int, action_value: float) -> tuple[float, dict[str, Any]]:
         """
         计算当前步骤的奖励。
 
@@ -65,7 +65,7 @@ class SequenceEnv(Env):
         self.reward_calculator = reward_calculator
         self._index = 0
 
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self) -> tuple[np.ndarray, dict[str, Any]]:
         """
         重置环境到初始状态。
 
@@ -77,7 +77,7 @@ class SequenceEnv(Env):
         info = {}
         return state, info
 
-    def step(self, action_value: float) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action_value: float) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         """
         执行一步动作。
 

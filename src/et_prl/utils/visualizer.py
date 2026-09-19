@@ -1,12 +1,7 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/06 星期四
-@Description : 可视化工具类
-"""
+"""可视化工具类。"""
 
 import warnings
 from pathlib import Path
-from typing import Tuple
 
 import matplotlib
 import matplotlib.font_manager as fm
@@ -77,6 +72,7 @@ class Visualizer:
                 "未找到中文字体，图表中的中文可能显示为方框。"
                 "建议安装 SimHei 或 Microsoft YaHei 字体以获得更好的显示效果。",
                 UserWarning,
+                stacklevel=2,
             )
 
         # 解决负号显示问题
@@ -93,7 +89,7 @@ class Visualizer:
         title: str = "模型预测结果对比",
         xlabel: str = "样本索引",
         ylabel: str = "目标值",
-        figsize: Tuple[int, int] = (15, 6),
+        figsize: tuple[int, int] = (15, 6),
         dpi: int = 300,
     ) -> None:
         """
@@ -157,7 +153,7 @@ class Visualizer:
         title: str = "预测误差分布",
         xlabel: str = "误差值",
         ylabel: str = "频数",
-        figsize: Tuple[int, int] = (10, 6),
+        figsize: tuple[int, int] = (10, 6),
         dpi: int = 300,
     ) -> None:
         """
@@ -185,16 +181,20 @@ class Visualizer:
         mean_error = np.mean(errors)
         std_error = np.std(errors)
         plt.axvline(
-            mean_error, color="red", linestyle="--", linewidth=2, label=f"均值: {mean_error:.4f}"
+            float(mean_error),
+            color="red",
+            linestyle="--",
+            linewidth=2,
+            label=f"均值: {mean_error:.4f}",
         )
         plt.axvline(
-            mean_error + std_error,
+            float(mean_error + std_error),
             color="orange",
             linestyle="--",
             linewidth=1.5,
             label=f"±标准差: {std_error:.4f}",
         )
-        plt.axvline(mean_error - std_error, color="orange", linestyle="--", linewidth=1.5)
+        plt.axvline(float(mean_error - std_error), color="orange", linestyle="--", linewidth=1.5)
 
         plt.xlabel(xlabel, fontsize=12)
         plt.ylabel(ylabel, fontsize=12)
@@ -215,7 +215,7 @@ class Visualizer:
         title: str = "预测值vs真实值散点图",
         xlabel: str = "真实值",
         ylabel: str = "预测值",
-        figsize: Tuple[int, int] = (8, 8),
+        figsize: tuple[int, int] = (8, 8),
         dpi: int = 300,
     ) -> None:
         """
@@ -261,7 +261,7 @@ class Visualizer:
         title: str = "训练过程损失曲线",
         xlabel: str = "Epoch",
         ylabel: str = "Loss",
-        figsize: Tuple[int, int] = (10, 6),
+        figsize: tuple[int, int] = (10, 6),
         dpi: int = 300,
     ) -> None:
         """

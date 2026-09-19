@@ -3,6 +3,7 @@
 本模块只含纯计算函数（轮次指标汇总、配对块自助法显著性、门控轨迹诊断等），
 不依赖实验编排或 I/O。常量取自 sensitivity_design。
 """
+
 from __future__ import annotations
 
 from statistics import NormalDist
@@ -36,7 +37,9 @@ def _metric_summary(
     fixed_energy_daily = float(fixed_baseline_summary.get("E_daily_kwh_per_day", 0.0))
 
     signed_reward_gap_ratio = (fixed_reward - total_reward) / max(abs(fixed_reward), 1e-8)
-    signed_energy_change_ratio = (energy_daily - fixed_energy_daily) / max(abs(fixed_energy_daily), 1e-8)
+    signed_energy_change_ratio = (energy_daily - fixed_energy_daily) / max(
+        abs(fixed_energy_daily), 1e-8
+    )
     event_trigger_rate = (
         float(step_results["gate_signal"].eq(1).mean()) if not step_results.empty else 0.0
     )
@@ -51,9 +54,7 @@ def _metric_summary(
         "action_frequency": float(summary.get("action_frequency", 0.0)),
         "N_daily_count_per_day": float(summary.get("N_daily_count_per_day", 0.0)),
         "event_trigger_count": int(summary.get("event_trigger_count", 0)),
-        "event_trigger_rate": float(
-            summary.get("event_trigger_rate", event_trigger_rate)
-        ),
+        "event_trigger_rate": float(summary.get("event_trigger_rate", event_trigger_rate)),
         "E_daily_kwh_per_day": energy_daily,
         "delta_total_reward_vs_default_gate": float(total_reward - default_reward),
         "delta_action_frequency_vs_default_gate": float(
@@ -148,7 +149,16 @@ def _paired_metric_deltas(cand: pd.DataFrame, base: pd.DataFrame) -> dict[str, n
     bs = _series_from_step_results(base)
     n = min(len(next(iter(cs.values()))), len(next(iter(bs.values()))))
     if n <= 0:
-        return {k: np.asarray([], dtype=np.float64) for k in ("total_reward", "avg_reward_per_env_step", "action_frequency", "event_trigger_rate", "E_daily_kwh_per_day")}
+        return {
+            k: np.asarray([], dtype=np.float64)
+            for k in (
+                "total_reward",
+                "avg_reward_per_env_step",
+                "action_frequency",
+                "event_trigger_rate",
+                "E_daily_kwh_per_day",
+            )
+        }
     rd = cs["reward"][:n] - bs["reward"][:n]
     return {
         "total_reward": rd,
@@ -187,7 +197,13 @@ def _paired_block_bootstrap_significance(
 ) -> dict[str, float | int]:
     deltas = _paired_metric_deltas(cand, base)
     ns = len(next(iter(deltas.values()))) if deltas else 0
-    names = ("total_reward", "avg_reward_per_env_step", "action_frequency", "event_trigger_rate", "E_daily_kwh_per_day")
+    names = (
+        "total_reward",
+        "avg_reward_per_env_step",
+        "action_frequency",
+        "event_trigger_rate",
+        "E_daily_kwh_per_day",
+    )
     res: dict[str, float | int] = {
         "bootstrap_paired_steps": int(ns),
         "bootstrap_samples": int(max(0, bootstrap_samples)),
@@ -197,7 +213,13 @@ def _paired_block_bootstrap_significance(
     }
     if ns <= 0 or bootstrap_samples <= 0:
         for name in names:
-            for suffix in ("delta_mean", "delta_ci_lower", "delta_ci_upper", "delta_p_value", "delta_significant"):
+            for suffix in (
+                "delta_mean",
+                "delta_ci_lower",
+                "delta_ci_upper",
+                "delta_p_value",
+                "delta_significant",
+            ):
                 key = f"bootstrap_{name}_{suffix}"
                 res[key] = 0.0 if suffix != "delta_p_value" else 1.0
         return res
@@ -209,7 +231,10 @@ def _paired_block_bootstrap_significance(
         diff = deltas[name]
         obs = _bootstrap_statistic(diff, name, np.arange(ns, dtype=np.int64))
         boot = np.asarray(
-            [_bootstrap_statistic(diff, name, _block_bootstrap_indices(rng, ns, block_size)) for _ in range(bootstrap_samples)],
+            [
+                _bootstrap_statistic(diff, name, _block_bootstrap_indices(rng, ns, block_size))
+                for _ in range(bootstrap_samples)
+            ],
             dtype=np.float64,
         )
         centered = boot - obs
@@ -228,10 +253,30 @@ def _gate_trace_diagnostics(cand: pd.DataFrame, base: pd.DataFrame) -> dict[str,
     n = min(len(cand), len(base))
     diag: dict[str, float | int] = {"diagnostic_paired_steps": int(n)}
     if n <= 0:
-        return {**diag, "gate_signal_diff_count": 0, "gate_signal_same_rate": 1.0, "action_update_diff_count": 0, "action_update_same_rate": 1.0, "action_value_diff_count": 0, "action_value_same_rate": 1.0}
-    for col, pfx in (("gate_signal", "gate_signal"), ("action_updated", "action_update"), ("action_value", "action_value")):
-        cv = cand[col].to_numpy(dtype=np.float64)[:n] if col in cand.columns else np.full(n, 0.0, dtype=np.float64)
-        bv = base[col].to_numpy(dtype=np.float64)[:n] if col in base.columns else np.full(n, 0.0, dtype=np.float64)
+        return {
+            **diag,
+            "gate_signal_diff_count": 0,
+            "gate_signal_same_rate": 1.0,
+            "action_update_diff_count": 0,
+            "action_update_same_rate": 1.0,
+            "action_value_diff_count": 0,
+            "action_value_same_rate": 1.0,
+        }
+    for col, pfx in (
+        ("gate_signal", "gate_signal"),
+        ("action_updated", "action_update"),
+        ("action_value", "action_value"),
+    ):
+        cv = (
+            cand[col].to_numpy(dtype=np.float64)[:n]
+            if col in cand.columns
+            else np.full(n, 0.0, dtype=np.float64)
+        )
+        bv = (
+            base[col].to_numpy(dtype=np.float64)[:n]
+            if col in base.columns
+            else np.full(n, 0.0, dtype=np.float64)
+        )
         dc = int(np.sum(~np.isclose(cv, bv, atol=ZERO_SENSITIVITY_ABS_TOL)))
         diag[f"{pfx}_diff_count"] = dc
         diag[f"{pfx}_same_rate"] = float(1.0 - dc / n)

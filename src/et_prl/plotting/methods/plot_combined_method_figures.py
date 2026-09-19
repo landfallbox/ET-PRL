@@ -80,40 +80,46 @@ def _build_radar_body(
     for lvl in [1.0, 2.0, 3.0]:
         ring_r = radius * (lvl / max_value)
         parts.append(
-            f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring_r:.2f}" fill="none" stroke="#c7cdd4" stroke-width="2.0"/>'
+            f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{ring_r:.2f}" fill="none" '
+            f'stroke="#c7cdd4" stroke-width="2.0"/>'
         )
 
     parts.append(
-        f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{radius:.2f}" fill="none" stroke="#000000" stroke-width="2.4"/>'
+        f'<circle cx="{cx:.2f}" cy="{cy:.2f}" r="{radius:.2f}" fill="none" '
+        f'stroke="#000000" stroke-width="2.4"/>'
     )
 
     for a in angles:
         x2, y2 = _polar_to_xy(cx, cy, radius, a)
         parts.append(
-            f'<line x1="{cx:.2f}" y1="{cy:.2f}" x2="{x2:.2f}" y2="{y2:.2f}" stroke="#d1d5db" stroke-width="1.2"/>'
+            f'<line x1="{cx:.2f}" y1="{cy:.2f}" x2="{x2:.2f}" y2="{y2:.2f}" '
+            f'stroke="#d1d5db" stroke-width="1.2"/>'
         )
 
-    for label, a in zip(criteria, angles):
+    for label, a in zip(criteria, angles, strict=True):
         lx, ly = _polar_to_xy(cx, cy, radius + 30, a)
         anchor = "middle"
         if abs(math.cos(a)) > 0.45:
             anchor = "start" if math.cos(a) > 0 else "end"
         parts.append(
             f'<text x="{lx:.2f}" y="{ly:.2f}" text-anchor="{anchor}" dominant-baseline="middle" '
-            f'font-family="Times New Roman" font-size="20pt" fill="#374151">{_svg_escape(label)}</text>'
+            f'font-family="Times New Roman" font-size="20pt" fill="#374151">'
+            f"{_svg_escape(label)}</text>"
         )
 
     for name, color in methods:
         vals = values_map[name]
         pts = []
-        for v, a in zip(vals, angles):
+        for v, a in zip(vals, angles, strict=True):
             rr = radius * (v / max_value)
             pts.append(_polar_to_xy(cx, cy, rr, a))
         fill_opacity = "0.25" if name == dynamic_method else "0.06"
         dash = "" if name == dynamic_method else ' stroke-dasharray="10 7"'
         stroke_width = "4.0" if name == dynamic_method else "2.8"
         parts.append(
-            f'<polygon points="{_polygon(pts)}" fill="{color}" fill-opacity="{fill_opacity}" stroke="{color}" stroke-width="{stroke_width}"{dash}/>'
+            f'<polygon points="{_polygon(pts)}" fill="{color}" '
+            f'fill-opacity="{fill_opacity}" stroke="{color}" '
+            f'stroke-width="{stroke_width}"{dash}/>'
         )
 
     return "\n".join(parts)
@@ -143,30 +149,57 @@ def _build_lineage_body(width: float, height: float, methods: list[tuple[str, st
 
     mid_x = plot_x + plot_w / 2.0
     mid_y = plot_y + plot_h / 2.0
-    parts.append(f'<rect x="{plot_x:.2f}" y="{plot_y:.2f}" width="{plot_w/2:.2f}" height="{plot_h/2:.2f}" fill="#f8fafc"/>')
-    parts.append(f'<rect x="{mid_x:.2f}" y="{plot_y:.2f}" width="{plot_w/2:.2f}" height="{plot_h/2:.2f}" fill="#f0fdf4"/>')
-    parts.append(f'<rect x="{plot_x:.2f}" y="{mid_y:.2f}" width="{plot_w/2:.2f}" height="{plot_h/2:.2f}" fill="#fff7ed"/>')
-    parts.append(f'<rect x="{mid_x:.2f}" y="{mid_y:.2f}" width="{plot_w/2:.2f}" height="{plot_h/2:.2f}" fill="#fef2f2"/>')
+    parts.append(
+        f'<rect x="{plot_x:.2f}" y="{plot_y:.2f}" width="{plot_w / 2:.2f}" '
+        f'height="{plot_h / 2:.2f}" fill="#f8fafc"/>'
+    )
+    parts.append(
+        f'<rect x="{mid_x:.2f}" y="{plot_y:.2f}" width="{plot_w / 2:.2f}" '
+        f'height="{plot_h / 2:.2f}" fill="#f0fdf4"/>'
+    )
+    parts.append(
+        f'<rect x="{plot_x:.2f}" y="{mid_y:.2f}" width="{plot_w / 2:.2f}" '
+        f'height="{plot_h / 2:.2f}" fill="#fff7ed"/>'
+    )
+    parts.append(
+        f'<rect x="{mid_x:.2f}" y="{mid_y:.2f}" width="{plot_w / 2:.2f}" '
+        f'height="{plot_h / 2:.2f}" fill="#fef2f2"/>'
+    )
 
     # Explicit coordinate axes with arrowheads.
     x0 = plot_x
     y0 = plot_y + plot_h
     x1 = plot_x + plot_w
     y1 = plot_y
-    parts.append(f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" y2="{y0:.2f}" stroke="#374151" stroke-width="2.6"/>')
-    parts.append(f'<polygon points="{x1:.2f},{y0:.2f} {x1-12:.2f},{y0-6:.2f} {x1-12:.2f},{y0+6:.2f}" fill="#374151"/>')
-    parts.append(f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x0:.2f}" y2="{y1:.2f}" stroke="#374151" stroke-width="2.6"/>')
-    parts.append(f'<polygon points="{x0:.2f},{y1:.2f} {x0-6:.2f},{y1+12:.2f} {x0+6:.2f},{y1+12:.2f}" fill="#374151"/>')
+    parts.append(
+        f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" y2="{y0:.2f}" '
+        f'stroke="#374151" stroke-width="2.6"/>'
+    )
+    parts.append(
+        f'<polygon points="{x1:.2f},{y0:.2f} {x1 - 12:.2f},{y0 - 6:.2f} '
+        f'{x1 - 12:.2f},{y0 + 6:.2f}" fill="#374151"/>'
+    )
+    parts.append(
+        f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x0:.2f}" y2="{y1:.2f}" '
+        f'stroke="#374151" stroke-width="2.6"/>'
+    )
+    parts.append(
+        f'<polygon points="{x0:.2f},{y1:.2f} {x0 - 6:.2f},{y1 + 12:.2f} '
+        f'{x0 + 6:.2f},{y1 + 12:.2f}" fill="#374151"/>'
+    )
 
     x_label_y = y0 + 24.0
     parts.append(
-        f'<text x="{plot_x + plot_w/2:.2f}" y="{x_label_y:.2f}" text-anchor="middle" '
-        f'font-family="Times New Roman" font-size="{fig2_font_size}" fill="#111827">Action Sparsity</text>'
+        f'<text x="{plot_x + plot_w / 2:.2f}" y="{x_label_y:.2f}" text-anchor="middle" '
+        f'font-family="Times New Roman" font-size="{fig2_font_size}" '
+        f'fill="#111827">Action Sparsity</text>'
     )
     y_label_x = x0 - 22.0
     parts.append(
-        f'<text x="{y_label_x}" y="{plot_y + plot_h/2:.2f}" transform="rotate(-90 {y_label_x} {plot_y + plot_h/2:.2f})" text-anchor="middle" '
-        f'font-family="Times New Roman" font-size="{fig2_font_size}" fill="#111827">Overall Control Performance</text>'
+        f'<text x="{y_label_x}" y="{plot_y + plot_h / 2:.2f}" '
+        f'transform="rotate(-90 {y_label_x} {plot_y + plot_h / 2:.2f})" '
+        f'text-anchor="middle" font-family="Times New Roman" '
+        f'font-size="{fig2_font_size}" fill="#111827">Overall Control Performance</text>'
     )
 
     ordered = ["RBC/PID", "MPC", "TTC", "ETC (Static Threshold)", "ETC (Dynamic Threshold)"]
@@ -186,7 +219,8 @@ def _build_lineage_body(width: float, height: float, methods: list[tuple[str, st
         for n in ordered
     ]
     parts.append(
-        f'<polyline points="{" ".join(f"{x:.2f},{y:.2f}" for x, y in path_points)}" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-dasharray="5 4"/>'
+        f'<polyline points="{" ".join(f"{x:.2f},{y:.2f}" for x, y in path_points)}" '
+        f'fill="none" stroke="#6b7280" stroke-width="2.2" stroke-dasharray="5 4"/>'
     )
     x_prev, y_prev = path_points[-2]
     x_end, y_end = path_points[-1]
@@ -197,7 +231,10 @@ def _build_lineage_body(width: float, height: float, methods: list[tuple[str, st
         bx, by = x_end - 10 * ux, y_end - 10 * uy
         lx, ly = bx - 4 * uy, by + 4 * ux
         rx, ry = bx + 4 * uy, by - 4 * ux
-        parts.append(f'<polygon points="{x_end:.2f},{y_end:.2f} {lx:.2f},{ly:.2f} {rx:.2f},{ry:.2f}" fill="#6b7280"/>')
+        parts.append(
+            f'<polygon points="{x_end:.2f},{y_end:.2f} {lx:.2f},{ly:.2f} '
+            f'{rx:.2f},{ry:.2f}" fill="#6b7280"/>'
+        )
 
     for name, color in methods:
         px, py = _map_xy(
@@ -212,7 +249,10 @@ def _build_lineage_body(width: float, height: float, methods: list[tuple[str, st
             y_min=y_min,
             y_max=y_max,
         )
-        parts.append(f'<circle cx="{px:.2f}" cy="{py:.2f}" r="11.0" fill="{color}" stroke="#ffffff" stroke-width="2.2"/>')
+        parts.append(
+            f'<circle cx="{px:.2f}" cy="{py:.2f}" r="11.0" fill="{color}" '
+            f'stroke="#ffffff" stroke-width="2.2"/>'
+        )
 
         label_dx, label_dy = 12, -10
         if name == "ETC (Dynamic Threshold)":
@@ -225,7 +265,8 @@ def _build_lineage_body(width: float, height: float, methods: list[tuple[str, st
         anchor = "start" if label_dx >= 0 else "end"
         parts.append(
             f'<text x="{px + label_dx:.2f}" y="{py + label_dy:.2f}" text-anchor="{anchor}" '
-            f'font-family="Times New Roman" font-size="{fig2_font_size}" fill="#111827">{_svg_escape(name)}</text>'
+            f'font-family="Times New Roman" font-size="{fig2_font_size}" '
+            f'fill="#111827">{_svg_escape(name)}</text>'
         )
 
     return "\n".join(parts)
@@ -287,7 +328,14 @@ def combine_svgs(
     # Swap panel positions: subplot-b on the left, subplot-a on the right.
     b_right_nudge = 10.0
     bx = padding + left_extra_whitespace + figure_shift_x - b_left_shift + b_right_nudge
-    ax = padding + left_extra_whitespace + rw_layout + inter_panel_gap + figure_shift_x - b_left_shift
+    ax = (
+        padding
+        + left_extra_whitespace
+        + rw_layout
+        + inter_panel_gap
+        + figure_shift_x
+        - b_left_shift
+    )
     # Anchor legend to the right edge of the right subplot area.
     right_plot_right_global = ax + lw_layout
     legend_gap_to_b = max(gap + 46.0, 64.0)
@@ -328,27 +376,36 @@ def combine_svgs(
 
     # Shared legend on the top-right side of the combined figure.
     lines.append(
-        f'<rect x="{legend_box_x:.2f}" y="{legend_box_y:.2f}" width="{legend_box_w:.2f}" height="{legend_box_h:.2f}" fill="#ffffff" stroke="#000000" stroke-opacity="0.5" stroke-width="1.6" rx="8" ry="8"/>'
+        f'<rect x="{legend_box_x:.2f}" y="{legend_box_y:.2f}" '
+        f'width="{legend_box_w:.2f}" height="{legend_box_h:.2f}" fill="#ffffff" '
+        f'stroke="#000000" stroke-opacity="0.5" stroke-width="1.6" rx="8" ry="8"/>'
     )
     for i, (name, color) in enumerate(methods):
         yy = legend_first_center_y + i * legend_item_step
         lines.append(
-            f'<rect x="{legend_x:.2f}" y="{yy - marker_size / 2.0:.2f}" width="{marker_size:.0f}" height="{marker_size:.0f}" fill="{color}" fill-opacity="0.35" stroke="{color}" stroke-width="1.6"/>'
+            f'<rect x="{legend_x:.2f}" y="{yy - marker_size / 2.0:.2f}" '
+            f'width="{marker_size:.0f}" height="{marker_size:.0f}" fill="{color}" '
+            f'fill-opacity="0.35" stroke="{color}" stroke-width="1.6"/>'
         )
         lines.append(
-            f'<text x="{legend_x + 28:.2f}" y="{yy + 2:.2f}" font-family="Times New Roman" font-size="20pt" fill="#1f2937">{_svg_escape(name)}</text>'
+            f'<text x="{legend_x + 28:.2f}" y="{yy + 2:.2f}" '
+            f'font-family="Times New Roman" font-size="20pt" fill="#1f2937">'
+            f"{_svg_escape(name)}</text>"
         )
 
     # Subfigure titles and labels centered below each subplot.
     b_center_x = bx + rw_layout / 2.0
     a_center_x = ax + 430.0
-    title_y = padding + content_h + 16.0
     label_y = padding + content_h + 20.0
     lines.append(
-        f'<text x="{a_center_x:.2f}" y="{label_y:.2f}" text-anchor="middle" font-family="Times New Roman" font-size="20pt" fill="#111827">(a) Radar Chart of Method Performance</text>'
+        f'<text x="{a_center_x:.2f}" y="{label_y:.2f}" text-anchor="middle" '
+        f'font-family="Times New Roman" font-size="20pt" fill="#111827">'
+        f"(a) Radar Chart of Method Performance</text>"
     )
     lines.append(
-        f'<text x="{b_center_x:.2f}" y="{label_y:.2f}" text-anchor="middle" font-family="Times New Roman" font-size="20pt" fill="#111827">(b) Evolutionary Lineage </text>'
+        f'<text x="{b_center_x:.2f}" y="{label_y:.2f}" text-anchor="middle" '
+        f'font-family="Times New Roman" font-size="20pt" fill="#111827">'
+        f"(b) Evolutionary Lineage </text>"
     )
 
     lines.append("</svg>")
@@ -358,7 +415,9 @@ def combine_svgs(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate one large SVG with two sub-figures and a shared legend.")
+    parser = argparse.ArgumentParser(
+        description="Generate one large SVG with two sub-figures and a shared legend."
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -366,8 +425,12 @@ def parse_args() -> argparse.Namespace:
         help="Output combined SVG path.",
     )
     parser.add_argument("--gap", type=float, default=210.0, help="Gap between two sub-figures.")
-    parser.add_argument("--padding", type=float, default=30.0, help="Outer padding of combined canvas.")
-    parser.add_argument("--legend-width", type=float, default=400.0, help="Reserved width for shared legend area.")
+    parser.add_argument(
+        "--padding", type=float, default=30.0, help="Outer padding of combined canvas."
+    )
+    parser.add_argument(
+        "--legend-width", type=float, default=400.0, help="Reserved width for shared legend area."
+    )
     return parser.parse_args()
 
 

@@ -1,49 +1,84 @@
 """Generate Figure 5-2-7: ablation Pareto scatter.
 
+从 outputs/runs/ablation/<ablation_id>/<timestamp>/metrics.json 读取各消融实验
+的最新一次运行结果，绘制 Pareto 散点图。
+
 Usage:
-    uv run python src/plotting/plot_ablation_pareto.py
+    uv run python src/et_prl/plotting/ablation/plot_ablation_pareto.py
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import pandas as pd
-
-from et_prl.config.base import project_root
 from matplotlib.lines import Line2D
 
+from et_prl.config.base import project_root
+from et_prl.plotting._style import apply_paper_style
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-        "mathtext.fontset": "dejavusans",
-        "axes.unicode_minus": True,
-    }
-)
+apply_paper_style(unicode_minus=True)
 
 
 PROPOSED_METHOD = "Full ET-PRL"
 
+# ablation_id -> 图中方法名
+ABLATION_METHOD_NAMES: dict[str, str] = {
+    "wo_dual_threshold": "Local Threshold Only",
+    "wo_local_threshold": "Global Threshold Only",
+    "single_scale_short": "Short-scale Only",
+    "single_scale_medium": "Medium-scale Only",
+    "single_scale_long": "Long-scale Only",
+    "full_et_prl": PROPOSED_METHOD,
+}
 
-def _build_ablation_dataframe() -> pd.DataFrame:
-    records = [
-        {"method": "Local Threshold Only", "E_daily": 7367.57, "PPR": 95.30, "ACR": 1.9513},
-        {"method": "Global Threshold Only", "E_daily": 7409.42, "PPR": 96.25, "ACR": 1.9565},
-        {"method": "Short-scale Only", "E_daily": 7407.03, "PPR": 94.99, "ACR": 2.0754},
-        {"method": "Medium-scale Only", "E_daily": 7484.70, "PPR": 99.38, "ACR": 1.1318},
-        {"method": "Long-scale Only", "E_daily": 7431.26, "PPR": 98.90, "ACR": 1.0162},
-        {"method": PROPOSED_METHOD, "E_daily": 7331.85, "PPR": 94.41, "ACR": 2.1525},
-    ]
+
+def _latest_metrics_path(ablation_root: Path, ablation_id: str) -> Path:
+    """返回指定消融实验最新一次运行的 metrics.json 路径。"""
+    run_dir = ablation_root / ablation_id
+    if not run_dir.is_dir():
+        raise FileNotFoundError(f"消融实验目录不存在: {run_dir}")
+
+    run_timestamps = sorted(p.name for p in run_dir.iterdir() if p.is_dir())
+    if not run_timestamps:
+        raise FileNotFoundError(f"消融实验无运行记录: {run_dir}")
+
+    metrics_path = run_dir / run_timestamps[-1] / "metrics.json"
+    if not metrics_path.exists():
+        raise FileNotFoundError(f"消融实验缺少 metrics.json: {metrics_path}")
+    return metrics_path
+
+
+def _build_ablation_dataframe(ablation_root: Path) -> pd.DataFrame:
+    """从各消融实验的最新 metrics.json 提取 (E_daily, PPR, ACR)。"""
+    records = []
+    for ablation_id, method in ABLATION_METHOD_NAMES.items():
+        metrics_path = _latest_metrics_path(ablation_root, ablation_id)
+        with open(metrics_path, encoding="utf-8") as f:
+            entries = json.load(f)
+        if not entries:
+            raise ValueError(f"metrics.json 为空: {metrics_path}")
+        latest = entries[-1]
+
+        ed_summary = latest["event_driven_summary"]
+        comparison = latest["comparison"]
+        records.append(
+            {
+                "method": method,
+                "E_daily": float(ed_summary["E_daily_kwh_per_day"]),
+                "PPR": float(comparison["PPR_percent"]),
+                "ACR": float(comparison["ACR"]),
+            }
+        )
     return pd.DataFrame.from_records(records)
 
 
-def generate_figure(output_path: Path) -> None:
-    df = _build_ablation_dataframe()
+def generate_figure(output_path: Path, ablation_root: Path) -> None:
+    df = _build_ablation_dataframe(ablation_root)
 
     acr_min = float(df["ACR"].min())
     acr_max = float(df["ACR"].max())
@@ -163,8 +198,11 @@ def main() -> None:
     args = parser.parse_args()
 
     root = project_root()
-    output_path = args.output_path or (root / "outputs" / "figures" / "fig10_ablation_pareto_scatter.svg")
-    generate_figure(output_path=output_path)
+    output_path = args.output_path or (
+        root / "outputs" / "figures" / "fig10_ablation_pareto_scatter.svg"
+    )
+    ablation_root = root / "outputs" / "runs" / "ablation"
+    generate_figure(output_path=output_path, ablation_root=ablation_root)
 
 
 if __name__ == "__main__":

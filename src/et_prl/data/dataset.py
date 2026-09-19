@@ -1,10 +1,4 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/04 星期二
-@Description : 数据集加载器，统一处理数据加载和预处理流程
-"""
-
-from typing import Dict, Tuple
+"""数据集加载器，统一处理数据加载和预处理流程。"""
 
 from torch.utils.data import DataLoader
 
@@ -38,7 +32,7 @@ class DatasetLoader:
 
     def load_data(
         self, load_normalizer: bool = True, reshape_for_rnn: bool = False
-    ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    ) -> tuple[DataLoader, DataLoader, DataLoader]:
         """
         加载数据并创建 DataLoader
 
@@ -88,18 +82,3 @@ class DatasetLoader:
         )
 
         return train_loader, val_loader, test_loader
-
-    def get_data_info(self) -> Dict[str, any]:
-        """
-        获取数据集信息
-
-        返回：
-            包含数据集路径、特征列等信息的字典
-        """
-        return {
-            "train_path": self.config.get_train_data_path(),
-            "val_path": self.config.get_val_data_path(),
-            "test_path": self.config.get_test_data_path(),
-            "target_column": self.config.TARGET_COLUMN,
-            "batch_size": self.config.BATCH_SIZE,
-        }

@@ -1,12 +1,11 @@
-"""
-@Author      : landfallbox
-@Date        : 2026/02/03 星期一
-@Description : 数据处理工具函数
-"""
+"""数据处理工具函数。"""
+
+from __future__ import annotations
+
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 
 def load_state_data(path: Path, required_columns: list[str]) -> pd.DataFrame:
@@ -48,7 +47,9 @@ def load_action_space(path: Path) -> np.ndarray:
         action_space = action_space.reshape(1)
 
     if action_space.ndim != 1:
-        raise ValueError(f"动作空间维度必须为 1，当前维度: {action_space.ndim}，形状: {action_space.shape}")
+        raise ValueError(
+            f"动作空间维度必须为 1，当前维度: {action_space.ndim}，形状: {action_space.shape}"
+        )
 
     if action_space.size == 0:
         raise ValueError("动作空间不能为空")
@@ -182,3 +183,49 @@ def build_temporal_features(
     result_df = result_df.iloc[window_length - 1 :].reset_index(drop=True)
 
     return result_df
+
+
+def load_prewarm_features(
+    config,
+    val_df_override: pd.DataFrame | None = None,
+    feature_columns: list[str] | None = None,
+) -> np.ndarray:
+    """加载门控预热特征：train 集与 val 集的特征列拼接。
+
+    参数：
+        config: 提供 get_train_data_path() / get_val_data_path()（及 FEATURE_COLUMNS）的配置对象
+        val_df_override: 可选的验证集 DataFrame 覆盖（用于优化流程中的时间切分场景）
+        feature_columns: 可选的特征列覆盖；默认取 config.FEATURE_COLUMNS
+
+    返回：
+        shape (n_train + n_val, n_features) 的 float32 数组
+
+    异常：
+        FileNotFoundError: train/val 数据文件不存在
+        ValueError: 数据缺少特征列
+    """
+    feature_columns = (
+        list(feature_columns) if feature_columns is not None else list(config.FEATURE_COLUMNS)
+    )
+    train_path = config.get_train_data_path()
+    if not train_path.exists():
+        raise FileNotFoundError(f"训练集不存在: {train_path}")
+
+    train_df = pd.read_csv(train_path)
+    if val_df_override is not None:
+        val_df = val_df_override
+    else:
+        val_path = config.get_val_data_path()
+        if not val_path.exists():
+            raise FileNotFoundError(f"验证集不存在: {val_path}")
+        val_df = pd.read_csv(val_path)
+
+    missing_train = [col for col in feature_columns if col not in train_df.columns]
+    if missing_train:
+        raise ValueError(f"训练集缺少门控特征列: {missing_train}")
+    missing_val = [col for col in feature_columns if col not in val_df.columns]
+    if missing_val:
+        raise ValueError(f"验证集缺少门控特征列: {missing_val}")
+
+    merged = pd.concat([train_df[feature_columns], val_df[feature_columns]], ignore_index=True)
+    return merged.to_numpy(dtype=np.float32)
