@@ -66,9 +66,7 @@ class StreamingThresholdOptimizer:
             1.0 - self.local_update_rate
         ) * self.local_threshold + self.local_update_rate * candidate
 
-    def update(
-        self, score: float, decision: int | None = None, perform_optimization: bool = True
-    ) -> None:
+    def update(self, score: float, perform_optimization: bool = True) -> None:
         self.sample_count += 1
 
         self.local_score_buffer.append(score)

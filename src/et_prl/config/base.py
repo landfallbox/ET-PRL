@@ -48,10 +48,6 @@ class BaseConfig:
     VAL_RATIO: float
     TEST_RATIO: float
 
-    # ==================== 温度舒适范围 ====================
-    COMFORT_LOWER_BOUND: float
-    COMFORT_UPPER_BOUND: float
-
     # ==================== 设备与运行 ====================
     USE_GPU: bool
     TIMESTAMP: str
@@ -91,7 +87,6 @@ class BaseConfig:
     PREDICTION_COMPARISON_FIGSIZE: tuple
     ERROR_DISTRIBUTION_FIGSIZE: tuple
     PREDICTION_SCATTER_FIGSIZE: tuple
-    TRAINING_HISTORY_FIGSIZE: tuple
     MAX_PLOT_SAMPLES: int
     ERROR_HIST_BINS: int
 

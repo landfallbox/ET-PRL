@@ -36,9 +36,6 @@ class DQNConfig(BaseConfig):
     COMFORT_SIGMA: float
     CHILLER_CAPACITY: int
     CHILLER_REF_POWER: int
-    CHILLER_F_NOMINAL: int
-    CHILLER_F_CW: int
-    CHILLER_F_TOWER: int
     CHILLER_F_CHW: int
     CHILLER_CP: float
     CHILLER_WATER_DENSITY: int

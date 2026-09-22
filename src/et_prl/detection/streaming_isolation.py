@@ -56,18 +56,6 @@ class StreamingIsolationDepth:
         dim_scale = max(np.sqrt(float(feature_dim)), 1.0)
         return distances / dim_scale
 
-    def _initialize_reference_set(self, initial_data: np.ndarray) -> None:
-        indices = np.random.choice(
-            len(initial_data),
-            size=min(self.n_reference_samples, len(initial_data)),
-            replace=False,
-        )
-        for idx in indices:
-            self.reference_buffer.append(initial_data[idx])
-
-        self.reference_array = np.array(list(self.reference_buffer))
-        self._update_distance_statistics()
-
     def _update_reference_set(self, sample: np.ndarray) -> None:
         self.reference_buffer.append(sample)
 

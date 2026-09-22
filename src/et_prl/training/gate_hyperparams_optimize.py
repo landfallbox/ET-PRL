@@ -399,7 +399,8 @@ def optimize_gate_hyperparameters(
     reward_drop_penalty_weight = float(base_config.GATE_OPT_REWARD_DROP_PENALTY_WEIGHT)
     energy_increase_penalty_weight = float(base_config.GATE_OPT_ENERGY_INCREASE_PENALTY_WEIGHT)
     baseline_fixed_interval = int(base_config.GATE_OPT_BASELINE_FIXED_INTERVAL)
-    validation_fit_ratio = float(getattr(base_config, "GATE_OPT_VALIDATION_FIT_RATIO", 0.8))
+    # 验证集切分比例（固定值，不在配置 schema 内）
+    validation_fit_ratio = 0.8
 
     logger.info("目标函数: objective = action_rate + reward_penalty + energy_penalty")
     logger.info(

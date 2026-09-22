@@ -82,7 +82,6 @@ def _get_phase_params(phase: str) -> dict:
                 "threshold_mad_scale",
                 "threshold_local_update_rate",
             ],
-            "trials": 60,
         },
         "phase2": {
             "description": "Layer B: 自适应参数（5个）",
@@ -93,7 +92,6 @@ def _get_phase_params(phase: str) -> dict:
                 "local_window_size",
                 "reference_samples",
             ],
-            "trials": 50,
         },
         "phase3": {
             "description": "Layer C+D: 融合与风格参数（3个）",
@@ -102,7 +100,6 @@ def _get_phase_params(phase: str) -> dict:
                 "score_medium_weight",
                 "threshold_quantile_weight",
             ],
-            "trials": 40,
         },
     }
     return params_config.get(phase, params_config["phase1"])

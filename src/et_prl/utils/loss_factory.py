@@ -7,7 +7,7 @@ def create_loss_fn(loss_type: str) -> nn.Module:
     """
     创建损失函数
     参数：
-        loss_type: 损失函数类型（mse, mae, ce）
+        loss_type: 损失函数类型（mse, mae）
     返回：
         损失函数实例
     异常：
@@ -18,7 +18,5 @@ def create_loss_fn(loss_type: str) -> nn.Module:
         return nn.MSELoss()
     elif loss_type == "mae":
         return nn.L1Loss()
-    elif loss_type == "ce":
-        return nn.CrossEntropyLoss()
     else:
-        raise ValueError(f"不支持的损失函数类型: {loss_type}，支持的类型: mse, mae, ce")
+        raise ValueError(f"不支持的损失函数类型: {loss_type}，支持的类型: mse, mae")

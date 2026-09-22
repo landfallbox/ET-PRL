@@ -53,7 +53,6 @@
 | `gate.yaml` | 在线异常门控 |
 | `control_compare.yaml` | 控制策略对比（extends [gate, dqn]） |
 | `event_driven.yaml` | 事件驱动 DQN 评估（extends [gate, dqn]） |
-| `default.yaml` | 默认（extends dqn） |
 | `ablation/*.yaml` | 消融实验变体（extends control_compare） |
 
 ## 目录约定
@@ -69,7 +68,6 @@
   - `experiments/`：实验编排
   - `data/`：数据加载/归一化
   - `detection/`：在线异常门控与事件触发
-  - `calibration/`：阈值标定
   - `plotting/`：绘图脚本（输出统一写 `outputs/figures/`）
   - `utils/`：通用工具（日志/指标/checkpoint/可复现性）
 - `configs/`：YAML 配置（单一事实源）

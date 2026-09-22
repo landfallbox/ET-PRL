@@ -18,7 +18,6 @@ class GateDecision:
     gate_signal: int  # 0=正常, 1=异常(触发DQN)
     anomaly_score: float  # 0-1的异常分数
     adaptive_threshold: float  # 当前触发阈值
-    timestamp: float | None = None  # 样本时间戳
     base_threshold: float = 0.0  # 未加滞回边际的基础阈值
     trigger_threshold: float = 0.0  # 进入触发状态的上阈值
     reset_threshold: float = 0.0  # 退出触发状态的下阈值
@@ -129,19 +128,12 @@ class StreamingAnomalyGate:
         self._last_trigger_step = -(10**9)
         self._trigger_latched = False
 
-    def predict(
-        self,
-        sample: np.ndarray,
-        timestamp: float | None = None,
-        feedback_label: int | None = None,
-    ) -> GateDecision:
+    def predict(self, sample: np.ndarray) -> GateDecision:
         """
         对单个样本进行异常判断（核心推理方法）
 
         参数：
             sample: 输入特征，shape (feature_dim,)
-            timestamp: 样本时间戳（可选）
-            feedback_label: 人工反馈标签（0=正常, 1=异常），用于优化（可选）
 
         返回：
             GateDecision: 门控决策结果
@@ -201,15 +193,12 @@ class StreamingAnomalyGate:
             sample=sample,
             normalized_sample=normalized_sample,
             anomaly_score=fused_anomaly_score,
-            gate_decision=gate_signal,
-            feedback_label=feedback_label,
         )
 
         return GateDecision(
             gate_signal=gate_signal,
             anomaly_score=fused_anomaly_score,
             adaptive_threshold=enter_threshold,
-            timestamp=timestamp,
             base_threshold=adaptive_threshold,
             trigger_threshold=enter_threshold,
             reset_threshold=exit_threshold,
@@ -223,8 +212,6 @@ class StreamingAnomalyGate:
         sample: np.ndarray,
         normalized_sample: np.ndarray,
         anomaly_score: float,
-        gate_decision: int,
-        feedback_label: int | None = None,
     ) -> None:
         """
         用新样本更新所有在线模块（在线学习的关键）
@@ -233,8 +220,6 @@ class StreamingAnomalyGate:
             sample: 原始样本
             normalized_sample: 归一化后的样本
             anomaly_score: 计算出的异常分数
-            gate_decision: 网关决策
-            feedback_label: 人工反馈标签（可选，用于有标签学习）
         """
         # 1. 更新特征统计（EMA）
         self.feature_stats.update(sample)
@@ -243,13 +228,7 @@ class StreamingAnomalyGate:
         self.anomaly_detector.update(normalized_sample)
 
         # 3. 更新阈值优化器
-        #    使用反馈标签（如果提供），否则使用网关决策
-        decision_for_optimization = feedback_label if feedback_label is not None else gate_decision
-        self.threshold_optimizer.update(
-            score=anomaly_score,
-            decision=decision_for_optimization,
-            perform_optimization=True,
-        )
+        self.threshold_optimizer.update(score=anomaly_score, perform_optimization=True)
 
     def get_statistics(self) -> dict:
         """获取网关的统计信息和诊断数据"""

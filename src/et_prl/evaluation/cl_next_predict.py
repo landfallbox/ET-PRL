@@ -30,20 +30,6 @@ def _zscore_transform(
     return result_df
 
 
-def _build_sequences(feature_array, window_length: int):
-    """构建 LSTM 输入序列，返回形状 (N-window, window, feature_dim)。"""
-    feature_tensor = torch.as_tensor(feature_array, dtype=torch.float32)
-    num_rows = feature_tensor.shape[0]
-    if num_rows <= window_length:
-        raise ValueError(
-            f"样本数量不足，当前行数={num_rows}，窗口长度={window_length}，"
-            f"至少需要 {window_length + 1} 行"
-        )
-
-    sequence_features = build_sliding_window_sequences(feature_tensor, window_length)
-    return sequence_features[:-1]
-
-
 def _load_normalizer(normalizer_path: Path) -> dict:
     """读取 normalizer.json。"""
     if not normalizer_path.exists():
@@ -105,8 +91,15 @@ def predict_cl_next(
     cl_std = float(feature_std[base_config.TARGET_COLUMN])
 
     scaled_df = _zscore_transform(raw_df, feature_mean, feature_std, feature_columns)
-    features_scaled = scaled_df[feature_columns].to_numpy(dtype="float32")
-    sequences = _build_sequences(features_scaled, window_length)
+    feature_tensor = torch.as_tensor(
+        scaled_df[feature_columns].to_numpy(dtype="float32"), dtype=torch.float32
+    )
+    if feature_tensor.shape[0] <= window_length:
+        raise ValueError(
+            f"样本数量不足，当前行数={feature_tensor.shape[0]}，窗口长度={window_length}，"
+            f"至少需要 {window_length + 1} 行"
+        )
+    sequences = build_sliding_window_sequences(feature_tensor, window_length)[:-1]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LSTM(

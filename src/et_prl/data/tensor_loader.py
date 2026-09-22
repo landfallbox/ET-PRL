@@ -1,25 +1,11 @@
 """张量加载和转换工具。"""
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-
-
-@dataclass
-class DataLoaderConfig:
-    """数据加载器配置类"""
-
-    batch_size: int
-    shuffle_train: bool = True
-    shuffle_val: bool = False
-    shuffle_test: bool = False
-    num_workers: int = 0
-    pin_memory: bool = False
-    drop_last: bool = False
 
 
 def load_csv_to_tensor(
@@ -121,9 +107,8 @@ def create_data_loaders(
     val_targets: torch.Tensor,
     test_features: torch.Tensor,
     test_targets: torch.Tensor,
-    batch_size: int | None = None,
+    batch_size: int,
     shuffle_train: bool = True,
-    config: DataLoaderConfig | None = None,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     创建训练、验证、测试数据加载器
@@ -132,44 +117,30 @@ def create_data_loaders(
         train_features/targets: 训练集张量
         val_features/targets: 验证集张量
         test_features/targets: 测试集张量
-        batch_size: 批大小（向后兼容参数，优先级低于 config）
-        shuffle_train: 是否对训练集打乱（向后兼容参数，优先级低于 config）
-        config: DataLoaderConfig 配置对象（推荐使用）
+        batch_size: 批大小
+        shuffle_train: 是否对训练集打乱
 
     返回：
         (train_loader, val_loader, test_loader)
     """
-    # 如果提供了 config，使用 config；否则使用传统参数
-    if config is None:
-        if batch_size is None:
-            raise ValueError("必须提供 batch_size 或 config 参数")
-        config = DataLoaderConfig(batch_size=batch_size, shuffle_train=shuffle_train)
-
     train_dataset = TensorDataset(train_features, train_targets)
     val_dataset = TensorDataset(val_features, val_targets)
     test_dataset = TensorDataset(test_features, test_targets)
 
     train_loader = DataLoader(
         train_dataset,
-        batch_size=config.batch_size,
-        shuffle=config.shuffle_train,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        drop_last=config.drop_last,
+        batch_size=batch_size,
+        shuffle=shuffle_train,
     )
     val_loader = DataLoader(
         val_dataset,
-        batch_size=config.batch_size,
-        shuffle=config.shuffle_val,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
+        batch_size=batch_size,
+        shuffle=False,
     )
     test_loader = DataLoader(
         test_dataset,
-        batch_size=config.batch_size,
-        shuffle=config.shuffle_test,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
+        batch_size=batch_size,
+        shuffle=False,
     )
 
     return train_loader, val_loader, test_loader

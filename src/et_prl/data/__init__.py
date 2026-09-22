@@ -11,7 +11,6 @@ from .data_utils import (
 from .dataset import DatasetLoader
 from .normalizer import Normalizer
 from .tensor_loader import (
-    DataLoaderConfig,
     build_sliding_window_sequences,
     create_data_loaders,
     load_csv_to_tensor,
@@ -27,7 +26,6 @@ __all__ = [
     "load_state_data",
     "load_action_space",
     "load_prewarm_features",
-    "DataLoaderConfig",
     "build_sliding_window_sequences",
     "create_data_loaders",
     "load_csv_to_tensor",

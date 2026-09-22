@@ -15,11 +15,6 @@ class Normalizer:
         normalizer = Normalizer()
         normalizer.fit(train_df, columns=['col1', 'col2'])
         normalized_df = normalizer.transform(df, columns=['col1', 'col2'])
-        normalizer.save(save_path)
-
-        normalizer2 = Normalizer()
-        normalizer2.load(save_path)
-        normalized_df2 = normalizer2.transform(df, columns=['col1', 'col2'])
     """
 
     def __init__(self, epsilon: float = 1e-8):
@@ -84,94 +79,6 @@ class Normalizer:
             result_df[col] = (result_df[col] - self.mean[col]) / (self.std[col] + self.epsilon)
 
         return result_df
-
-    def inverse_transform(self, df: pd.DataFrame, columns: list[str] | None = None) -> pd.DataFrame:
-        """
-        反归一化（恢复原始数据）
-
-        参数：
-            df: 已归一化的DataFrame
-            columns: 需要反归一化的列名列表（如果为None则使用fit时的列）
-
-        返回：
-            反归一化后的DataFrame（原始DataFrame的副本）
-        """
-        if self.mean is None or self.std is None or self.columns is None:
-            raise ValueError("Normalizer未拟合，请先调用fit()方法")
-
-        if columns is None:
-            columns = self.columns
-
-        result_df = df.copy()
-        for col in columns:
-            if col not in self.mean or col not in self.std:
-                raise ValueError(f"列 '{col}' 未在fit阶段处理")
-
-            result_df[col] = result_df[col] * (self.std[col] + self.epsilon) + self.mean[col]
-
-        return result_df
-
-    def fit_transform(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
-        """
-        拟合并应用归一化转换（fit + transform的便捷方法）
-
-        参数：
-            df: 输入DataFrame
-            columns: 需要归一化的列名列表
-
-        返回：
-            归一化后的DataFrame（原始DataFrame的副本）
-        """
-        self.fit(df, columns)
-        return self.transform(df, columns)
-
-    def __repr__(self) -> str:
-        """返回归一化器的字符串表示"""
-        if self.mean is None or self.std is None:
-            return f"Normalizer(fitted=False, epsilon={self.epsilon})"
-        return f"Normalizer(fitted=True, columns={self.columns}, epsilon={self.epsilon})"
-
-    def save(self, path: Path) -> None:
-        """
-        保存归一化参数到JSON文件
-
-        参数：
-            path: 保存路径
-        """
-        if self.mean is None or self.std is None:
-            raise ValueError("Normalizer未拟合，无法保存")
-
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        params = {
-            "mean": self.mean,
-            "std": self.std,
-            "columns": self.columns,
-            "epsilon": self.epsilon,
-        }
-
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(params, f, indent=2, ensure_ascii=False)
-
-    def load(self, path: Path) -> None:
-        """
-        从JSON文件加载归一化参数
-
-        参数：
-            path: 加载路径
-        """
-        path = Path(path)
-        if not path.exists():
-            raise FileNotFoundError(f"归一化参数文件不存在: {path}")
-
-        with open(path, encoding="utf-8") as f:
-            params = json.load(f)
-
-        self.mean = params["mean"]
-        self.std = params["std"]
-        self.columns = params["columns"]
-        self.epsilon = params.get("epsilon", 1e-8)
 
     @staticmethod
     def save_normalizers(normalizers: dict, path: Path) -> None:

@@ -11,7 +11,7 @@ def create_optimizer(
     创建优化器
     参数：
         model: 模型
-        optimizer_type: 优化器类型（adam, sgd, rmsprop）
+        optimizer_type: 优化器类型（adam, sgd）
         learning_rate: 学习率
         **kwargs: 其他优化器参数（如momentum、weight_decay等）
     返回：
@@ -24,7 +24,5 @@ def create_optimizer(
         return torch.optim.Adam(model.parameters(), lr=learning_rate, **kwargs)
     elif optimizer_type == "sgd":
         return torch.optim.SGD(model.parameters(), lr=learning_rate, **kwargs)
-    elif optimizer_type == "rmsprop":
-        return torch.optim.RMSprop(model.parameters(), lr=learning_rate, **kwargs)
     else:
-        raise ValueError(f"不支持的优化器类型: {optimizer_type}，支持的类型: adam, sgd, rmsprop")
+        raise ValueError(f"不支持的优化器类型: {optimizer_type}，支持的类型: adam, sgd")

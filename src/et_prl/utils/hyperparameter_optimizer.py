@@ -218,7 +218,6 @@ class BayesianOptimizer:
                 "trial_number": trial.number,
                 "params": rounded_params,
                 "params_raw": trial.params,
-                "params_rounded": rounded_params,
                 "value": trial.value,
                 "state": trial.state.name,
             }
@@ -228,37 +227,3 @@ class BayesianOptimizer:
         output_file = self.results_dir / "optimization_results.json"
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2, ensure_ascii=False)
-
-    def get_optimization_history(self) -> list:
-        """
-        获取优化历史
-
-        返回：
-            包含每一轮结果的列表
-        """
-        if self.study is None:
-            return []
-
-        history = []
-        for trial in self.study.trials:
-            history.append(
-                {
-                    "trial": trial.number,
-                    "params": trial.params,
-                    "value": trial.value,
-                    "state": trial.state.name,
-                }
-            )
-        return history
-
-    def get_best_params(self) -> dict[str, Any]:
-        """获取最优超参"""
-        if self.best_params is None:
-            raise RuntimeError("尚未完成优化，best_params 不可用")
-        return self.best_params
-
-    def get_best_value(self) -> float:
-        """获取最优值（验证损失）"""
-        if self.best_value is None:
-            raise RuntimeError("尚未完成优化，best_value 不可用")
-        return self.best_value

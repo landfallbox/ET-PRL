@@ -72,37 +72,6 @@ class CheckpointManager:
             best_path = self.checkpoints_dir / best_filename
             torch.save(state, best_path)
 
-    def load_checkpoint(
-        self,
-        filepath: Path,
-        model: torch.nn.Module,
-        optimizer: torch.optim.Optimizer | None = None,
-        map_location=None,
-    ) -> dict[str, Any]:
-        """
-        加载检查点到模型和优化器
-
-        参数:
-            filepath: 检查点文件路径
-            model: 模型实例
-            optimizer: 优化器实例（可选）
-            map_location: 设备映射
-
-        返回:
-            检查点内容字典 (不包含 model_state_dict 和 optimizer_state_dict，因为已经加载)
-        """
-        if not filepath.exists():
-            raise FileNotFoundError(f"Checkpoint file not found: {filepath}")
-
-        checkpoint = torch.load(filepath, map_location=map_location)
-
-        model.load_state_dict(checkpoint["model_state_dict"])
-
-        if optimizer is not None and "optimizer_state_dict" in checkpoint:
-            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-
-        return checkpoint
-
     @staticmethod
     def find_latest_experiment(
         experiment_name: str, mode: str = "train", log_root_dir: Path | None = None
