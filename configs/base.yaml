@@ -1,6 +1,6 @@
 # 全量字段规范（默认值载体 / 参数文档）。各实验 YAML 通过 extends: base 继承。
 
-DATA_ROOT: "data"
+DATA_ROOT: "data/shanghai_chiller"
 COMFORT_LOWER_BOUND: 13.0
 COMFORT_UPPER_BOUND: 21.0
 DATA_SUBDIR: ""

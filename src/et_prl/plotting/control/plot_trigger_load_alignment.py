@@ -225,7 +225,9 @@ def main() -> None:
 
         args.results_dir = default_control_compare_results_dir()
     results_dir = args.results_dir
-    env_data_path = args.env_data_path or (root / "data" / "dqn" / "test_data.csv")
+    env_data_path = args.env_data_path or (
+        root / "data" / "shanghai_chiller" / "dqn" / "test_data.csv"
+    )
     output_path = args.output_path or (
         root / "outputs" / "figures" / "fig9_trigger_load_alignment.svg"
     )

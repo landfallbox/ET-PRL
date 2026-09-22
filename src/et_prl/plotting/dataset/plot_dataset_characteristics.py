@@ -177,7 +177,7 @@ def plot_distribution_and_joint_pattern(df: pd.DataFrame, output_path: Path) -> 
 
 def main() -> None:
     root = project_root()
-    data_path = root / "data" / "raw_data.csv"
+    data_path = root / "data" / "shanghai_chiller" / "raw_data.csv"
     output_dir = root / "outputs" / "figures"
     output_dir.mkdir(parents=True, exist_ok=True)
 

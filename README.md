@@ -73,7 +73,9 @@
   - `plotting/`：绘图脚本（输出统一写 `outputs/figures/`）
   - `utils/`：通用工具（日志/指标/checkpoint/可复现性）
 - `configs/`：YAML 配置（单一事实源）
-- `data/`：输入数据与预处理输出（gitignore）
+- `data/`：数据（gitignore）
+  - `shanghai_chiller/`：上海冷冻站实测数据（2021.7-10，5min）与预处理输出（`raw_data.csv`、`action_all.npy`、`coeff_date.npy`、`dqn/`、`lstm/`）
+  - `external/`：外部公开数据集（一个数据集一个目录，目录内附来源/许可/字段说明）
 - `outputs/`：实验结果与图表（gitignore，约定见 `outputs/README.md`）
 - `docs/`：论文与图表源文件
 

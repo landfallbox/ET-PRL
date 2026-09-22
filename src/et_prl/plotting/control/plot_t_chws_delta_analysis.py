@@ -331,7 +331,7 @@ def generate_delta_figure(
     et_df = results["ET-PRL"]
 
     if env_data_path is None:
-        env_data_path = project_root() / "data" / "dqn" / "test_data.csv"
+        env_data_path = project_root() / "data" / "shanghai_chiller" / "dqn" / "test_data.csv"
 
     disturbance_values, disturbance_label = _load_disturbance_series(env_data_path, len(time_hours))
     common_length = min(len(time_hours), len(disturbance_values), len(et_df))
@@ -583,7 +583,7 @@ def main(
     if output_dir is None:
         output_dir = project_root() / "outputs" / "figures"
     if env_data_path is None:
-        env_data_path = project_root() / "data" / "dqn" / "test_data.csv"
+        env_data_path = project_root() / "data" / "shanghai_chiller" / "dqn" / "test_data.csv"
 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Loading control results from {results_dir}...")

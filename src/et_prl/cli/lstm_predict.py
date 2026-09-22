@@ -11,7 +11,7 @@ def main() -> None:
     parser.add_argument(
         "--output_csv_path",
         type=str,
-        default=str(Path("data") / "dqn" / "cl_next_predictions.csv"),
+        default=str(get_default("dqn").get_data_dir() / "cl_next_predictions.csv"),
     )
     parser.add_argument("--experiment_dir", type=str, default=None)
     args = parser.parse_args()
