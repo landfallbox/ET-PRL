@@ -36,7 +36,7 @@
 - 前置：已安装 Pandoc（`pandoc --version` 检查）；若要从 `docs/pics/fig2.drawio` 重新导出 Figure 2，还需 draw.io/diagrams.net 与 Inkscape 命令行工具
 - 若修改了 `docs/pics/fig2.drawio`，先导出 Word 友好的 plain SVG：`uv run python docs/papers/_docx_build/export_drawio_plain_svg.py`
 - 若缺少 draw.io 或 Inkscape，按脚本提示安装后重试；也可用 `DRAWIO_EXE`、`INKSCAPE_EXE` 指定可执行文件路径
-- 生成 Word：`uv run python docs/papers/_docx_build/merge_paper.py --input docs/papers/小论文-en.md`
+- 生成 Word：`uv run python docs/papers/_docx_build/merge_paper.py --input docs/papers/et-prl/小论文-en.md`
 
 ## 配置（YAML 单一事实源）
 

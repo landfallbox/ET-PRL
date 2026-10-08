@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from docx import Document
 
-DOCX_PATH = Path("docs/papers/小论文.docx")
+DOCX_PATH = Path("docs/papers/et-prl/小论文.docx")
 doc = Document(DOCX_PATH)
 
 print(f"Total tables: {len(doc.tables)}")

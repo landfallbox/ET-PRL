@@ -28,7 +28,7 @@ from docx.oxml.ns import qn
 
 
 BUILD_DIR = Path(__file__).resolve().parent
-PAPER_DIR = BUILD_DIR.parent
+PAPER_DIR = BUILD_DIR.parent / "et-prl"
 
 ALGO_BUILD_SCRIPT = BUILD_DIR / "build_algorithm_docx.py"
 ALGO_DOCX = PAPER_DIR / "algorithm1.docx"
@@ -240,7 +240,7 @@ def _parse_args() -> argparse.Namespace:
         "--input",
         type=Path,
         default=PAPER_MD,
-        help="Input markdown file. Defaults to docs/papers/小论文.md.",
+        help="Input markdown file. Defaults to docs/papers/et-prl/小论文.md.",
     )
     parser.add_argument(
         "--output",

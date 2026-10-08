@@ -27,9 +27,9 @@ Event-DQN.code-workspace
 
 # Local submission credentials (never commit)
 CREDENTIALS.local.md
-docs/papers/ijge-latex/submission/CREDENTIALS.local.md
-docs/papers/ibe-latex/submission/CREDENTIALS.local.md
+docs/papers/et-prl/submissions/ijge-latex/submission/CREDENTIALS.local.md
+docs/papers/et-prl/submissions/ibe-latex/submission/CREDENTIALS.local.md
 
 # LaTeX build intermediates (keep PDFs)
-docs/papers/ijge-latex/submission/build/*
-!docs/papers/ijge-latex/submission/build/*.pdf
+docs/papers/et-prl/submissions/ijge-latex/submission/build/*
+!docs/papers/et-prl/submissions/ijge-latex/submission/build/*.pdf

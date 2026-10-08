@@ -18,7 +18,7 @@ from lxml import etree
 
 BUILD_DIR = Path(__file__).resolve().parent
 GENERATED_DIR = BUILD_DIR / "generated"
-OUTPUT = BUILD_DIR.parent / "algorithm1.docx"
+OUTPUT = BUILD_DIR.parent / "et-prl" / "algorithm1.docx"
 MATH_MARKDOWN = GENERATED_DIR / "formula_source.md"
 MATH_DOCX = GENERATED_DIR / "formula_source.docx"
 PANDOC = "pandoc"
