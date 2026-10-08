@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSI 概念卡 · 自迭代强化学习 × 冷站控制</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#151b28; --panel2:#1b2334; --border:#2a3348;
+  --text:#e6edf3; --muted:#8b98b0; --accent:#4da3ff; --accent2:#ffb454;
+  --green:#3fb950; --red:#f85149; --purple:#bc8cff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.75}
+.wrap{max-width:1000px;margin:0 auto;padding:44px 24px 90px}
+h1{font-size:30px;letter-spacing:.5px}
+h1 small{display:block;font-size:14px;color:var(--muted);font-weight:400;margin-top:6px}
+h2{font-size:20px;margin:0 0 14px;padding-left:10px;border-left:4px solid var(--accent)}
+section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px 28px;margin-top:26px}
+p.lead{color:var(--muted);font-size:14.5px}
+.formula{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:14px 0;font-size:16px;text-align:center}
+.formula b{color:var(--accent2)}
+.tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);margin-right:6px}
+.tag.hot{color:var(--accent2);border-color:var(--accent2)}
+/* 环动画 */
+.loopbox{position:relative;width:420px;height:420px;margin:10px auto}
+.loopring{position:absolute;inset:70px;border:2px dashed #33415e;border-radius:50%}
+.node{position:absolute;width:150px;padding:12px 10px;background:var(--panel2);border:1.5px solid var(--border);border-radius:12px;font-size:13.5px;text-align:center;transition:all .4s}
+.node b{display:block;font-size:14.5px;margin-bottom:4px}
+.node span{color:var(--muted);font-size:12px;line-height:1.5;display:block}
+.node.active{border-color:var(--accent);box-shadow:0 0 18px rgba(77,163,255,.35);transform:scale(1.05)}
+.node.n1{top:0;left:135px}
+.node.n2{top:135px;right:0}
+.node.n3{bottom:0;left:135px}
+.node.n4{top:135px;left:0}
+.loopcaption{margin:14px auto 0;max-width:420px;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 16px}
+.loopcaption .t1{font-size:16px;font-weight:700;color:var(--accent2);line-height:1.5}
+.loopcaption .t2{font-size:12.5px;color:var(--muted);margin-top:4px}
+.loopdot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);inset:auto;left:50%;top:50%;margin:-6px 0 0 -6px}
+@keyframes orbit{from{transform:rotate(0deg) translateX(140px)}to{transform:rotate(360deg) translateX(140px)}}
+.loopdot{animation:orbit 6s linear infinite}
+/* 三特征卡 */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+.fcard{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.fcard h3{font-size:15px;color:var(--accent);margin-bottom:8px}
+.fcard p{font-size:13px;color:var(--muted)}
+.fcard .ex{margin-top:8px;font-size:12px;color:var(--text);background:rgba(77,163,255,.08);border-radius:8px;padding:8px 10px}
+/* 对比表 */
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:12px}
+th,td{border:1px solid var(--border);padding:10px 12px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--muted);font-weight:600}
+tr.hl td{background:rgba(255,180,84,.07);color:var(--text)}
+td.dim{color:var(--muted)}
+/* 三种 formulation */
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tabbtn{background:var(--panel2);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:7px 16px;font-size:13.5px;cursor:pointer;transition:all .2s}
+.tabbtn.active{border-color:var(--accent);color:var(--text);background:rgba(77,163,255,.12)}
+.fpanel{display:none;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.fpanel.show{display:block}
+.minidiag{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0;font-size:13px}
+.mbox{background:var(--bg);border:1.5px solid #3b4a6b;border-radius:10px;padding:9px 14px;text-align:center}
+.mbox.q{border-color:var(--accent2);color:var(--accent2)}
+.mbox.p{border-color:var(--accent);color:var(--accent)}
+.mbox.a{border-color:var(--green);color:var(--green)}
+.arrow{color:var(--muted);font-size:18px}
+.fpanel .desc{font-size:13.5px;color:var(--muted)}
+.fpanel .desc b{color:var(--text)}
+/* 闸门 canvas */
+.ctrl{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px}
+.ctrl .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctrl .lbl{font-size:13px;color:var(--muted)}
+canvas{width:100%;height:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;display:block}
+.msg{margin-top:12px;font-size:14px;background:var(--panel2);border-left:4px solid var(--accent2);border-radius:8px;padding:12px 16px}
+.answer{background:rgba(77,163,255,.10);border:1px solid var(--accent);border-left:4px solid var(--accent);border-radius:10px;padding:14px 18px;font-size:14.5px;margin-top:12px}
+/* 骨架 */
+pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px;font-size:13.5px;line-height:1.8;overflow-x:auto;font-family:Consolas,"Cascadia Code",monospace;color:#c9d6ea}
+pre .c{color:var(--muted)}
+pre .h{color:var(--accent2)}
+footer{margin-top:40px;text-align:center;color:var(--muted);font-size:12.5px}
+@media(max-width:720px){.grid3{grid-template-columns:1fr}.loopbox{transform:scale(.82);transform-origin:top center;margin:-30px auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>RSI 概念卡：自迭代强化学习
+    <small>Self-Iterative / Self-Improving RL × 冷站事件触发控制 · ET-PRL next-paper 前期方法探索 · 2026-09-28</small>
+  </h1>
+</header>
+
+<!-- 1 最小定义 -->
+<section>
+  <h2>1 · 最小定义（先记住这一句）</h2>
+  <p class="lead">RSI 不是一个有教科书定义的固定技术，而是一个<b style="color:var(--text)">机制家族</b>。它的本质是一个环：</p>
+  <div class="formula">部署当前的自己 → 收集<b>自己</b>的经验 →（由<b>自己</b>的性能触发）更新自己 → 再部署<br>
+  <span style="font-size:14px;color:var(--muted)">π₀ → π₁ → π₂ → … &nbsp;&nbsp;（冷站场景：π₀,τ₀ → π₁,τ₁ → …，阈值 τ 共同进化）</span></div>
+  <p class="lead">注意：它<b style="color:var(--text)">不是</b>可以脱离论文先学懂的固定算法——读 RLoop / SELFI / ProteinZero 这些论文，本身就是"弄懂 RSI"的过程。你能先建立的，是下面这张概念锚。</p>
+</section>
+
+<!-- 2 在线部署辨析 -->
+<section>
+  <h2>2 · RSI 是"在线部署方式"吗？（一个易混点）</h2>
+  <div class="answer">
+    <b>不完全是。</b>RSI 是一种<b>学习范式</b>（策略如何随时间改进），不是部署方式。但它<b>依赖部署</b>——部署是必要前提，不是本质。
+  </div>
+  <p class="lead" style="margin-top:14px"><b style="color:var(--text)">为什么"依赖部署"</b>：RSI 的定义性特征是<b style="color:var(--text)">自指性</b>——经验和改进信号必须来自 agent <b>自己</b>的部署。不部署就没有自己的经验，也就没有自迭代（区别于离线 RL：静态数据训一次就完事）。所以部署阶段是 RSI 的"原料来源"。</p>
+  <p class="lead" style="margin-top:10px"><b style="color:var(--text)">但它也不是"在线 RL"</b>。三者的差别在"更新时机"：</p>
+  <table>
+    <tr><th>范式</th><th>与部署的关系</th><th>更新时机</th></tr>
+    <tr><td>离线 RL</td><td class="dim">部署一次，无环</td><td class="dim">部署前训完，之后不再更新</td></tr>
+    <tr><td>在线 RL</td><td class="dim">部署中</td><td class="dim"><b>每步</b>都更新（连续梯度）</td></tr>
+    <tr class="hl"><td><b>RSI</b></td><td><b>部署中（轮次式）</b></td><td><b>离散结构化轮次</b>：部署→收集→判断→更新→再部署</td></tr>
+  </table>
+  <p class="lead" style="margin-top:12px">RSI 和在线 RL 的差别：在线 RL 每步都改；RSI 是"部署一段、攒一批经验、再做一次<b style="color:var(--text)">结构化更新</b>"。<b style="color:var(--text)">RSI 的本质是那个"改进环"，不是部署本身</b>——部署只是环里"收集经验"那一步的实现方式。</p>
+
+  <p class="lead" style="margin-top:16px"><b style="color:var(--accent2)">对冷站论文的关键推论</b>：我们只有<b style="color:var(--text)">历史数据</b>（没有实时现场接入），那 RSI 里的"部署"指什么？答案是 <b style="color:var(--text)">滚动窗口回放（rolling replay / 仿真回放）</b>——在某个时间窗上"部署" πₖ、跑完这段数据、从结果收集经验，判断→更新→移到下一个窗"部署" πₖ₊₁。这正是文档反复强调<b style="color:var(--text)">"滚动评估协议"</b>的原因：它就是历史数据上让"部署"阶段真实化的机制。</p>
+  <table>
+    <tr><th>形态</th><th>"部署"阶段靠什么</th><th>何时做</th></tr>
+    <tr><td>历史数据版</td><td>滚动回放 / 仿真</td><td>现在就能做（Phase 0 动机实验）</td></tr>
+    <tr class="hl"><td>现场版</td><td>真实系统在线运行</td><td>最终形态，需现场接入</td></tr>
+  </table>
+  <p class="lead" style="margin-top:12px">一句话：<b style="color:var(--text)">RSI 是"部署耦合的迭代学习范式"——部署是入场券，改进环才是本体；在历史数据上，"部署"退化为滚动回放，所以滚动评估协议不是可选项，而是 RSI 在冷站数据上成立的承重墙。</b></p>
+</section>
+
+<!-- 3 环动画 -->
+<section>
+  <h2>3 · 核心环（动画）</h2>
+  <p class="lead">外层环 = RSI 本体；内层（部署阶段）= 前一篇 ET-PRL 的事件触发控制，原封不动保留。</p>
+  <div class="loopbox">
+    <div class="loopring"></div>
+    <div class="loopdot"></div>
+    <div class="node n1" id="nd0"><b>① 部署</b><span>πₖ + τₖ 上线运行<br>（内层：事件触发控制）</span></div>
+    <div class="node n2" id="nd1"><b>② 收集经验</b><span>一个时间窗内的<br>在线运行经验（自己的）</span></div>
+    <div class="node n3" id="nd2"><b>③ 触发判断</b><span>性能退化？工况漂移？<br>都不满足 → 不迭代，继续部署</span></div>
+    <div class="node n4" id="nd3"><b>④ 更新</b><span>筛成功轨迹 → RFT 微调 π<br>同步更新 τ（KL 锚定防漂移）</span></div>
+  </div>
+  <div class="loopcaption">
+    <div class="t1" id="loopT">事件触发自迭代环</div>
+    <div class="t2" id="loopS">迭代由"失配"驱动，而非固定周期</div>
+  </div>
+  <p class="lead" style="text-align:center">关键：③ 是<b style="color:var(--text)">事件触发</b>的——"自迭代"区别于"定期重训"的核心，也是它区别于"逐步在线学习"的核心（离散轮次 vs 连续更新）。</p>
+</section>
+
+<!-- 3 三个划界特征 -->
+<section>
+  <h2>4 · 让它"自迭代"的三个特征（划界锚点）</h2>
+  <div class="grid3">
+    <div class="fcard">
+      <h3>① 自指性</h3>
+      <p>经验与改进信号都来自 agent <b>自己</b>的部署——不是人、不是教师、不是固定数据集。</p>
+      <div class="ex">冷站：用部署后自己跑出来的数据改进自己</div>
+    </div>
+    <div class="fcard">
+      <h3>② 迭代性（离散轮次）</h3>
+      <p>改进发生在结构化轮次里，πₖ → πₖ₊₁，每轮建立在上轮之上，不是一次训练。</p>
+      <div class="ex">冷站：每个时间窗（日/工况周期）是一个轮次单元</div>
+    </div>
+    <div class="fcard">
+      <h3>③ 结构化更新步</h3>
+      <p>每轮更新是一个 deliberate 步骤（筛轨迹→微调），不是逐步梯度更新。</p>
+      <div class="ex">冷站：筛成功轨迹 → RFT 微调 + KL 锚定</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 邻近范式对比 -->
+<section>
+  <h2>5 · 和邻近范式划界（读论文时归类的锚）</h2>
+  <table>
+    <tr><th>范式</th><th>更新什么</th><th>由什么驱动</th><th>数据来源</th></tr>
+    <tr><td>离线 RL</td><td class="dim">策略</td><td class="dim">固定数据集</td><td class="dim">预采集、静态</td></tr>
+    <tr><td>在线 RL</td><td class="dim">策略</td><td class="dim">持续交互</td><td class="dim">实时环境，<b>逐步</b>更新</td></tr>
+    <tr><td>持续/终身学习</td><td class="dim">策略/模型</td><td class="dim">新任务流</td><td class="dim">新任务不断到达</td></tr>
+    <tr><td>Meta-RL</td><td class="dim">元策略</td><td class="dim">任务分布</td><td class="dim">多任务</td></tr>
+    <tr class="hl"><td><b>自迭代 RSI</b></td><td><b>策略（它自己）</b></td><td><b>自己的经验 + 自己的性能</b></td><td><b>自己的部署</b></td></tr>
+  </table>
+  <p class="lead" style="margin-top:12px">最微妙的一对是 <b style="color:var(--text)">在线 RL vs 自迭代</b>：在线 RL 每步都更新；自迭代是<b style="color:var(--text)">离散、结构化的改进轮次</b>。事件触发的外层环正是让它"迭代"而非"只是连续在线学习"的东西——你之前感到的"事件触发 vs RL 冲突"，在这里被消解：触发不是冗余外力，它是"迭代"二字的构成部分。</p>
+</section>
+
+<!-- 5 事件触发关系 -->
+<section>
+  <h2>6 · 事件触发和 RL 冲突吗？—— 三种 formulation</h2>
+  <p class="lead">"冲突"只发生在"谁来决定何时动作"这一点。围绕它有三种等价但不同的 formulation（表达能力大致等价，差别在样本效率 / 可解释性 / 动作空间）：</p>
+  <div class="tabs">
+    <button class="tabbtn active" data-p="fa"> (a) hold 作为动作（MDP）</button>
+    <button class="tabbtn" data-p="fb"> (b) 阈值 ETC ← ET-PRL / 新论文</button>
+    <button class="tabbtn" data-p="fc"> (c) 隐式触发（状态增广）</button>
+  </div>
+  <div class="fpanel show" id="fa">
+    <div class="minidiag">
+      <div class="mbox">每步：状态 sₜ</div><span class="arrow">→</span>
+      <div class="mbox p">π 自己选：hold / act</div><span class="arrow">→</span>
+      <div class="mbox a">动作</div>
+    </div>
+    <p class="desc"><b>时序逻辑 + 控制律都编码在 π 里，纠缠。</b>你的直觉是对的：理论上 π 能自己学出"何时不动"。但在<b>连续动作空间</b>（冷站：PLR、阀位、供水温度）里，"hold = 重复上一步连续值"不是自然动作，需要离散化或特殊处理。</p>
+  </div>
+  <div class="fpanel" id="fb">
+    <div class="minidiag">
+      <div class="mbox">每步：状态 sₜ</div><span class="arrow">→</span>
+      <div class="mbox q">τ 检查：|e| &gt; τ ?（廉价）</div><span class="arrow">→ 否 →</span>
+      <div class="mbox">保持上次动作（hold）</div>
+    </div>
+    <div class="minidiag" style="margin-top:4px">
+      <div class="mbox" style="visibility:hidden">每步：状态 sₜ</div><span class="arrow" style="visibility:hidden">→</span>
+      <div class="mbox q">τ 检查：|e| &gt; τ ?</div><span class="arrow">→ 是 →</span>
+      <div class="mbox p">π 被查询</div><span class="arrow">→</span>
+      <div class="mbox a">新设定值</div>
+    </div>
+    <p class="desc"><b>时序逻辑显式（τ）+ 控制律学习（π），关注点分离。</b>四个不冗余的理由：① 连续动作空间下 hold 不自然，ETC 干净处理；② 样本效率（π 只学"该动时做什么"）；③ τ 显式、可解释、<b>可独立学/共同进化</b>（新论文贡献的前提）；④ 执行/物理成本（冷机启停磨损）是一等约束。代价：引入了归纳偏置——审稿人会问"为什么不让 RL 隐式学"。</p>
+  </div>
+  <div class="fpanel" id="fc">
+    <div class="minidiag">
+      <div class="mbox">状态 sₜ + 累积奖励（历史）</div><span class="arrow">→</span>
+      <div class="mbox p">π 隐式决定触发 + 动作</div><span class="arrow">→</span>
+      <div class="mbox a">动作</div>
+    </div>
+    <p class="desc"><b>Adaptive ETRL (2409.19769) 的路线</b>：把累积奖励增广进状态，价值函数天然编码历史，无需显式学触发条件即得自适应非平稳策略。它证明了"触发条件可学"成立——是新论文的桥，也是审稿人攻击"显式阈值不必要"的弹药。<b>关键：走隐式路线就失去"阈值共同进化"这个贡献点。</b></p>
+  </div>
+  <p class="lead" style="margin-top:14px">理论定位一句话：<b style="color:var(--text)">事件触发不是替 RL 做它做不到的事，而是把 RL 本可以隐式学的时序逻辑，抽出来做成显式、可学、可共同进化的参数</b>——代价是归纳偏置，收益是样本效率 + 可解释性 + 一个隐式触发给不出的贡献点。最干净的理论外壳是 <b style="color:var(--text)">SMDP</b>：触发时刻做决策，触发间开环演化；"hold 作为动作"是 sojourn time 恒为 1 步的特例（Applied Energy 2020 即用 SMDP 框架）。</p>
+</section>
+
+<!-- 6 闸门问题 -->
+<section>
+  <h2>7 · 闸门问题：冷站问题值得 RSI 吗？（交互）</h2>
+  <p class="lead">"RSI 能不能加到 HVAC" <b style="color:var(--text)">首先不是 RSI 的问题，而是冷站问题是否具有非平稳性</b>。自迭代是个机制，只在环境非平稳时才划算。切换下面的开关看四条曲线：</p>
+  <div class="ctrl">
+    <div class="grp"><span class="lbl">环境：</span>
+      <button class="tabbtn" id="envSt">平稳</button>
+      <button class="tabbtn active" id="envNs">非平稳（工况漂移）</button>
+    </div>
+    <div class="grp"><span class="lbl">更新策略：</span>
+      <button class="tabbtn" id="upStatic">静态策略</button>
+      <button class="tabbtn" id="upSched">定期重训</button>
+      <button class="tabbtn active" id="upEvent">事件触发自迭代</button>
+    </div>
+  </div>
+  <canvas id="cv" width="1800" height="640"></canvas>
+  <div class="msg" id="msg"></div>
+</section>
+
+<!-- 9 RSI 与训练阶段 -->
+<section>
+  <h2>9 · RSI 和训练阶段：不是"参与训练"，是"治理生命周期"</h2>
+  <p class="lead">RSI 不是训练算法——<b>怎么训 = RFT 微调，不变</b>。它是决定<b>何时训、用什么训、怎么初始化</b>的调度器 / 生命周期协议。原 ET-PRL 的"训练 → 部署 → 冻结"是一次性生命周期，RSI 把它变成重复生命周期。</p>
+  <h3>两层更新：事件触发真正改的是什么</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>第一层 · 轮次内（不变）</h4>
+      <p>π 用标准 RL（梯度下降）在当前轮数据上训练。RSI 不改变这一步——轮次内算法和原 ET-PRL 完全一样。</p>
+    </div>
+    <div class="card">
+      <h4>第二层 · 轮次间（新增）</h4>
+      <p>事件触发：性能退化 ∨ 工况漂移 → 决定是否开下一轮。下一轮的数据 = 部署的 πₖ 收集的经验；下一轮的起点 = πₖ（热启动，不从零开始）。</p>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:10px">两个易错点修正：① "每时间步都更新"是在线 RL 的特征，不是基线——事件触发在<b>轮次级</b>，不在时间步级；② 是"按需"（事件触发），不是"始终在线"。</p>
+</section>
+
+<!-- 10 价值边界 -->
+<section>
+  <h2>10 · 价值边界：RSI 到底买到了什么（关键自检）</h2>
+  <p class="lead"><b>"10000 条数据"思想实验</b>：如果数据是静态历史、环境是平稳的，那么 RSI ≈ 把一次训练拆成多次——没有价值。RSI 的价值由两个假设买来：</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>假设 ① 非平稳性</h4>
+      <p>环境 / 工况随时间变化 → 顺序适应让最新工况赢得话语权。一次性全量训练 = 各工况的折中模型（"四季折中"模型）。</p>
+    </div>
+    <div class="card">
+      <h4>假设 ② 在策略自产数据</h4>
+      <p>每轮数据由模型自己的动作产生——环境必须能评估"模型自己动作"的奖励。静态历史数据做不到：奖励固定在数据里，模型动作不影响奖励。</p>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:10px">静态历史数据两个假设都不满足（或只弱满足 ①）→ 纯静态数据 RSI 是只保留顺序适应的弱化版。第 7 节闸门问题验证 ①（承重墙）；第 11 节验证 ②（环境选择）。</p>
+</section>
+
+<!-- 11 环境前置条件 -->
+<section>
+  <h2>11 · 前置条件：环境必须"对模型自己的动作有响应"</h2>
+  <p class="lead">静态历史数据序列是<b>数据集，不是环境</b>。RSI 要发挥作用，环境必须能对模型自己的动作返回奖励。四条路径：</p>
+  <table>
+    <tr><th>路径</th><th>非平稳性</th><th>在策略奖励</th><th>说明</th></tr>
+    <tr><td>真实在线部署</td><td>✔</td><td>✔</td><td>真实冷站响应 agent 动作；竞赛数据不支持</td></tr>
+    <tr><td>物理仿真器</td><td>✔（回放时间线）</td><td>✔</td><td>EnergyPlus 等；需建冷站模型</td></tr>
+    <tr><td>学习型数字孪生</td><td>✔</td><td>✔（保真度是天花板）</td><td>训练代理模型当环境；接数字孪生文献线</td></tr>
+    <tr><td>纯静态历史数据</td><td>弱</td><td>✘</td><td>仅保留顺序适应的弱化版</td></tr>
+  </table>
+  <p class="lead" style="margin-top:10px"><b>推荐路径：滚动回放过仿真器</b>——历史时间线按序回放（→ 非平稳）+ agent 出动作、仿真器返奖励（→ 在策略），同时满足两个假设。<b>保真度风险 = RSI 链天花板</b>：OOD 动作 → 仿真器预测不准 → 在错误奖励上自迭代，越迭代越偏；对历史数据校验仿真器 / 置信度加权是前置。</p>
+</section>
+
+<!-- 12 冷站 RSI 环骨架 -->
+<section>
+  <h2>12 · 拼出的冷站 RSI 环（设计骨架，待 Phase 0 验证）</h2>
+<pre><span class="c"># 外层环（RSI，事件触发）</span>
+初始化：π₀, τ₀ = ET-PRL 策略 + 离线贝叶斯阈值   <span class="h">← 前一篇结果作为起点，不丢弃</span>
+循环：
+  1. 部署 πₖ + τₖ，一个时间窗内收集在线经验
+  2. <span class="h">[迭代触发判断]</span>（事件触发，非固定周期）：
+       性能退化？（奖励/KPI 跌破基线）
+       工况漂移？（运行分布变化）
+       都不满足 → 保持 πₖ+τₖ 继续部署（不迭代）
+  3. 触发则更新（部分式，不丢历史）：
+       筛成功轨迹 → RFT 微调 πₖ → πₖ₊₁（KL 锚到 πₖ，防漂移/过特化）
+       同步更新 τₖ → τₖ₊₁（显式可学阈值，与 π 共同进化）
+  4. 再部署 πₖ₊₁ + τₖ₊₁
+安全：KL 锚定 + 安全盾（参照 CQD-ERL），防止自迭代把策略带崩</pre>
+  <p class="lead" style="margin-top:12px"><b style="color:var(--text)">待 Phase 0 回答的前置问题</b>（上面第 7 节的动画就是它的预演）：① 冷站数据上"静态 π₀+τ₀ 随时间退化"是否真实成立（价值边界 · 假设 ①，第 10 节）——不成立则外层环无动机，需先定位非平稳性来源（工况漂移 / 设备老化 / 使用模式变化）；② 环境能否提供在策略奖励（价值边界 · 假设 ②，第 11 节）——确定滚动回放过仿真器 / 数字孪生的路径。</p>
+</section>
+
+<footer>ET-PRL next-paper · 文献调研 v5 配套概念卡 · 机制来源：RLoop / 高效重启 / SELFI / ProteinZero / Adaptive ETRL · 概念结论见文献调研文档 §2.7–2.8</footer>
+</div>
+
+<script>
+// ---- 环动画 ----
+(function(){
+  var nodes=[document.getElementById('nd0'),document.getElementById('nd1'),document.getElementById('nd2'),document.getElementById('nd3')];
+  var T=['事件触发<br>自迭代环','收集自己的<br>在线经验','失配才迭代<br>（非固定周期）','部分式更新<br>不丢历史'];
+  var S=['迭代由"失配"驱动，而非固定周期','时间窗 = 一个轮次单元','性能退化 ∨ 工况漂移 → 迭代','RFT 微调 π + 更新 τ，KL 锚定'];
+  var i=0;
+  setInterval(function(){
+    nodes.forEach(function(n,k){n.classList.toggle('active',k===i);});
+    document.getElementById('loopT').innerHTML=T[i];
+    document.getElementById('loopS').textContent=S[i];
+    i=(i+1)%4;
+  },1500);
+})();
+// ---- formulation tabs ----
+document.querySelectorAll('.tabbtn[data-p]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tabbtn[data-p]').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.fpanel').forEach(function(x){x.classList.remove('show');});
+    b.classList.add('active');
+    document.getElementById(b.dataset.p).classList.add('show');
+  });
+});
+// ---- 闸门 canvas ----
+(function(){
+  var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+  var env='ns',mode='event';
+  var msgEl=document.getElementById('msg');
+  function bind(id,val,group){
+    document.getElementById(id).addEventListener('click',function(){
+      if(group==='env'){env=val;syncEnv();}else{mode=val;syncMode();}
+      draw();
+    });
+  }
+  function syncEnv(){
+    document.getElementById('envSt').classList.toggle('active',env==='st');
+    document.getElementById('envNs').classList.toggle('active',env==='ns');
+  }
+  function syncMode(){
+    document.getElementById('upStatic').classList.toggle('active',mode==='static');
+    document.getElementById('upSched').classList.toggle('active',mode==='sched');
+    document.getElementById('upEvent').classList.toggle('active',mode==='event');
+  }
+  bind('envSt','st','env');bind('envNs','ns','env');
+  bind('upStatic','static','mode');bind('upSched','sched','mode');bind('upEvent','event','mode');
+
+  function sim(m){
+    var N=120,envA=[],perf=[],trig=[];
+    var ns=(env==='ns');
+    for(var t=0;t<N;t++){
+      envA[t]=ns? 92-0.35*t+Math.sin(t/7)*1.2 : 90+Math.sin(t/9)*0.8;
+    }
+    perf[0]=envA[0]-1;
+    for(var t2=1;t2<N;t2++){
+      perf[t2]=perf[t2-1]-(ns?0.35:0.02);
+      if(m==='sched'&&t2%30===0){perf[t2]=envA[t2]-1;trig.push(t2);}
+      else if(m==='event'&&envA[t2]-perf[t2]>4){perf[t2]=envA[t2]-1;trig.push(t2);}
+    }
+    return {envA:envA,perf:perf,trig:trig};
+  }
+  function X(t){return 60+ (t/119)*(cv.width-120);}
+  function Y(v){return 40+ (100-v)*(cv.height-100)/45;}
+  function draw(){
+    var s=sim(mode);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    // 网格
+    ctx.strokeStyle='#232c40';ctx.lineWidth=1;ctx.font='20px Segoe UI';ctx.fillStyle='#8b98b0';
+    for(var g=60;g<=100;g+=10){
+      ctx.beginPath();ctx.moveTo(50,Y(g));ctx.lineTo(cv.width-40,Y(g));ctx.stroke();
+      ctx.fillText(g,14,Y(g)+7);
+    }
+    ctx.fillText('时间 →',cv.width-140,cv.height-16);
+    ctx.fillText('性能 (KPI) ↑',12,30);
+    // gap 填充（env vs perf）
+    ctx.beginPath();
+    for(var t0=0;t0<120;t0++){var x0=X(t0);if(t0===0)ctx.moveTo(x0,Y(s.envA[t0]));else ctx.lineTo(x0,Y(s.envA[t0]));}
+    for(var t1=119;t1>=0;t1--){ctx.lineTo(X(t1),Y(s.perf[t1]));}
+    ctx.closePath();ctx.fillStyle='rgba(248,81,73,.10)';ctx.fill();
+    // env 线
+    ctx.beginPath();
+    for(var t2=0;t2<120;t2++){if(t2===0)ctx.moveTo(X(t2),Y(s.envA[t2]));else ctx.lineTo(X(t2),Y(s.envA[t2]));}
+    ctx.setLineDash([10,8]);ctx.strokeStyle='#e6edf3';ctx.lineWidth=3;ctx.stroke();ctx.setLineDash([]);
+    // perf 线
+    ctx.beginPath();
+    for(var t3=0;t3<120;t3++){if(t3===0)ctx.moveTo(X(t3),Y(s.perf[t3]));else ctx.lineTo(X(t3),Y(s.perf[t3]));}
+    ctx.strokeStyle='#4da3ff';ctx.lineWidth=4;ctx.stroke();
+    // 触发点
+    s.trig.forEach(function(tt){
+      ctx.beginPath();ctx.arc(X(tt),Y(s.perf[tt]),9,0,Math.PI*2);
+      ctx.fillStyle='#ffb454';ctx.fill();
+      ctx.strokeStyle='#0d1117';ctx.lineWidth=3;ctx.stroke();
+    });
+    // 图例
+    ctx.font='22px Segoe UI';
+    ctx.setLineDash([10,8]);ctx.strokeStyle='#e6edf3';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(80,70);ctx.lineTo(130,70);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#e6edf3';ctx.fillText('环境最优性能',140,78);
+    ctx.strokeStyle='#4da3ff';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(330,70);ctx.lineTo(380,70);ctx.stroke();
+    ctx.fillStyle='#4da3ff';ctx.fillText(mode==='static'?'静态策略（前一篇 ET-PRL 产物）':(mode==='sched'?'定期重训（每 30 步）':'事件触发自迭代（失配才更新）'),390,78);
+    ctx.beginPath();ctx.arc(760,66,8,0,Math.PI*2);ctx.fillStyle='#ffb454';ctx.fill();
+    ctx.fillStyle='#ffb454';ctx.fillText('迭代/重训触发点',780,74);
+    // 消息
+    var m;
+    if(env==='st'){
+      m='平稳环境：静态策略已近最优（红线几乎贴着白线）。此时自迭代买不到任何东西——只花计算、只担漂移风险。<b>结论：非平稳性是 RSI 的入场券。</b>';
+    }else if(mode==='static'){
+      m='非平稳 + 静态策略：环境在漂（白线下移），静态策略不动 → 红色 gap 随时间越拉越大。这就是 Phase 0 要验证的"退化"。';
+    }else if(mode==='sched'){
+      m='非平稳 + 定期重训：每 30 步强制更新——有时环境还没变（白点浪费），有时 gap 已经很大才更新（滞后）。固定周期 = 盲目，这是"高效重启"文献指出的缺陷。';
+    }else{
+      m='非平稳 + 事件触发自迭代：只在 gap 超阈值时更新（橙点）——环境没变不花成本，变了立刻跟上。<b>这就是"自迭代"区别于"定期重训"和"静态策略"的全部价值。</b>';
+    }
+    msgEl.innerHTML=m;
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
