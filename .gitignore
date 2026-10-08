@@ -17,7 +17,6 @@ env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.playwright-mcp/
 
 # temp ignore
 Event-DQN.code-workspace
