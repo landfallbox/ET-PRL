@@ -7,7 +7,7 @@
 
 状态空间（6.3，无 LSTM）：
   [CL, Twb, Tdb, hour, day_of_week, 运行台数, PLR, 当前设定, 实际供水温度, 跟踪误差]
-动作空间（6.2）：19 档聚合供水温度设定 5.8-10.3℃ × 0.25℃
+动作空间（6.2）：13 档聚合供水温度设定 7.0-10.0℃ × 0.25℃
 奖励（6.5）：r = -w_e·(ΣP/CL) - w_c·comfort_violation - w_a·|Δsetpoint|
 
 用法：
@@ -35,9 +35,9 @@ CP = 4.186
 RHO = 998.0
 
 # 动作空间：19 档 5.8-10.3℃ × 0.25℃
-ACTION_MIN = 5.8
+ACTION_MIN = 7.0
 ACTION_STEP = 0.25
-ACTION_N = 19
+ACTION_N = 13
 ACTION_SPACE = np.round(ACTION_MIN + np.arange(ACTION_N) * ACTION_STEP, 3)
 
 # 状态列（按序）
@@ -53,9 +53,17 @@ class CsgeConfig:
     w_e: float = 1.0          # 能耗权重
     w_c: float = 0.5          # 舒适越界权重
     w_a: float = 0.1          # 动作变化惩罚
-    comfort_lo: float = 7.0   # 供水温度舒适带下界
-    comfort_hi: float = 10.5  # 供水温度舒适带上界
+    comfort_lo: float = 7.5   # 舒适带下界（常数，数据 p10≈8.1 留裕量）
+    comfort_hi_base: float = 9.5    # 舒适带上界（低负载，数据 p90≈9.0 留裕量）
+    comfort_hi_min: float = 8.5     # 舒适带上界（高负载下限，数据 p90≈8.3 留裕量）
+    comfort_hi_slope: float = 0.0025  # 上界随负载下降斜率 /kW
+    comfort_hi_cl_start: float = 200.0  # 斜率起始负载
     comfort_sigma: float = 1.0
+
+    def comfort_hi(self, cl: float) -> float:
+        """负载相关舒适带上界（数据驱动：操作员负载越高设定越低）。"""
+        hi = self.comfort_hi_base - self.comfort_hi_slope * max(0.0, cl - self.comfort_hi_cl_start)
+        return float(max(self.comfort_hi_min, min(self.comfort_hi_base, hi)))
 
 
 class CsgeEnv:
@@ -76,6 +84,8 @@ class CsgeEnv:
         pm = calibration["power_model"]
         self.capacity = float(pm["capacity_kw"])
         self.power_coef = np.array(pm["power_model_coeffs"])
+        self.p_ref = float(pm["p_ref_kw"])
+        self.track_offset = -0.1  # 实际供水温度跟踪偏移（数据中位数 act-sp≈-0.11）
         self.thr_1to2 = float(calibration["chiller_count"]["thr_1to2_cl_kw"])
         hb = calibration.get("heat_balance", {})
         self.f_chw = float(hb.get("f_chw_m3h", 87.5))
@@ -89,15 +99,10 @@ class CsgeEnv:
 
     # ---------- 物理模型 ----------
     def _chiller_power(self, clc: float, t_supply: float, t_out: float) -> float:
-        """单台冷机功率（标定二次多项式）。"""
+        """单台冷机功率（标定可分离乘积模型：P = P_ref·exp(...)）。"""
         plr = float(np.clip(clc / self.capacity, 0.0, 1.5))
-        x = np.array([
-            1.0, plr, plr**2,
-            t_supply, t_supply**2,
-            t_out, t_out**2,
-            plr * t_supply,
-        ])
-        p = float(x @ self.power_coef)
+        x = np.array([plr, plr**2, t_supply, t_supply**2, t_out, t_out**2])
+        p = self.p_ref * float(np.exp(x @ self.power_coef))
         return max(p, 0.0)
 
     def _n_chillers(self, cl: float) -> int:
@@ -115,7 +120,7 @@ class CsgeEnv:
             return {"n_on": 0, "sum_p": 0.0, "t_supply": action_sp,
                     "track_err": 0.0, "clc": 0.0}
         clc = cl / n
-        t_supply = action_sp + clc / ((CP * RHO * self.f_chw) / 3600.0)
+        t_supply = action_sp + self.track_offset  # 实际供水温度≈设定+跟踪偏移（非回水温度）
         p_single = self._chiller_power(clc, action_sp, t_out)
         # ΣP = 冷机 + 泵 + 冷却塔（泵/塔按运行台数比例）
         sum_p = n * p_single + n * self.pump_kw + n * self.cwp_kw + n * self.ct_kw
@@ -146,8 +151,8 @@ class CsgeEnv:
         # 舒适越界：供水温度出带的程度
         if sim["t_supply"] < self.cfg.comfort_lo:
             viol = (self.cfg.comfort_lo - sim["t_supply"]) / self.cfg.comfort_sigma
-        elif sim["t_supply"] > self.cfg.comfort_hi:
-            viol = (sim["t_supply"] - self.cfg.comfort_hi) / self.cfg.comfort_sigma
+        elif sim["t_supply"] > self.cfg.comfort_hi(cl):
+            viol = (sim["t_supply"] - self.cfg.comfort_hi(cl)) / self.cfg.comfort_sigma
         else:
             viol = 0.0
         act = abs(action_sp - self._cur_sp)
