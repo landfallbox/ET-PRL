@@ -7,7 +7,7 @@
 
 状态空间（6.3，无 LSTM）：
   [CL, Twb, Tdb, hour, day_of_week, 运行台数, PLR, 当前设定, 实际供水温度, 跟踪误差]
-动作空间（6.2）：13 档聚合供水温度设定 7.0-10.0℃ × 0.25℃
+动作空间（6.2）：13 档聚合供水温度设定 7.6-9.4℃ × 0.15℃
 奖励（6.5）：r = -w_e·(ΣP/CL) - w_c·comfort_violation - w_a·|Δsetpoint|
 
 用法：
@@ -34,9 +34,9 @@ TIME_COL = "timeStamp"
 CP = 4.186
 RHO = 998.0
 
-# 动作空间：19 档 5.8-10.3℃ × 0.25℃
-ACTION_MIN = 7.0
-ACTION_STEP = 0.25
+# 动作空间：13 档 7.6-9.4℃ × 0.15℃（收窄防越界）
+ACTION_MIN = 7.6
+ACTION_STEP = 0.15
 ACTION_N = 13
 ACTION_SPACE = np.round(ACTION_MIN + np.arange(ACTION_N) * ACTION_STEP, 3)
 
@@ -51,7 +51,7 @@ STATE_COLS = [
 class CsgeConfig:
     """环境配置（奖励权重 + 舒适带）。"""
     w_e: float = 1.0          # 能耗权重
-    w_c: float = 0.5          # 舒适越界权重
+    w_c: float = 2.0          # 舒适越界权重
     w_a: float = 0.1          # 动作变化惩罚
     comfort_lo: float = 7.5   # 舒适带下界（常数，数据 p10≈8.1 留裕量）
     comfort_hi_base: float = 9.5    # 舒适带上界（低负载，数据 p90≈9.0 留裕量）
