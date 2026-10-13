@@ -79,11 +79,12 @@ def _kl_divergence(net, ref_net, obs_t, mask_t):
     return (p * (logp - logp_ref)).sum(dim=-1).mean()
 
 
-def rft_finetune(net, norm, env, cfg: RftConfig) -> dict:
-    """KL 锚定 PPO 微调。返回训练指标。"""
+def rft_finetune(net, norm, env, cfg: RftConfig, ref_state=None) -> dict:
+    """KL 锚定 PPO 微调。ref_state 指定锚定策略（默认=当前 net，链式；传 pi0 状态=锚定初训）。"""
     device = torch.device(cfg.device)
     ref_net = ActorCritic(env.observation_size, env.action_size, (256, 128)).to(device)
-    ref_net.load_state_dict(net.state_dict()); ref_net.train(False)
+    ref_net.load_state_dict(ref_state if ref_state is not None else net.state_dict())
+    ref_net.train(False)
     opt = torch.optim.Adam(net.parameters(), lr=cfg.lr)
     B = cfg.rollout_len
 
