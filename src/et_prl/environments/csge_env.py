@@ -128,6 +128,17 @@ class CsgeEnv:
         return {"n_on": n, "sum_p": sum_p, "t_supply": t_supply,
                 "track_err": track_err, "clc": clc}
 
+    # ---------- 动作掩码 ----------
+    def feasible_mask(self, cl: float) -> np.ndarray:
+        """动作掩码：仅允许供水温度落在舒适带 [comfort_lo, comfort_hi(cl)] 内的设定档。
+
+        返回长度 ACTION_N 的 bool 数组；cl<=1（停机）时全部允许。
+        """
+        if cl <= 1.0:
+            return np.ones(len(ACTION_SPACE), dtype=bool)
+        ts = np.asarray(ACTION_SPACE, dtype=float) + self.track_offset
+        return (ts >= self.cfg.comfort_lo) & (ts <= self.cfg.comfort_hi(cl))
+
     # ---------- 状态 ----------
     def _make_obs(self, row: pd.Series, sim: dict, ts) -> np.ndarray:
         cl = float(row["TotalRealTimeLoad"])
@@ -166,7 +177,8 @@ class CsgeEnv:
         sim = self._simulate(float(row["TotalRealTimeLoad"]),
                              float(row["OutdoorWetTemp"]), self._cur_sp)
         obs = self._make_obs(row, sim, self.t.iloc[0])
-        return obs, {"step": 0}
+        return obs, {"step": 0,
+                     "action_mask": self.feasible_mask(float(row["TotalRealTimeLoad"]))}
 
     def step(self, action_idx: int) -> tuple[np.ndarray, float, bool, bool, dict]:
         action_sp = float(ACTION_SPACE[int(action_idx)])
@@ -182,8 +194,10 @@ class CsgeEnv:
         self._step += 1
         done = self._step >= self.n
         obs = self._make_obs(row, sim, ts)
+        next_row = self.data.iloc[self._step % self.n]
         info = {"sum_p": sim["sum_p"], "n_on": sim["n_on"],
-                "t_supply": sim["t_supply"], "cl": cl, "step": self._step}
+                "t_supply": sim["t_supply"], "cl": cl, "step": self._step,
+                "action_mask": self.feasible_mask(float(next_row["TotalRealTimeLoad"]))}
         return obs, float(reward), False, done, info
 
     @property

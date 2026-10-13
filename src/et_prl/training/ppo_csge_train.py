@@ -99,8 +99,11 @@ class ActorCritic(nn.Module):
         z = self.trunk(obs)
         return self.actor(z), self.critic(z).squeeze(-1)
 
-    def act(self, obs: torch.Tensor, action: torch.Tensor | None = None):
+    def act(self, obs: torch.Tensor, action: torch.Tensor | None = None,
+            mask: torch.Tensor | None = None):
         logits, value = self.forward(obs)
+        if mask is not None:
+            logits = logits.masked_fill(~mask, -1e9)
         dist = Categorical(logits=logits)
         if action is None:
             action = dist.sample()
@@ -124,7 +127,8 @@ def assess(
 ) -> dict:
     """整段评估。net=None 且 replay_sp 给定 -> 操作员回放基线；
     net=None 且 replay_sp=None -> 恒定中间档基线；net 给定 -> 贪心动作。"""
-    obs, _ = env.reset()
+    obs, info0 = env.reset()
+    mask = info0["action_mask"]
     tot_r = 0.0
     n = 0
     e_num = 0.0
@@ -143,10 +147,13 @@ def assess(
             with torch.no_grad():
                 logits, _ = net(torch.as_tensor(
                     norm.normalize(obs), dtype=torch.float32, device=device))
+            logits = logits.masked_fill(
+                ~torch.as_tensor(mask, dtype=torch.bool, device=device), -1e9)
             a = int(logits.argmax().item())
         else:
             a = len(ACTION_SPACE) // 2
         obs, r, term, trunc, info = env.step(a)
+        mask = info["action_mask"]
         tot_r += r
         n += 1
         act_hist[a] += 1
@@ -219,8 +226,10 @@ def train(cfg: PpoCsgeConfig) -> Path:
     rew_buf = np.zeros(B, np.float32)
     done_buf = np.zeros(B, np.float32)
     val_buf = np.zeros(B, np.float32)
+    mask_buf = np.zeros((B, env.action_size), dtype=bool)
 
-    obs, _ = env.reset()
+    obs, info0 = env.reset()
+    mask = info0["action_mask"]
     global_step = 0
     update_no = 0
     best_score = -float("inf")
@@ -231,24 +240,28 @@ def train(cfg: PpoCsgeConfig) -> Path:
         last_value = 0.0
         for i in range(B):
             obs_buf[i] = obs
+            mask_buf[i] = mask
             obs_t = torch.as_tensor(norm.normalize(obs), dtype=torch.float32, device=device)
             with torch.no_grad():
-                a, logp, _, value = net.act(obs_t)
+                a, logp, _, value = net.act(
+                    obs_t, mask=torch.as_tensor(mask, dtype=torch.bool, device=device))
             act_buf[i] = int(a.item())
             logp_buf[i] = float(logp.item())
             val_buf[i] = float(value.item())
-            next_obs, r, term, trunc, _ = env.step(act_buf[i])
+            next_obs, r, term, trunc, info = env.step(act_buf[i])
             done = bool(term or trunc)
             rew_buf[i] = r
             done_buf[i] = 1.0 if done else 0.0
             if done:
                 last_value = 0.0
-                obs, _ = env.reset()
+                obs, info0 = env.reset()
+                mask = info0["action_mask"]
             else:
                 with torch.no_grad():
                     _, _, _, nv = net.act(torch.as_tensor(
                         norm.normalize(next_obs), dtype=torch.float32, device=device))
                 last_value = float(nv.item())
+                mask = info["action_mask"]
             global_step += 1
 
         norm.update(obs_buf)
@@ -268,6 +281,7 @@ def train(cfg: PpoCsgeConfig) -> Path:
         obs_t = torch.as_tensor(obs_buf, dtype=torch.float32, device=device)
         act_t = torch.as_tensor(act_buf, dtype=torch.long, device=device)
         logp_t = torch.as_tensor(logp_buf, dtype=torch.float32, device=device)
+        mask_t = torch.as_tensor(mask_buf, dtype=torch.bool, device=device)
         adv_t = torch.as_tensor(adv, dtype=torch.float32, device=device)
         ret_t = torch.as_tensor(ret_buf, dtype=torch.float32, device=device)
         adv_t = (adv_t - adv_t.mean()) / (adv_t.std() + 1e-8)
@@ -280,6 +294,7 @@ def train(cfg: PpoCsgeConfig) -> Path:
             for start in range(0, B, cfg.minibatch_size):
                 idx = perm[start:start + cfg.minibatch_size]
                 logits, value = net(obs_t[idx])
+                logits = logits.masked_fill(~mask_t[idx], -1e9)
                 dist = Categorical(logits=logits)
                 new_logp = dist.log_prob(act_t[idx])
                 ratio = torch.exp(new_logp - logp_t[idx])
