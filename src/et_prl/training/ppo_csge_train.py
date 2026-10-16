@@ -38,6 +38,7 @@ class PpoCsgeConfig:
     # 数据
     train_split: str = "s1"
     test_split: str = "s2"
+    calibration: str | None = None
     # PPO 超参
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -114,8 +115,9 @@ def _load_split(name: str) -> pd.DataFrame:
     return pd.read_csv(CLEANED_DIR / "split" / f"{name}.csv")
 
 
-def _load_calibration() -> dict:
-    return json.loads((CLEANED_DIR / "calibration.json").read_text())
+def _load_calibration(path: str | None = None) -> dict:
+    f = CLEANED_DIR / (path or "calibration.json")
+    return json.loads(f.read_text())
 
 
 def assess(
@@ -207,7 +209,7 @@ def train(cfg: PpoCsgeConfig) -> Path:
     logger.info(f"输出目录: {out_dir}")
     logger.info(f"配置: {asdict(cfg)}")
 
-    cal = _load_calibration()
+    cal = _load_calibration(cfg.calibration)
     data = _load_split(cfg.train_split)
     test_data = _load_split(cfg.test_split)
     env = CsgeEnv(data, cal)
@@ -366,6 +368,7 @@ def main() -> None:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--train-split", default="s1")
     parser.add_argument("--test-split", default="s2")
+    parser.add_argument("--calibration", default=None, help="calibration json 文件名（默认 calibration.json）")
     parser.add_argument("--assess-every", type=int, default=500_000)
     parser.add_argument("--quick", action="store_true", help="冒烟测试（4096 步）")
     args = parser.parse_args()
@@ -375,6 +378,7 @@ def main() -> None:
     cfg.device = args.device
     cfg.train_split = args.train_split
     cfg.test_split = args.test_split
+    cfg.calibration = args.calibration
     if args.quick:
         cfg.total_steps = 4096
         cfg.assess_every_steps = 2048
