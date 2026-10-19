@@ -32,3 +32,5 @@ docs/papers/et-prl/submissions/ibe-latex/submission/CREDENTIALS.local.md
 # LaTeX build intermediates (keep PDFs)
 docs/papers/et-prl/submissions/ijge-latex/submission/build/*
 !docs/papers/et-prl/submissions/ijge-latex/submission/build/*.pdf
+data.7z
+
